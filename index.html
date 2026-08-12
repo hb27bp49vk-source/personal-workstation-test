@@ -560,6 +560,13 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-quick select,.ln-quick button{flex:none;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;font-size:13px;color:var(--text-2)}
 .ln-quick button{background:var(--text);color:#fff;border-color:var(--text)}
 .ln-home-card{margin-bottom:12px;cursor:pointer;transition:transform .12s}
+  .ln-task-node{cursor:pointer}
+  .ln-task-node:hover{background:var(--card-soft)}
+  .ln-task-cnt{margin-left:auto;font-size:11px;color:var(--text-3);background:var(--card-soft);border:1px solid var(--line);border-radius:99px;padding:1px 8px;flex:none;white-space:nowrap}
+  .ln-task-go{color:var(--text-3);flex:none;font-size:15px;margin-left:2px}
+  .ln-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);margin:8px 0}
+  .ln-check input{width:16px;height:16px;flex:none}
+  .ln-sec{margin-top:14px}
 .ln-home-card:active{transform:scale(.99)}
 .ln-detail-head{display:flex;align-items:center;gap:8px;padding:6px 2px 2px}
 .ln-detail-head .ln-dot{width:12px;height:12px;border-radius:50%;flex:none;margin-top:0}
@@ -899,8 +906,8 @@ summary::-webkit-details-marker{color:var(--text)}
       <div class="sec" data-module="about">
         <div class="page-title">关于</div>
         <div class="card">
-          <div class="row-between" style="margin-bottom:6px"><span class="lab">我的工作台</span><span class="val">v3.9-test</span></div>
-          <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br>v3.9-test · 新增「学习」大模块：方向 / 内容 / 计划 / 问题 / 知识库 / 复习</p>
+          <div class="row-between" style="margin-bottom:6px"><span class="lab">我的工作台</span><span class="val">v3.10-test</span></div>
+          <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br>v3.10-test · 学习模块强化：计划节点绑定/聚合/错题/自测/大纲/时间轴</p>
         </div>
       </div>
     </section>
@@ -948,6 +955,7 @@ const daysBetween=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.10-test',date:'2026-08-12',modules:['学习'],items:['学习模块强化：内容/问题/复习可绑定到计划任务节点（双轨：也允许只挂方向）','新增计划节点聚合页：点任务小标题查看该节点下资料/问题/知识/复习','录入表单增加关联节点下拉；复习自动继承来源节点','新增tab：错题(难点归集)/资源(资料型)/大纲(树+计数)/时间轴/自测记录','知识库按节点聚合；问题可一键标记难点'],status:'测试中'},
   {version:'v3.9.1-test',date:'2026-08-12',modules:['云同步'],items:['同步防丢数据修复（与正式版 v3.8.1 同源）：改为按 id 合并同步，本地已有记录永不删除','推送失败指数退避自动重试（5s→10s→…上限60s）','页面切后台/关闭时强制 flush 本地未上云数据','「立即同步」改为先推本地再拉云合并的双向同步','注：本测试版同时含「学习」大模块（v3.9-test）'],status:'测试中'},
   {version:'v3.9-test',date:'2026-08-12',modules:['学习'],items:['新增「学习」大模块：自定义学习方向与内容（方向下挂「资料 / 子主题」二级）','UX 重构为「方向即主页」：取消顶部 6 Tab，改为方向卡片展开，一个卡片内直接切换计划/内容/问题/知识库/复习，减少来回切换','支持一键快速添加：方向内直接输入标题新建计划（带模板）/ 内容 / 问题，无需先切 Tab 再进弹窗','计划支持模板快速创建：21 天入门 / 读书笔记 / 项目实战，自动生成阶段与任务','问题状态支持点击徽章单键循环切换（未解决 → 解决中 → 已解决）','已解决问题可一键加入复习，按 1/3/7/16/30 天间隔递增提醒','手动制定学习计划：方向 → 阶段 → 任务 → 截止日，自动计算完成进度','已解决问题与答案自动沉淀为「知识库」，可搜索','学习数据随导出 / 导入 / 合并导入 / 云同步自动携带'],status:'测试中'},
   {version:'v3.7-test',date:'2026-08-10',modules:['账本'],items:[
