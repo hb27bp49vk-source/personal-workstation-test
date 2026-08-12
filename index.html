@@ -874,16 +874,14 @@ summary::-webkit-details-marker{color:var(--text)}
         </div>
       </div>
       <div class="sec" data-module="cloudSync">
-        <div class="page-title">云同步</div>
+        <div class="page-title">云同步（测试版已禁用）</div>
         <div class="card">
-          <div class="set-row" id="syncRow"><span class="lab">状态</span><span id="syncStatus" class="sync-dot off">未开启</span></div>
-          <div class="set-row"><span class="lab">云同步设置</span><button id="syncBtn">设置</button></div>
-          <div class="privacy-box">
-            <b>隐私保障</b><br>
-            · 数据经 <b>AES-GCM 端到端加密</b>后存于 GitHub Gist（私有），仅持有 Passcode 的你能解密<br>
-            · 传输全程 <b>HTTPS</b>；GitHub 只看到密文<br>
-            · Token 是访问凭证，Passcode 是加密钥匙——分开存放更安全<br>
-            · 丢失 Passcode <b>无法恢复</b>，请牢记；本地 localStorage 始终是你的离线兜底
+          <div class="set-row"><span class="lab">状态</span><span id="syncStatus" class="sync-dot off">测试版不可用</span></div>
+          <div class="privacy-box" style="border-color:var(--line);color:var(--text-2)">
+            <b>测试版不连接云同步</b><br>
+            · 为避免测试数据污染你的正式云库，测试版<b>禁止</b>开启云同步、也不读取你的云端数据。<br>
+            · 需要数据时请用正式版「数据管理 → 导出 JSON」，再到测试版「粘贴 JSON 导入」。<br>
+            · 正式版云同步不受影响，请从正式版地址恢复或管理。
           </div>
         </div>
       </div>
@@ -942,6 +940,8 @@ const localStorage = {
   key(i){ const k = _realLS.key(i); return (k && k.indexOf(_LS_NS) === 0) ? k.slice(_LS_NS.length) : null; },
   get length(){ let n = 0; for(let i = 0; i < _realLS.length; i++){ if(_realLS.key(i) && _realLS.key(i).indexOf(_LS_NS) === 0) n++; } return n; }
 };
+/* 测试版标记：禁用云同步，避免测试数据污染正式云库（两者共用同一 Gist） */
+const TEST_BUILD=true;
 /* ============ 工具函数 ============ */
 const $=s=>document.querySelector(s), $$=(s,ctx)=>[...(ctx||document).querySelectorAll(s)];
 const pad=n=>String(n).padStart(2,'0');
@@ -2116,6 +2116,7 @@ function renderSyncBtn(){
 }
 
 async function cloudPush(){
+  if(TEST_BUILD)return;
   if(!syncCfg||!syncCfg.binId||syncBusy)return;
   syncBusy=true;setSyncStatus('sync');
   try{
@@ -2129,6 +2130,7 @@ async function cloudPush(){
 }
 
 function schedulePush(){
+  if(TEST_BUILD)return;
   if(!syncCfg||!syncCfg.binId)return;
   clearTimeout(syncTimer);
   syncTimer=setTimeout(cloudPush,3000);
@@ -2137,6 +2139,7 @@ function schedulePush(){
 let syncRetryCount=0;
 let syncRetryTimer=null;
 function schedulePushRetry(){
+  if(TEST_BUILD)return;
   if(!syncCfg||!syncCfg.binId)return;
   syncRetryCount++;
   const delay=Math.min(60000,5000*syncRetryCount);
@@ -2166,6 +2169,7 @@ function mergeState(remote){
 }
 
 async function cloudPull(opts={}){
+  if(TEST_BUILD)return false;
   const force=!!opts.force;
   const throwOnError=!!opts.throwOnError;
   if(!syncCfg||!syncCfg.binId||syncBusy)return false;
@@ -2377,7 +2381,7 @@ function openSyncSetup(){
   };
 }
 
-$('#syncBtn').onclick=openSyncSetup;
+const _sb=$('#syncBtn'); if(_sb)_sb.onclick=openSyncSetup;
 
 
 /* ============ 更新日志 ============ */
@@ -3086,7 +3090,7 @@ renderAll();
 
 /* 云同步初始化 */
 renderSyncBtn();
-if(syncCfg&&syncCfg.binId){
+if(!TEST_BUILD && syncCfg&&syncCfg.binId){
   setSyncStatus('sync');
   cloudPull().then(()=>{
     setInterval(()=>{if(navigator.onLine)cloudPull()},60000);
