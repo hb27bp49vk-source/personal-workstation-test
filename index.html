@@ -592,11 +592,6 @@ summary::-webkit-details-marker{color:var(--text)}
   <main>
     <input type="file" id="importFile" accept="application/json" hidden>
     <input type="file" id="mergeFile" accept="application/json" hidden>
-    <div class="module-manager-entry">
-      <div><div class="t">测试版模块管理</div><div class="s">先在测试链接调整显示/隐藏和排序，确认后再升正式版</div></div>
-      <button id="moduleManageBtn">编辑模块</button>
-    </div>
-
     <!-- 今日 -->
     <section class="page active" id="page-today">
       <button class="qn-entry" id="qnEntry">
@@ -868,6 +863,7 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="set-row"><span class="lab">合并导入（去重）</span><div class="btn-pair"><button id="mergeBtn">选择文件</button><button id="mergePasteBtn">粘贴JSON</button></div></div>
           <div class="set-row"><span class="lab">设置月预算</span><button id="budgetBtn">设置</button></div>
           <div class="set-row"><span class="lab">清空全部</span><button id="clearBtn" style="color:var(--bad)">清空</button></div>
+          <div class="set-row"><span class="lab">模块显示与排序</span><button id="moduleManageBtn">编辑模块</button></div>
         </div>
       </div>
       <div class="sec" data-module="cloudSync">
@@ -2681,18 +2677,39 @@ if(!syncCfg&&S.todos.length===0&&S.habits.length===0&&S.ledger.length===0&&S.not
 }
 
 /* ============ 学习模块 ============ */
-function lnData(){if(!S.learning)S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});return S.learning}
+function lnData(){if(!S.learning)S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[],mistakes:[],selftests:[]};['directions','contents','plans','questions','reviews','mistakes','selftests'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});return S.learning}
+/* 取某节点（plan 下某 task）下的全部关联记录 */
+function lnNodeItems(L0,nodeId){return {
+  contents:L0.contents.filter(c=>c.nodeId===nodeId),
+  questions:L0.questions.filter(q=>q.nodeId===nodeId),
+  knowledge:L0.questions.filter(q=>q.nodeId===nodeId&&q.status==='solved'&&q.answer&&q.answer.trim()),
+  reviews:L0.reviews.filter(r=>r.nodeId===nodeId),
+  mistakes:L0.mistakes.filter(m=>m.nodeId===nodeId)
+}}
+/* 当前方向下所有 plan 的阶段/任务，用于“关联节点”下拉；返回 [{value,label}] */
+function lnNodeOptions(L0,dirId){
+  const out=[{value:'',label:'不绑定（仅方向）'}];
+  L0.plans.filter(p=>p.directionId===dirId).forEach(p=>{
+    (p.milestones||[]).forEach(m=>{
+      (m.tasks||[]).forEach(t=>{out.push({value:t.id,label:`${p.title} / ${m.title||'阶段'} / ${t.title||'未命名任务'}`})});
+    });
+  });
+  return out;
+}
 const LN_COLORS=['#5a7a8a','#7a5a8a','#8a7a5a','#5a8a6a','#8a5a6a','#5a6a8a','#8a8a5a','#6a5a8a'];
 function lnColor(i){return LN_COLORS[((i%LN_COLORS.length)+LN_COLORS.length)%LN_COLORS.length]}
 function addDays(str,n){const d=new Date(str+'T00:00:00');d.setDate(d.getDate()+n);return fmtDate(d)}
 const LN_REVIEW_SEQ=[1,3,7,16,30];
 function lnNextInterval(cur){const i=LN_REVIEW_SEQ.indexOf(cur);if(i<0)return 1;if(i<LN_REVIEW_SEQ.length-1)return LN_REVIEW_SEQ[i+1];return cur+15}
 let lnCurrentDir=null;
+let lnNode=null; /* {dirId,planId,msId,taskId} 当前打开的计划节点（任务）聚合页 */
+let lnNodeTab='items';
 let lnDetailTab='plans';
 let lnKbKw='';
 let lnPlanDraft=null;
-function renderLearning(){lnData();if(lnCurrentDir)renderLnDetail();else renderLnHome();}
-function lnRefresh(){if(lnCurrentDir)renderLnDetail();else renderLnHome();}
+function renderLearning(){lnData();if(lnNode)renderLnNodeView();else if(lnCurrentDir)renderLnDetail();else renderLnHome();}
+function lnRefresh(){if(lnNode)renderLnNodeView();else if(lnCurrentDir)renderLnDetail();else renderLnHome();}
+function lnBackNode(){lnNode=null;renderLearning();}
 /* —— 主页：方向列表 —— */
 function renderLnHome(){
   var ov=$('#lnOverview'); if(ov)ov.style.display='';
@@ -2726,7 +2743,7 @@ function renderLnDetail(){
   if(!d){lnCurrentDir=null;renderLnHome();return}
   var ov=$('#lnOverview'); if(ov)ov.style.display='none';
   const st=lnDirStats(d,L0);const pct=st.total?Math.round(st.done/st.total*100):0;
-  const tabs=[['plans','计划'],['contents','内容'],['questions','问题'],['kb','知识库'],['reviews','复习']];
+  const tabs=[['plans','计划'],['contents','内容'],['questions','问题'],['kb','知识库'],['reviews','复习'],['mistakes','错题'],['resources','资源'],['outline','大纲'],['timeline','时间轴'],['selftests','自测']];
   const tabHtml=tabs.map(([k,n])=>`<button class="ln-dir-tab ${lnDetailTab===k?'on':''}" data-t="${k}" ${lnDetailTab===k?`style="background:${d.color};border-color:${d.color};color:#fff"`:''}>${n}</button>`).join('');
   let bodyHtml='';
   if(lnDetailTab==='plans')bodyHtml=renderLnDirPlans(d,L0);
@@ -2734,6 +2751,11 @@ function renderLnDetail(){
   else if(lnDetailTab==='questions')bodyHtml=renderLnDirQuestions(d,L0);
   else if(lnDetailTab==='kb')bodyHtml=renderLnDirKb(d,L0);
   else if(lnDetailTab==='reviews')bodyHtml=renderLnDirReviews(d,L0);
+  else if(lnDetailTab==='mistakes')bodyHtml=renderLnDirMistakes(d,L0);
+  else if(lnDetailTab==='resources')bodyHtml=renderLnDirResources(d,L0);
+  else if(lnDetailTab==='outline')bodyHtml=renderLnDirOutline(d,L0);
+  else if(lnDetailTab==='timeline')bodyHtml=renderLnDirTimeline(d,L0);
+  else if(lnDetailTab==='selftests')bodyHtml=renderLnDirSelftests(d,L0);
   $('#lnBody').innerHTML=`<div class="ln-detail-head" style="box-shadow:inset 4px 0 0 ${d.color||'#888'}">
       <button class="ln-back" onclick="lnBackHome()">‹ 返回</button>
       <span class="ln-dot" style="background:${d.color||'#888'}"></span>
@@ -2812,15 +2834,28 @@ function renderLnDirPlans(d,L0){
     html+=`<div class="ln-card">
       <div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(p.title)}</div><div class="ln-sub">${done}/${all.length} 任务 · ${pct}%</div></div><div class="ln-acts"><button onclick="openLnPlanModal('${d.id}','${p.id}')">编辑</button><button onclick="lnDelPlan('${p.id}')" style="color:var(--bad)">删除</button></div></div>
       <div class="ln-bar"><i style="width:${pct}%;background:${d.color}"></i></div>
-      ${renderLnPlanMilestones(p)}
+      ${renderLnPlanMilestones(p,L0)}
     </div>`;
   });
   return html;
 }
-function renderLnPlanMilestones(p){
+function renderLnPlanMilestones(p,L0){
   if(!(p.milestones||[]).length)return '<div class="muted" style="font-size:12px">暂无阶段，点击编辑添加。</div>';
   return (p.milestones||[]).map(m=>{
-    const tasks=(m.tasks||[]).map(t=>`<div class="ln-task"><input type="checkbox" ${t.done?'checked':''} onchange="lnToggleTask('${p.id}','${m.id}','${t.id}',this.checked)"><span class="ln-task-t ${t.done?'ln-done':''}">${t.title?esc(t.title):'<span style="color:var(--text-3)">未命名任务</span>'}</span>${t.due?`<span class="ln-sub">📅${t.due}</span>`:''}</div>`).join('')||'<div class="muted" style="font-size:12px">暂无任务</div>';
+    const tasks=(m.tasks||[]).map(t=>{
+      const ni=lnNodeItems(L0,t.id);const cnts=[];
+      if(ni.contents.length)cnts.push('📄'+ni.contents.length);
+      if(ni.questions.length)cnts.push('💡'+ni.questions.length);
+      if(ni.reviews.length)cnts.push('🔁'+ni.reviews.length);
+      const cntHtml=cnts.length?`<span class="ln-task-cnt">${cnts.join(' ')}</span>`:'';
+      return `<div class="ln-task ln-task-node" onclick="lnOpenNode('${p.directionId}','${p.id}','${m.id}','${t.id}')" title="点此查看该节点下的全部资料">
+        <input type="checkbox" ${t.done?'checked':''} onclick="event.stopPropagation()" onchange="lnToggleTask('${p.id}','${m.id}','${t.id}',this.checked)">
+        <span class="ln-task-t ${t.done?'ln-done':''}">${t.title?esc(t.title):'<span style="color:var(--text-3)">未命名任务</span>'}</span>
+        ${t.due?`<span class="ln-sub">📅${t.due}</span>`:''}
+        ${cntHtml}
+        <span class="ln-task-go">›</span>
+      </div>`;
+    }).join('')||'<div class="muted" style="font-size:12px">暂无任务</div>';
     return `<div class="ln-card" style="margin-top:8px"><div class="ln-ms-top"><b>${esc(m.title)||'阶段'}</b>${m.due?`<span class="ln-sub">${m.due}</span>`:''}</div>${tasks}</div>`;
   }).join('');
 }
