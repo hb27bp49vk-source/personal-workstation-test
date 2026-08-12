@@ -15,16 +15,23 @@
 <style>
 /* ====== 设计令牌 · 墨白极简 ====== */
 :root{
-  --bg:#ffffff; --bg2:#f7f7f5;
-  --card:#ffffff; --card-soft:#f9f9f8; --card-hover:#f4f4f2;
-  --text:#1a1a1a; --text-2:#6b6b6b; --text-3:#a0a0a0;
-  --line:#e5e5e3; --line-soft:#efefed;
-  --pri:#1a1a1a; --pri-light:#4a4a4a; --pri-soft:rgba(26,26,26,.04); --pri-grad:#1a1a1a;
+  /* 背景 / 卡片：极浅暖白，降低长时间观看刺眼 */
+  --bg:#faf8f4; --bg2:#f0ece6;
+  --card:#fffdfb; --card-soft:#f6f3ee; --card-hover:#f1ede7; --card-tint:#fbf9f5;
+  --text:#23211d; --text-2:#6f6a62; --text-3:#a39d93;
+  --line:#e7e2da; --line-soft:#efeae4;
+  --pri:#23211d; --pri-light:#4f4a43; --pri-soft:rgba(35,33,29,.05); --pri-grad:#23211d;
   --ok:#5a7a4e; --warn:#9a7a3a; --bad:#b04a4a;
   --income:#5a7a4e; --expense:#b04a4a;
   --shadow:none; --shadow-sm:none;
-  --r:8px; --r-sm:6px; --r-xs:4px;
+  --r:10px; --r-sm:7px; --r-xs:5px;
   --tab-h:56px; --max:560px;
+  /* 模块柔和强调色（莫兰迪低饱和，做明显区分，无大色块） */
+  --m-worklog:#c4a062; --m-todos:#6a8db5; --m-habits:#6ab58a; --m-todayMoney:#c4756b;
+  --m-moneyForm:#b0854e; --m-monthOverview:#c98a5a; --m-catExpense:#9a7a3a; --m-flowList:#7a82c4;
+  --m-mood:#c47a9e; --m-heatmap:#5fa0b0; --m-countdown:#6a8db5; --m-history:#8a7fb0;
+  --m-notes:#9a86b8; --m-dataManage:#5a7a8a; --m-cloudSync:#5fa0b0; --m-homeScreen:#8aa0b0;
+  --m-changelog:#b0894e; --m-about:#9a9a92; --m-learning:#5a7a8a;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -44,7 +51,7 @@ input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
 .app{max-width:var(--max);margin:0 auto;background:var(--bg);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 header.topbar{
   position:sticky;top:0;z-index:30;
-  background:#fff;
+  background:var(--card);
   border-bottom:1px solid var(--line);
   padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 14px;
 }
@@ -64,6 +71,33 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .card h3{margin:0 0 12px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
 .card h3 .ic{width:18px;height:18px;color:var(--text);flex:none}
 .sec{margin-bottom:20px}
+/* ====== 模块柔和强调色：标题左细色条 + 卡片内嵌左色脊 + 图标着色 ====== */
+.sec[data-module]{--mac:var(--m-about)}
+.sec[data-module="worklog"]{--mac:var(--m-worklog)}
+.sec[data-module="todos"]{--mac:var(--m-todos)}
+.sec[data-module="habits"]{--mac:var(--m-habits)}
+.sec[data-module="todayMoney"]{--mac:var(--m-todayMoney)}
+.sec[data-module="moneyForm"]{--mac:var(--m-moneyForm)}
+.sec[data-module="monthOverview"]{--mac:var(--m-monthOverview)}
+.sec[data-module="catExpense"]{--mac:var(--m-catExpense)}
+.sec[data-module="flowList"]{--mac:var(--m-flowList)}
+.sec[data-module="mood"]{--mac:var(--m-mood)}
+.sec[data-module="heatmap"]{--mac:var(--m-heatmap)}
+.sec[data-module="countdown"]{--mac:var(--m-countdown)}
+.sec[data-module="history"]{--mac:var(--m-history)}
+.sec[data-module="notes"]{--mac:var(--m-notes)}
+.sec[data-module="learning"]{--mac:var(--m-learning)}
+.sec[data-module="dataManage"]{--mac:var(--m-dataManage)}
+.sec[data-module="cloudSync"]{--mac:var(--m-cloudSync)}
+.sec[data-module="homeScreen"]{--mac:var(--m-homeScreen)}
+.sec[data-module="changelog"]{--mac:var(--m-changelog)}
+.sec[data-module="about"]{--mac:var(--m-about)}
+.sec[data-module] > .page-title{border-left:3px solid var(--mac);padding-left:9px;color:var(--mac)}
+.sec[data-module] > .card{box-shadow:inset 3px 0 0 var(--mac);border-color:var(--line)}
+.sec[data-module] .card h3 .ic{color:var(--mac)}
+.sec[data-module="todos"] .todo-prog i{background:var(--m-todos)}
+.sec[data-module="habits"] .habit-card.done{background:rgba(106,181,138,.10);border-color:rgba(106,181,138,.42)}
+.sec[data-module="habits"] .habit-card.done .h-ic{color:#4f8f63}
 
 /* ====== 待办 ====== */
 .todo-add{display:flex;gap:8px;margin-bottom:10px}
@@ -165,15 +199,16 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .money-stat .s .l{font-size:11px;color:var(--text-3);margin-top:2px}
 .money-stat .inc .n{color:var(--income)}
 .money-stat .exp .n{color:var(--expense)}
-.flow-item{display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid var(--line-soft)}
+.flow-item{display:flex;align-items:center;gap:11px;padding:11px 12px 11px 10px;border-bottom:1px solid var(--line-soft);border-left:3px solid transparent;border-radius:var(--r-xs);transition:background .15s}
 .flow-item:last-child{border-bottom:none}
-.flow-item .f-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none}
-.flow-item .f-ic .ic{width:16px;height:16px;color:#fff}
-.flow-item .f-main{flex:1}
-.flow-item .f-cat{font-size:13.5px;font-weight:600}
+.flow-item .f-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none;border:1px solid var(--line-soft)}
+.flow-item .f-ic .ic{width:16px;height:16px;color:inherit}
+.flow-item .f-main{flex:1;min-width:0}
+.flow-item .f-cat{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.flow-item .f-tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12.5px;font-weight:600;line-height:1.6}
 .flow-item .f-note{font-size:11.5px;color:var(--text-3)}
-.flow-item .f-amt{font-weight:700;font-size:15px}
-.flow-item .f-date{font-size:11px;color:var(--text-3)}
+.flow-item .f-amt{font-weight:700;font-size:15px;flex:none}
+.flow-item .f-date{font-size:11px;color:var(--text-3);margin-top:2px}
 .budget-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:8px 0}
 .budget-bar i{display:block;height:100%;border-radius:99px;transition:width .35s ease}
 .month-pick{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -327,7 +362,8 @@ nav.tabbar{
 }
 nav.tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text-3);font-size:10.5px;text-decoration:none;transition:.15s}
 nav.tabbar a .ic{width:22px;height:22px;transition:.15s}
-nav.tabbar a.on{color:var(--text)}
+nav.tabbar a.on{color:#3f5d68}
+nav.tabbar a.on .ic{color:#3f5d68}
 nav.tabbar a.on .ic{transform:scale(1.05)}
 
 /* ====== 通用 ====== */
@@ -420,6 +456,22 @@ summary::-webkit-details-marker{color:var(--text)}
 .hist-row .hr-amt{font-weight:700;font-size:13.5px;flex:none;white-space:nowrap}
 .hist-more{width:100%;margin-top:6px;padding:9px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;color:var(--text);font-weight:600;font-size:13px}
 
+/* 历史日报 · 查询 + 复制 */
+.his-mode{display:flex;gap:8px;margin-bottom:12px}
+.his-mode button{flex:1;padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card-soft);color:var(--text-2);font-weight:600;font-size:13.5px;transition:all .15s}
+.his-mode button.on{background:var(--text);color:#fff;border-color:var(--text)}
+.his-mode button:active{transform:scale(.98)}
+.hrpt-item{border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:10px;overflow:hidden;background:var(--card)}
+.hrpt-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:var(--card-soft);border-bottom:1px solid var(--line-soft)}
+.hrpt-date{font-weight:700;font-size:13.5px}
+.hrpt-sum{font-size:11.5px;color:var(--text-3);white-space:nowrap}
+.hrpt-actions{display:flex;gap:8px;padding:9px 12px}
+.hrpt-actions button{flex:1;padding:9px;border-radius:var(--r-sm);font-weight:600;font-size:13px;border:1px solid var(--line)}
+.hrpt-view{background:var(--card-soft);color:var(--text)}
+.hrpt-view:hover{border-color:var(--text)}
+.hrpt-copy{background:var(--text);color:#fff;border-color:var(--text)}
+.hrpt-copy:active{transform:scale(.98)}
+
 /* ====== 超大弹窗（日报 / 导出） ====== */
 .modal.xl{max-width:780px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
 .modal.xl h4{flex:none}
@@ -452,6 +504,70 @@ summary::-webkit-details-marker{color:var(--text)}
   .hist-stat{grid-template-columns:repeat(6,1fr)}
   .report-area{min-height:56vh}
 }
+/* 学习模块 */
+.ln-ov{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ln-ov-i{background:var(--card-soft);border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:12px 6px;text-align:center}
+.ln-ov-i b{display:block;font-size:22px;font-weight:700;line-height:1.1}
+.ln-ov-i span{font-size:11px;color:var(--text-3)}
+.ln-tabs{display:flex;gap:6px;overflow-x:auto;margin:4px 0 12px;padding-bottom:2px}
+.ln-tabs button{flex:none;padding:7px 14px;border-radius:99px;background:var(--card-soft);border:1px solid var(--line);font-size:13px;color:var(--text-2);font-weight:600;transition:.15s}
+.ln-tabs button.on{background:var(--text);color:#fff;border-color:var(--text)}
+.ln-bar{height:5px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:6px 0}
+.ln-bar i{display:block;height:100%;background:var(--ok);border-radius:99px}
+.ln-badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+.ln-badge.open{background:#f3ece1;color:#9a7a3a}
+.ln-badge.doing{background:#e7eef6;color:#3a649a}
+.ln-badge.solved{background:#e7f0e7;color:var(--ok)}
+.ln-tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;background:var(--card-soft);border:1px solid var(--line);color:var(--text-2);margin:2px 4px 2px 0}
+.ln-dot{width:10px;height:10px;border-radius:99px;display:inline-block;flex:none}
+.ln-item{display:flex;align-items:flex-start;gap:10px;padding:12px 4px;border-bottom:1px solid var(--line-soft)}
+.ln-item:last-child{border-bottom:none}
+.ln-item .ln-main{flex:1;min-width:0}
+.ln-item .ln-title{font-size:14px;font-weight:600}
+.ln-item .ln-sub{font-size:12px;color:var(--text-3);margin-top:3px;line-height:1.5}
+.ln-item .ln-acts{display:flex;gap:6px;flex:none}
+.ln-item .ln-acts button{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;font-size:12px;color:var(--text-2)}
+.ln-seg{display:flex;gap:6px;margin:8px 0}
+.ln-seg button{flex:1;padding:7px;border-radius:var(--r-sm);background:var(--card-soft);border:1px solid var(--line);font-size:13px;color:var(--text-2);font-weight:600}
+.ln-seg button.on{background:var(--text);color:#fff;border-color:var(--text)}
+.ln-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.ln-toolbar select,.ln-toolbar input{flex:1;min-width:110px;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;outline:none;font-size:13px}
+.ln-add-btn{width:100%;border:1px dashed var(--line);background:transparent;color:var(--text-3);padding:11px;border-radius:var(--r-sm);font-size:13px;margin-top:8px;cursor:pointer}
+.ln-add-btn:hover{color:var(--text-2)}
+.ln-empty{text-align:center;color:var(--text-3);font-size:13px;padding:18px 0;line-height:1.7}
+.ln-card{background:var(--card-soft);border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:12px;margin-bottom:10px}
+.ln-ms{margin:8px 0 4px;font-size:12px;color:var(--text-2);font-weight:600}
+.ln-ms-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.ln-ms-top b{flex:1;font-size:13px}
+.ln-ms-top button,.ln-ms-top input{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 8px;font-size:12px;color:var(--text-2)}
+.ln-task{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+.ln-task input[type=checkbox]{width:16px;height:16px;flex:none}
+.ln-task .ln-task-t{flex:1}
+.ln-done{text-decoration:line-through;color:var(--text-3)}
+.ln-kb-a{background:var(--card-soft);border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:10px 12px;margin-top:6px;font-size:13px;white-space:pre-wrap;color:var(--text-2);line-height:1.6}
+.ln-due{color:var(--bad);font-weight:600}
+.ln-dir-card{margin-bottom:12px}
+.ln-dir-head{display:flex;align-items:flex-start;gap:10px;padding:12px;cursor:pointer;user-select:none}
+.ln-dir-head .ln-main{flex:1;min-width:0}
+.ln-dir-arrow{font-size:18px;color:var(--text-3);flex:none;margin-top:2px}
+.ln-dir-actions{display:flex;gap:6px;padding:0 12px 10px;flex-wrap:wrap}
+.ln-dir-actions button{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 10px;font-size:12px;color:var(--text-2)}
+.ln-dir-body{padding:0 12px 12px;border-top:1px solid var(--line-soft)}
+.ln-dir-tabs{padding-top:10px;margin-bottom:10px}
+.ln-dir-tabs button{padding:5px 11px;font-size:12px}
+.ln-quick{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.ln-quick input{flex:1;min-width:90px;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;outline:none;font-size:13px}
+.ln-quick select,.ln-quick button{flex:none;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;font-size:13px;color:var(--text-2)}
+.ln-quick button{background:var(--text);color:#fff;border-color:var(--text)}
+.ln-home-card{margin-bottom:12px;cursor:pointer;transition:transform .12s}
+.ln-home-card:active{transform:scale(.99)}
+.ln-detail-head{display:flex;align-items:center;gap:8px;padding:6px 2px 2px}
+.ln-detail-head .ln-dot{width:12px;height:12px;border-radius:50%;flex:none;margin-top:0}
+.ln-detail-t{flex:1;min-width:0;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ln-detail-acts{display:flex;gap:6px;flex:none}
+.ln-detail-acts button{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;font-size:12px;color:var(--text-2)}
+.ln-back{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 11px;font-size:13px;color:var(--text-2);flex:none}
+.ln-dir-section{padding-top:8px}
 </style>
 </head>
 <body>
@@ -661,45 +777,59 @@ summary::-webkit-details-marker{color:var(--text)}
     <!-- 历史 -->
     <section class="page" id="page-history">
       <div class="sec" data-module="history">
-        <div class="page-title">历史信息 · 按时间筛选</div>
-        <div class="card">
-          <div class="filter-bar">
-            <div class="fb-row">
-              <span class="fb-lab">日期</span>
-              <input type="date" id="hisFrom">
-              <span class="fb-lab">至</span>
-              <input type="date" id="hisTo">
-            </div>
-            <div class="fb-row quick-chips" id="hisQuick">
-              <button class="quick-chip" data-r="today">今天</button>
-              <button class="quick-chip" data-r="yesterday">昨天</button>
-              <button class="quick-chip on" data-r="7">近7天</button>
-              <button class="quick-chip" data-r="30">近30天</button>
-              <button class="quick-chip" data-r="thisMonth">本月</button>
-              <button class="quick-chip" data-r="lastMonth">上月</button>
-              <button class="quick-chip" data-r="all">全部</button>
-            </div>
-            <div class="fb-row quick-chips" id="hisKind">
-              <button class="quick-chip on" data-k="all">全部类型</button>
-              <button class="quick-chip" data-k="worklog">工作日志</button>
-              <button class="quick-chip" data-k="todo">待办</button>
-              <button class="quick-chip" data-k="habit">打卡</button>
-              <button class="quick-chip" data-k="ledger">账目</button>
-              <button class="quick-chip" data-k="mood">心情</button>
-              <button class="quick-chip" data-k="note">备忘</button>
-            </div>
-            <div class="fb-row">
-              <input class="fb-kw" id="hisKw" placeholder="搜索关键词（内容 / 分类 / 备注）">
-              <button class="quick-chip" id="hisReset">重置</button>
-            </div>
-            <div class="filter-sum" id="hisSum"></div>
+        <div class="page-title">历史信息</div>
+        <div class="his-mode" id="hisMode">
+          <button class="on" data-m="timeline">时间线记录</button>
+          <button data-m="report">历史日报</button>
+        </div>
+        <div class="filter-bar" id="hisFilter">
+          <div class="fb-row">
+            <span class="fb-lab">日期</span>
+            <input type="date" id="hisFrom">
+            <span class="fb-lab">至</span>
+            <input type="date" id="hisTo">
           </div>
+          <div class="fb-row quick-chips" id="hisQuick">
+            <button class="quick-chip" data-r="today">今天</button>
+            <button class="quick-chip" data-r="yesterday">昨天</button>
+            <button class="quick-chip on" data-r="7">近7天</button>
+            <button class="quick-chip" data-r="30">近30天</button>
+            <button class="quick-chip" data-r="thisMonth">本月</button>
+            <button class="quick-chip" data-r="lastMonth">上月</button>
+            <button class="quick-chip" data-r="all">全部</button>
+          </div>
+          <div class="fb-row quick-chips" id="hisKind">
+            <button class="quick-chip on" data-k="all">全部类型</button>
+            <button class="quick-chip" data-k="worklog">工作日志</button>
+            <button class="quick-chip" data-k="todo">待办</button>
+            <button class="quick-chip" data-k="habit">打卡</button>
+            <button class="quick-chip" data-k="ledger">账目</button>
+            <button class="quick-chip" data-k="mood">心情</button>
+            <button class="quick-chip" data-k="note">备忘</button>
+          </div>
+          <div class="fb-row">
+            <input class="fb-kw" id="hisKw" placeholder="搜索关键词（内容 / 分类 / 备注）">
+            <button class="quick-chip" id="hisReset">重置</button>
+          </div>
+          <div class="filter-sum" id="hisSum"></div>
+        </div>
+        <div class="card" id="hisTimeline">
           <div class="hist-stat" id="hisStat"></div>
           <div id="hisList"></div>
           <button class="wl-report-btn" id="hisExport">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
             导出 / 复制所选区间记录
           </button>
+        </div>
+        <div id="hisReportView" style="display:none">
+          <div class="card">
+            <p class="muted" style="margin:0 0 12px;font-size:12.5px">按当前<b>日期区间</b>列出有记录的每一天工作日报。点「复制日报」可一键复制当天日报，点「查看」在弹窗中编辑或下载 .md；也可一键复制本区间全部日报。</p>
+            <button class="wl-report-btn" id="hisRptCopyAll">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              复制本区间全部日报
+            </button>
+            <div id="hisReportList"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -716,6 +846,15 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="note-toolbar"><span id="noteCount">0 条备忘</span><span>未完成优先 · 自动保存到本机</span></div>
           <div id="noteList"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- 学习 -->
+    <section class="page" id="page-learning">
+      <div class="sec" data-module="learning">
+        <div class="page-title">学习</div>
+        <div class="card" id="lnOverview"></div>
+        <div id="lnBody"></div>
       </div>
     </section>
 
@@ -764,8 +903,8 @@ summary::-webkit-details-marker{color:var(--text)}
       <div class="sec" data-module="about">
         <div class="page-title">关于</div>
         <div class="card">
-          <div class="row-between" style="margin-bottom:6px"><span class="lab">我的工作台</span><span class="val">v3.7-test</span></div>
-          <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br>v3.7-test · 支出类型可逐类「计入月预算」· 饼图新增仅看焦点模式 + 实时刷新时间戳</p>
+          <div class="row-between" style="margin-bottom:6px"><span class="lab">我的工作台</span><span class="val">v3.9-test</span></div>
+          <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br>v3.9-test · 新增「学习」大模块：方向 / 内容 / 计划 / 问题 / 知识库 / 复习</p>
         </div>
       </div>
     </section>
@@ -778,6 +917,7 @@ summary::-webkit-details-marker{color:var(--text)}
     <a data-p="heat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>热力</a>
     <a data-p="history"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>历史</a>
     <a data-p="notes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>备忘</a>
+    <a data-p="learning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4zM4 18a2 2 0 0 1 2-2h13"/></svg>学习</a>
     <a data-p="me"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>我的</a>
   </nav>
 </div>
@@ -801,6 +941,8 @@ const daysBetween=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.9.1-test',date:'2026-08-12',modules:['云同步'],items:['同步防丢数据修复（与正式版 v3.8.1 同源）：改为按 id 合并同步，本地已有记录永不删除','推送失败指数退避自动重试（5s→10s→…上限60s）','页面切后台/关闭时强制 flush 本地未上云数据','「立即同步」改为先推本地再拉云合并的双向同步','注：本测试版同时含「学习」大模块（v3.9-test）'],status:'测试中'},
+  {version:'v3.9-test',date:'2026-08-12',modules:['学习'],items:['新增「学习」大模块：自定义学习方向与内容（方向下挂「资料 / 子主题」二级）','UX 重构为「方向即主页」：取消顶部 6 Tab，改为方向卡片展开，一个卡片内直接切换计划/内容/问题/知识库/复习，减少来回切换','支持一键快速添加：方向内直接输入标题新建计划（带模板）/ 内容 / 问题，无需先切 Tab 再进弹窗','计划支持模板快速创建：21 天入门 / 读书笔记 / 项目实战，自动生成阶段与任务','问题状态支持点击徽章单键循环切换（未解决 → 解决中 → 已解决）','已解决问题可一键加入复习，按 1/3/7/16/30 天间隔递增提醒','手动制定学习计划：方向 → 阶段 → 任务 → 截止日，自动计算完成进度','已解决问题与答案自动沉淀为「知识库」，可搜索','学习数据随导出 / 导入 / 合并导入 / 云同步自动携带'],status:'测试中'},
   {version:'v3.7-test',date:'2026-08-10',modules:['账本'],items:[
     '账单「支出类型」新增「计入月预算」开关：可逐类选择是否计入月预算，关闭的类型仍记为支出（成本）但不占用预算额度、不计入超支判断',
     '月预算进度条与超支判断改为仅统计「计入月预算」的类型，并在预算区显示「其中 X 不计入预算」',
@@ -811,6 +953,7 @@ const CHANGELOG=[
     '新增第二张「预算内支出构成」饼图：只统计在「支出类型管理」中开启「计入月预算」的类型，与总饼图并列，同样支持多选高亮对比，便于单独看预算执行构成',
     '修复多选高亮对比不明显的 bug：修正后选中扇区为满色 + 白色描边，未选中扇区 fill-opacity 0.16，对比一眼可辨'
   ],status:'测试中'},
+  {version:'v3.8-test',date:'2026-08-12',modules:['历史信息'],items:['历史信息新增「历史日报」视图：在「历史」页切换「历史日报」，按日期区间列出有记录每一天','每天支持「复制日报」一键复制当天工作日报，或「查看」在弹窗中编辑 / 下载 .md','新增「复制本区间全部日报」，可批量复制所选区间所有日报','日期区间筛选栏置于页签上方，时间线记录与历史日报共享同一套筛选条件'],status:'测试中'},
   {version:'v3.6-test',date:'2026-08-10',modules:['历史信息','工作日志','账本'],items:[
     '新增「历史信息」模块与独立页签：不再只看今天，可按日期区间 + 类型 + 关键词回看全部历史记录',
     '历史信息支持今天/昨天/近7天/近30天/本月/上月/全部快捷筛选，按天分组展示并统计收支与打卡',
@@ -833,7 +976,8 @@ const DEFAULT={
   todos:[], habits:[], ledger:[], budget:0,
   moods:{}, notes:[], countdowns:[], worklog:[],
   customCats:{expense:[],income:[]},
-  budgetCats:{}
+  budgetCats:{},
+  learning:{directions:[],contents:[],plans:[],questions:[],reviews:[]}
 };
 let S=load();
 function load(){
@@ -847,6 +991,8 @@ function load(){
     if(!d.habits)d.habits=[];
     if(!d.todos)d.todos=[];
     if(!d.ledger)d.ledger=[];
+    if(!d.learning||typeof d.learning!=='object')d.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};
+    ['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(d.learning[k]))d.learning[k]=[]});
     if(!d.customCats||typeof d.customCats!=='object')d.customCats={expense:[],income:[]};
     if(!Array.isArray(d.customCats.expense))d.customCats.expense=[];
     if(!Array.isArray(d.customCats.income))d.customCats.income=[];
@@ -924,7 +1070,7 @@ $$('nav.tabbar a').forEach(a=>a.addEventListener('click',()=>{
   $$('nav.tabbar a').forEach(x=>x.classList.remove('on'));a.classList.add('on');
   const p=a.dataset.p;$$('.page').forEach(x=>x.classList.remove('active'));
   $('#page-'+p).classList.add('active');
-  if(p==='today')renderWorklog();if(p==='money')renderMoney();if(p==='heat')renderHeat();if(p==='notes')renderNotes();if(p==='history')renderHistory();
+  if(p==='today')renderWorklog();if(p==='money')renderMoney();if(p==='heat')renderHeat();if(p==='notes')renderNotes();if(p==='history')renderActiveHis();if(p==='learning')renderLearning();
 }));
 function goTab(p){$(`nav.tabbar a[data-p="${p}"]`).click()}
 
@@ -1047,16 +1193,31 @@ let curType='expense',curCat=null,curMonth=new Date();
 function renderMoney(){
   renderCats();renderFlow();renderMonthStat();renderCatChart();renderTodayStat();
 }
+function hexA(hex,a){
+  if(!hex)return'rgba(0,0,0,'+a+')';
+  hex=(''+hex).replace('#','');
+  if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');
+  const n=parseInt(hex,16);
+  return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
+}
 function renderCats(){
   const cats=catsFor(curType);
   curCat=curCat||cats[0][0];
   if(!cats.some(c=>c[0]===curCat))curCat=cats[0][0];
   $('#catRow').innerHTML=cats.map(c=>{
     const nb=curType==='expense'&&!catInBudget('expense',c[0]);
-    return `<div class="cat-chip ${c[0]===curCat?'on':''} ${nb?'no-budget':''}" data-c="${esc(c[0])}"><span class="d" style="background:${c[1]}"></span>${esc(c[0])}${nb?'<span class="nb-dot" title="不计入月预算"></span>':''}</div>`;
+    const on=c[0]===curCat;
+    return `<div class="cat-chip ${on?'on':''} ${nb?'no-budget':''}" data-c="${esc(c[0])}" ${on?`style="background:${c[1]};border-color:${c[1]};color:#fff"`:''}><span class="d" style="background:${on?'#fff':c[1]}"></span>${esc(c[0])}${nb?'<span class="nb-dot" title="不计入月预算"></span>':''}</div>`;
   }).join('')
     +'<div class="cat-chip add" id="catAddChip">＋ 自定义</div>';
-  $$('#catRow .cat-chip[data-c]').forEach(el=>el.onclick=()=>{curCat=el.dataset.c;$$('#catRow .cat-chip[data-c]').forEach(x=>x.classList.remove('on'));el.classList.add('on')});
+  $$('#catRow .cat-chip[data-c]').forEach(el=>el.onclick=()=>{
+    curCat=el.dataset.c;
+    $$('#catRow .cat-chip[data-c]').forEach(x=>{x.classList.remove('on');x.style.background='';x.style.borderColor='';x.style.color='';const d=x.querySelector('.d');if(d)d.style.background=''});
+    el.classList.add('on');
+    const col=cats.find(c=>c[0]===curCat)[1];
+    el.style.background=col;el.style.borderColor=col;el.style.color='#fff';
+    const d=el.querySelector('.d');if(d)d.style.background='#fff';
+  });
   $('#catAddChip').onclick=()=>openCatManager(curType);
   $$('.money-head .seg button').forEach(b=>{b.classList.toggle('on',b.dataset.t===curType);b.classList.toggle('exp',curType==='expense');b.classList.toggle('inc',curType==='income')});
 }
@@ -1187,9 +1348,9 @@ function renderFlow(){
   $('#flowSum').innerHTML=`${rangeLabel(from,to)} · 共 <b>${list.length}</b> 笔 · 收入 <b style="color:var(--income)">${money(inc)}</b> · 支出 <b style="color:var(--expense)">${money(exp)}</b> · 结余 <b>${money(inc-exp)}</b>`;
   $('#flowList').innerHTML=list.length?list.map(x=>{
     const meta=catMeta(x.type,x.category);
-    return `<div class="flow-item" data-id="${x.id}">
-      <div class="f-ic" style="background:${meta[1]}">${catIcon(meta[2])}</div>
-      <div class="f-main"><div class="f-cat">${esc(x.category)}${x.note?' · <span style="font-weight:400;color:var(--text-2)">'+esc(x.note)+'</span>':''}</div><div class="f-date">${x.date}</div></div>
+    return `<div class="flow-item" data-id="${x.id}" style="border-left-color:${meta[1]}">
+      <div class="f-ic" style="background:${hexA(meta[1],.14)};color:${meta[1]}">${catIcon(meta[2])}</div>
+      <div class="f-main"><div class="f-cat"><span class="f-tag" style="background:${hexA(meta[1],.12)};color:${meta[1]}">${esc(x.category)}</span>${x.note?' <span style="font-weight:400;color:var(--text-2)">· '+esc(x.note)+'</span>':''}</div><div class="f-date">${x.date}</div></div>
       <div class="f-amt" style="color:${x.type==='income'?'var(--income)':'var(--expense)'}">${x.type==='income'?'+':'-'}${money(x.amount)}</div>
     </div>`;
   }).join(''):'<div class="empty-mini">所选条件下暂无账单记录</div>';
@@ -1737,12 +1898,19 @@ function openMergePaste(){
   };
 }
 function mergeData(d){
-  let add={todos:0,ledger:0,notes:0,countdowns:0,habits:0,moods:0,worklog:0};
+  let add={todos:0,ledger:0,notes:0,countdowns:0,habits:0,moods:0,worklog:0,learning:0};
   if(Array.isArray(d.todos))d.todos.forEach(t=>{if(t.id&&!S.todos.some(x=>x.id===t.id)){S.todos.push(t);add.todos++}});
   if(Array.isArray(d.ledger))d.ledger.forEach(t=>{if(t.id&&!S.ledger.some(x=>x.id===t.id)){S.ledger.push(t);add.ledger++}});
   if(Array.isArray(d.notes))d.notes.forEach(t=>{if(t.id&&!S.notes.some(x=>x.id===t.id)){S.notes.push(t);add.notes++}});
   if(Array.isArray(d.countdowns))d.countdowns.forEach(t=>{if(t.id&&!S.countdowns.some(x=>x.id===t.id)){S.countdowns.push(t);add.countdowns++}});
   if(Array.isArray(d.worklog))d.worklog.forEach(t=>{if(t.id&&!S.worklog.some(x=>x.id===t.id)){S.worklog.push(t);add.worklog++}});
+  if(d.learning&&typeof d.learning==='object'){
+    ['directions','contents','plans','questions','reviews'].forEach(k=>{
+      if(!Array.isArray(d.learning[k]))return;
+      if(!S.learning[k])S.learning[k]=[];
+      d.learning[k].forEach(x=>{if(x&&x.id&&!S.learning[k].some(y=>y.id===x.id)){S.learning[k].push(x);add.learning++}});
+    });
+  }
   if(Array.isArray(d.habits))d.habits.forEach(h=>{
     if(!h.id)return;
     let local=S.habits.find(x=>x.id===h.id)||S.habits.find(x=>x.name===h.name);
@@ -1769,6 +1937,7 @@ function mergeData(d){
   if(add.habits)chips.push(`<span class="qn-pv-chip">合并 <b>${add.habits}</b>项习惯打卡</span>`);
   if(add.moods)chips.push(`<span class="qn-pv-chip">新增 <b>${add.moods}</b>条心情</span>`);
   if(add.worklog)chips.push(`<span class="qn-pv-chip">新增 <b>${add.worklog}</b>条工作日志</span>`);
+  if(add.learning)chips.push(`<span class="qn-pv-chip">新增 <b>${add.learning}</b>条学习数据</span>`);
   if(!chips.length)chips.push('<span class="qn-pv-chip" style="color:var(--text-3)">无新数据（全部已存在）</span>');
   if(Array.isArray(d.modules))restoreModules(d.modules);
   return{chips,warns:[]};
@@ -1938,8 +2107,9 @@ async function cloudPush(){
     const blob=await encryptState(S,syncCfg.salt);
     const r=await fetch(GITHUB_API+'/'+syncCfg.binId,{method:'PATCH',headers:GH_HEADERS(syncCfg.masterKey),body:JSON.stringify({files:{'data.json':{content:JSON.stringify(blob)}}})});
     if(!r.ok)throw new Error('HTTP '+r.status);
+    syncRetryCount=0;clearTimeout(syncRetryTimer);
     setSyncStatus('ok');
-  }catch(e){setSyncStatus('err');console.warn('push fail',e.message)}
+  }catch(e){setSyncStatus('err');console.warn('push fail',e.message);schedulePushRetry();}
   finally{syncBusy=false}
 }
 
@@ -1947,6 +2117,37 @@ function schedulePush(){
   if(!syncCfg||!syncCfg.binId)return;
   clearTimeout(syncTimer);
   syncTimer=setTimeout(cloudPush,3000);
+}
+/* push 失败指数退避重试：5s→10s→15s… 上限 60s，成功即清零 */
+let syncRetryCount=0;
+let syncRetryTimer=null;
+function schedulePushRetry(){
+  if(!syncCfg||!syncCfg.binId)return;
+  syncRetryCount++;
+  const delay=Math.min(60000,5000*syncRetryCount);
+  clearTimeout(syncRetryTimer);
+  syncRetryTimer=setTimeout(cloudPush,delay);
+}
+
+/* 按 id 合并本地与云端：本地已有记录永不删除，只补回云端有而本地没有的记录
+   —— 根治原 last-write-wins 整覆盖导致跨设备丢数据的问题（如某笔账本地未上云被云端旧版本覆盖） */
+function mergeState(remote){
+  let changed=false;
+  const unionArr=(loc,rem)=>{
+    const map=new Map();
+    (loc||[]).forEach(x=>{if(x&&x.id)map.set(x.id,x)});
+    (rem||[]).forEach(x=>{if(x&&x.id&&!map.has(x.id)){map.set(x.id,x);changed=true}});
+    return [...map.values()];
+  };
+  ['todos','habits','ledger','notes','countdowns','worklog'].forEach(k=>{ S[k]=unionArr(S[k],remote[k]); });
+  if(remote.learning&&S.learning){
+    ['directions','contents','plans','questions','reviews'].forEach(k=>{ S.learning[k]=unionArr(S.learning[k],remote.learning[k]); });
+  }
+  if(remote.moods&&typeof remote.moods==='object'){
+    S.moods=S.moods||{};
+    Object.keys(remote.moods).forEach(d=>{ if(!(d in S.moods)){S.moods[d]=remote.moods[d];changed=true;} });
+  }
+  return changed;
 }
 
 async function cloudPull(opts={}){
@@ -1963,13 +2164,18 @@ async function cloudPull(opts={}){
     const blob=JSON.parse(content);
     if(!blob||!blob.ct){setSyncStatus('ok');if(!force)schedulePush();return true}
     const remote=await decryptState(blob);
-    const shouldApply=force||!S.updatedAt||remote.updatedAt>S.updatedAt;
-    if(shouldApply){
-      S=remote;if(!S.worklog)S.worklog=[];if(!S.notes)S.notes=[];if(!S.countdowns)S.countdowns=[];if(!S.moods)S.moods={};if(!S.habits)S.habits=[];if(!S.todos)S.todos=[];if(!S.ledger)S.ledger=[];
+    if(force){
+      /* 历史版本恢复：用户主动操作的整覆盖，保留 force 语义 */
+      S=remote;if(!S.worklog)S.worklog=[];if(!S.notes)S.notes=[];if(!S.countdowns)S.countdowns=[];if(!S.moods)S.moods={};if(!S.habits)S.habits=[];if(!S.todos)S.todos=[];if(!S.ledger)S.ledger=[];if(!S.learning||typeof S.learning!=='object')S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});
       if(Array.isArray(remote.modules))restoreModules(remote.modules);
       save();renderAll();
-      setSyncStatus('ok');toast(force?'已从云端恢复':'已从云端同步');
-    }else{setSyncStatus('ok');schedulePush()}
+      setSyncStatus('ok');toast('已从云端恢复');
+      return true;
+    }
+    /* 常规同步：合并而非覆盖，本地记录永不丢失 */
+    const changed=mergeState(remote);
+    if(changed){ S.updatedAt=Date.now(); save(); renderAll(); }
+    setSyncStatus('ok'); schedulePush(); /* 合并后把并集推回云端，保证两端一致 */
     return true;
   }catch(e){
     if(e.message&&e.message.includes('decrypt')){setSyncStatus('err');toast('Passcode 错误，无法解密')}
@@ -1987,7 +2193,7 @@ function syncFmtTime(iso){
   return d.toLocaleString('zh-CN',{hour12:false});
 }
 function normalizeState(d){
-  if(!d.worklog)d.worklog=[];if(!d.notes)d.notes=[];if(!d.countdowns)d.countdowns=[];if(!d.moods)d.moods={};if(!d.habits)d.habits=[];if(!d.todos)d.todos=[];if(!d.ledger)d.ledger=[];
+  if(!d.worklog)d.worklog=[];if(!d.notes)d.notes=[];if(!d.countdowns)d.countdowns=[];if(!d.moods)d.moods={};if(!d.habits)d.habits=[];if(!d.todos)d.todos=[];if(!d.ledger)d.ledger=[];if(!d.learning||typeof d.learning!=='object')d.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(d.learning[k]))d.learning[k]=[]});
   return d;
 }
 function syncStateSummary(d){
@@ -2093,7 +2299,7 @@ function openSyncSetup(){
     const s2=$('#syncStatus2');
     const ss=$('#syncStatus');
     if(ss)s2.className=ss.className,s2.textContent=ss.textContent;
-    $('#syncNowBtn').onclick=async()=>{closeModal();await cloudPull({force:true})};
+    $('#syncNowBtn').onclick=async()=>{closeModal();await cloudPush();await cloudPull();toast('已双向同步')};
     $('#syncCopyBtn').onclick=()=>{navigator.clipboard?.writeText(syncCfg.binId).then(()=>toast('Gist ID 已复制'),()=>toast('复制失败'))};
     $('#syncHistoryBtn').onclick=openSyncHistory;
     $('#syncDisableBtn').onclick=()=>{
@@ -2268,14 +2474,14 @@ function historyExportText(){
   });
   return L.join('\n');
 }
-$$('#hisQuick .quick-chip').forEach(b=>b.onclick=()=>{const[f,t]=rangeOf(b.dataset.r);setHisRange(f,t,b.dataset.r);hisLimit=14;renderHistory()});
-$$('#hisKind .quick-chip').forEach(b=>b.onclick=()=>{hisFilterKind=b.dataset.k;$$('#hisKind .quick-chip').forEach(x=>x.classList.remove('on'));b.classList.add('on');hisLimit=14;renderHistory()});
-$('#hisFrom').onchange=()=>{$$('#hisQuick .quick-chip').forEach(b=>b.classList.remove('on'));hisLimit=14;renderHistory()};
-$('#hisTo').onchange=()=>{$$('#hisQuick .quick-chip').forEach(b=>b.classList.remove('on'));hisLimit=14;renderHistory()};
-$('#hisKw').addEventListener('input',()=>{hisLimit=14;renderHistory()});
+$$('#hisQuick .quick-chip').forEach(b=>b.onclick=()=>{const[f,t]=rangeOf(b.dataset.r);setHisRange(f,t,b.dataset.r);hisLimit=14;hisReportLimit=14;renderActiveHis()});
+$$('#hisKind .quick-chip').forEach(b=>b.onclick=()=>{hisFilterKind=b.dataset.k;$$('#hisKind .quick-chip').forEach(x=>x.classList.remove('on'));b.classList.add('on');hisLimit=14;renderActiveHis()});
+$('#hisFrom').onchange=()=>{$$('#hisQuick .quick-chip').forEach(b=>b.classList.remove('on'));hisLimit=14;hisReportLimit=14;renderActiveHis()};
+$('#hisTo').onchange=()=>{$$('#hisQuick .quick-chip').forEach(b=>b.classList.remove('on'));hisLimit=14;hisReportLimit=14;renderActiveHis()};
+$('#hisKw').addEventListener('input',()=>{hisLimit=14;renderActiveHis()});
 $('#hisReset').onclick=()=>{
   hisFilterKind='all';$$('#hisKind .quick-chip').forEach(x=>x.classList.toggle('on',x.dataset.k==='all'));
-  $('#hisKw').value='';const[f,t]=rangeOf('7');setHisRange(f,t,'7');hisLimit=14;renderHistory();toast('已重置筛选');
+  $('#hisKw').value='';const[f,t]=rangeOf('7');setHisRange(f,t,'7');hisLimit=14;hisReportLimit=14;renderActiveHis();toast('已重置筛选');
 };
 $('#hisExport').onclick=()=>{
   const txt=historyExportText();
@@ -2291,6 +2497,48 @@ $('#hisExport').onclick=()=>{
   $('#hisExpText').value=txt;
   $('#hisCopy').onclick=()=>copyText($('#hisExpText').value,'历史记录已复制');
   $('#hisDl').onclick=()=>downloadText($('#hisExpText').value,'历史记录_'+($('#hisFrom').value||'全部')+'_'+($('#hisTo').value||'至今')+'.md');
+};
+
+/* ============ 历史日报 · 查询 + 复制 ============ */
+let hisMode='timeline',hisReportLimit=14;
+function renderActiveHis(){ if(hisMode==='report') renderHisReportList(); else renderHistory(); }
+$$('#hisMode button').forEach(b=>b.onclick=()=>{
+  hisMode=b.dataset.m;
+  $$('#hisMode button').forEach(x=>x.classList.toggle('on',x===b));
+  $('#hisTimeline').style.display = hisMode==='report'?'none':'';
+  $('#hisReportView').style.display = hisMode==='report'?'':'none';
+  hisLimit=14; hisReportLimit=14; renderActiveHis();
+});
+function renderHisReportList(){
+  if(!$('#hisReportList'))return;
+  const{ev:all,from,to}=filteredHistory();
+  const days=[...new Set(all.map(x=>x.date))].sort((a,b)=>b.localeCompare(a));
+  $('#hisSum').innerHTML=`${rangeLabel(from,to)} · 共 <b>${days.length}</b> 天可生成日报${hisFilterKind==='all'?'':' · 仅看'+HIS_KIND_NAME[hisFilterKind]}`;
+  const show=days.slice(0,hisReportLimit);
+  if(!show.length){ $('#hisReportList').innerHTML='<div class="empty-mini">所选时间区间内没有可生成日报的日期，换个日期或类型试试</div>'; return; }
+  $('#hisReportList').innerHTML=show.map(d=>{
+    const items=all.filter(x=>x.date===d);
+    let di=0,de=0; items.filter(x=>x.kind==='ledger').forEach(x=>{ if(x.type==='income')di+=x.amount; else de+=x.amount; });
+    const dd=new Date(d+'T00:00:00'); const wk=isNaN(dd)?'':'星期'+WEEK[dd.getDay()];
+    const meta=[items.length+' 条',de?'支'+money(de):'',di?'收'+money(di):''].filter(Boolean).join(' · ');
+    return `<div class="hrpt-item">
+      <div class="hrpt-head"><div class="hrpt-date">${d} ${wk}${d===todayStr()?' · 今天':''}</div><div class="hrpt-sum">${meta}</div></div>
+      <div class="hrpt-actions">
+        <button class="hrpt-view" data-d="${d}">查看</button>
+        <button class="hrpt-copy" data-d="${d}">复制日报</button>
+      </div>
+    </div>`;
+  }).join('')+(days.length>hisReportLimit?`<button class="hist-more" id="hisRptMore">继续加载（还有 ${days.length-hisReportLimit} 天）</button>`:'');
+  $$('#hisReportList .hrpt-view').forEach(b=>b.onclick=()=>generateDailyReport(b.dataset.d));
+  $$('#hisReportList .hrpt-copy').forEach(b=>b.onclick=()=>{ const r=buildDailyReport(b.dataset.d); copyText(r.report, r.dateStr+' 日报已复制'); });
+  const more=$('#hisRptMore'); if(more)more.onclick=()=>{ hisReportLimit+=14; renderHisReportList(); };
+}
+$('#hisRptCopyAll').onclick=()=>{
+  const{ev:all}=filteredHistory();
+  const days=[...new Set(all.map(x=>x.date))].sort((a,b)=>a.localeCompare(b));
+  if(!days.length){ toast('当前区间没有可复制的日报'); return; }
+  const txt=days.map(d=>buildDailyReport(d).report).join('\n\n---\n\n');
+  copyText(txt,'已复制 '+days.length+' 天日报');
 };
 
 /* ============ 测试版 · 模块管理 ============ */
@@ -2309,6 +2557,7 @@ const MODULES=[
   {id:'countdown',name:'倒计日',page:'heat'},
   {id:'history',name:'历史信息',page:'history'},
   {id:'notes',name:'备忘录',page:'notes'},
+  {id:'learning',name:'学习',page:'learning'},
   {id:'dataManage',name:'数据管理',page:'me'},
   {id:'cloudSync',name:'云同步',page:'me'},
   {id:'homeScreen',name:'添加到手机主屏幕',page:'me'},
@@ -2341,7 +2590,7 @@ function restoreModules(arr){
 let moduleCfg=loadModuleConfig();
 if(!S.modules)S.modules=moduleCfg;
 function applyModuleLayout(){
-  const byPage={today:$('#page-today'),money:$('#page-money'),heat:$('#page-heat'),history:$('#page-history'),notes:$('#page-notes'),me:$('#page-me')};
+  const byPage={today:$('#page-today'),money:$('#page-money'),heat:$('#page-heat'),history:$('#page-history'),notes:$('#page-notes'),learning:$('#page-learning'),me:$('#page-me')};
   moduleCfg.forEach(c=>{
     const meta=MODULES.find(m=>m.id===c.id);
     const el=document.querySelector('[data-module="'+c.id+'"]');
@@ -2394,7 +2643,7 @@ function initFilters(){
   const[mf,mt]=rangeOf('thisMonth');setFlowRange(mf,mt,'thisMonth');
   const[hf,ht]=rangeOf('7');setHisRange(hf,ht,'7');
 }
-function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderChangelog();applyModuleLayout()}
+function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderChangelog();renderLearning();applyModuleLayout()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 /* 首次使用预置示例 */
@@ -2424,9 +2673,348 @@ if(!syncCfg&&S.todos.length===0&&S.habits.length===0&&S.ledger.length===0&&S.not
     {id:uid(),text:'完成了需求文档初稿，已发给组长审阅',time:'11:15',date:t},
     {id:uid(),text:'和团队同步了接口设计变更',time:'14:20',date:t}
   ];
+  const dDir={id:uid(),name:'示例学习方向',desc:'这是示例数据，可在「学习」页删除',color:'#5a7a8a',active:true,createdAt:t};
+  S.learning={directions:[dDir],contents:[],plans:[],questions:[{id:uid(),directionId:dDir.id,contentId:null,title:'示例问题：如何高效记忆学过的知识？',detail:'比如看完书后过几天就忘，有没有好的方法？',status:'open',tags:['方法'],answer:'',createdAt:t}],reviews:[]};
   const ny=new Date();ny.setMonth(11);ny.setDate(31);
   S.countdowns=[{id:uid(),name:'今年还剩',date:fmtDate(ny),color:'#5a5a5a'}];
   persist();
+}
+
+/* ============ 学习模块 ============ */
+function lnData(){if(!S.learning)S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});return S.learning}
+const LN_COLORS=['#5a7a8a','#7a5a8a','#8a7a5a','#5a8a6a','#8a5a6a','#5a6a8a','#8a8a5a','#6a5a8a'];
+function lnColor(i){return LN_COLORS[((i%LN_COLORS.length)+LN_COLORS.length)%LN_COLORS.length]}
+function addDays(str,n){const d=new Date(str+'T00:00:00');d.setDate(d.getDate()+n);return fmtDate(d)}
+const LN_REVIEW_SEQ=[1,3,7,16,30];
+function lnNextInterval(cur){const i=LN_REVIEW_SEQ.indexOf(cur);if(i<0)return 1;if(i<LN_REVIEW_SEQ.length-1)return LN_REVIEW_SEQ[i+1];return cur+15}
+let lnCurrentDir=null;
+let lnDetailTab='plans';
+let lnKbKw='';
+let lnPlanDraft=null;
+function renderLearning(){lnData();if(lnCurrentDir)renderLnDetail();else renderLnHome();}
+function lnRefresh(){if(lnCurrentDir)renderLnDetail();else renderLnHome();}
+/* —— 主页：方向列表 —— */
+function renderLnHome(){
+  var ov=$('#lnOverview'); if(ov)ov.style.display='';
+  renderLnOverview();
+  const L0=lnData();
+  let html='';
+  if(!L0.directions.length)html='<div class="ln-empty">还没有学习方向，点下方按钮新建。</div>';
+  L0.directions.forEach(d=>{html+=renderLnHomeCard(d,L0)});
+  html+='<button class="ln-add-btn" onclick="openLnDirModal()">+ 新建学习方向</button>';
+  $('#lnBody').innerHTML=html;
+}
+function renderLnHomeCard(d,L0){
+  const st=lnDirStats(d,L0);const pct=st.total?Math.round(st.done/st.total*100):0;const col=d.color||'#888';
+  return `<div class="card ln-home-card" style="box-shadow:inset 4px 0 0 ${col}" onclick="lnOpenDir('${d.id}')">
+    <div class="ln-dir-head" style="background:${hexA(col,.06)};border-radius:var(--r-sm)">
+      <span class="ln-dot" style="background:${col};margin-top:4px"></span>
+      <div class="ln-main">
+        <div class="ln-title">${esc(d.name)} ${d.active?'':'<span class="ln-tag">已停用</span>'}</div>
+        <div class="ln-sub">${d.desc?esc(d.desc)+' · ':''}${st.cnt}内容 · ${st.plans}计划 · ${st.qTotal}问题 · ${st.qOpen}未解决 · ${st.dueR}待复习</div>
+        ${st.total?`<div class="ln-bar"><i style="width:${pct}%;background:${col}"></i></div>`:''}
+      </div>
+      <div class="ln-dir-arrow">›</div>
+    </div>
+  </div>`;
+}
+function lnOpenDir(id){lnCurrentDir=id;lnDetailTab='plans';renderLearning();}
+function lnBackHome(){lnCurrentDir=null;renderLearning();}
+/* —— 详情页：整页展示某个方向 —— */
+function renderLnDetail(){
+  const L0=lnData();const d=L0.directions.find(x=>x.id===lnCurrentDir);
+  if(!d){lnCurrentDir=null;renderLnHome();return}
+  var ov=$('#lnOverview'); if(ov)ov.style.display='none';
+  const st=lnDirStats(d,L0);const pct=st.total?Math.round(st.done/st.total*100):0;
+  const tabs=[['plans','计划'],['contents','内容'],['questions','问题'],['kb','知识库'],['reviews','复习']];
+  const tabHtml=tabs.map(([k,n])=>`<button class="ln-dir-tab ${lnDetailTab===k?'on':''}" data-t="${k}" ${lnDetailTab===k?`style="background:${d.color};border-color:${d.color};color:#fff"`:''}>${n}</button>`).join('');
+  let bodyHtml='';
+  if(lnDetailTab==='plans')bodyHtml=renderLnDirPlans(d,L0);
+  else if(lnDetailTab==='contents')bodyHtml=renderLnDirContents(d,L0);
+  else if(lnDetailTab==='questions')bodyHtml=renderLnDirQuestions(d,L0);
+  else if(lnDetailTab==='kb')bodyHtml=renderLnDirKb(d,L0);
+  else if(lnDetailTab==='reviews')bodyHtml=renderLnDirReviews(d,L0);
+  $('#lnBody').innerHTML=`<div class="ln-detail-head" style="box-shadow:inset 4px 0 0 ${d.color||'#888'}">
+      <button class="ln-back" onclick="lnBackHome()">‹ 返回</button>
+      <span class="ln-dot" style="background:${d.color||'#888'}"></span>
+      <div class="ln-detail-t"><b>${esc(d.name)}</b>${d.active?'':' <span class="ln-tag">已停用</span>'}</div>
+      <div class="ln-detail-acts"><button onclick="openLnDirModal('${d.id}')">编辑</button><button onclick="lnToggleDir('${d.id}')">${d.active?'停用':'启用'}</button><button onclick="lnDelDir('${d.id}')" style="color:var(--bad)">删除</button></div>
+    </div>
+    ${st.total?`<div class="ln-bar" style="margin:2px 12px 0"><i style="width:${pct}%;background:${d.color}"></i></div>`:''}
+    <div class="ln-tabs ln-dir-tabs">${tabHtml}</div>
+    <div class="ln-dir-section">${bodyHtml}</div>`;
+  $('#lnBody').querySelectorAll('.ln-dir-tab').forEach(b=>{b.onclick=()=>{lnDetailTab=b.dataset.t;renderLnDetail()}});
+}
+function renderLnOverview(){
+  const L0=lnData();
+  const dirs=L0.directions.length;
+  const activePlans=L0.plans.filter(p=>(p.milestones||[]).some(m=>(m.tasks||[]).some(t=>!t.done))).length;
+  const openQ=L0.questions.filter(q=>q.status!=='solved').length;
+  const dueR=L0.reviews.filter(r=>r.due<=todayStr()).length;
+  $('#lnOverview').innerHTML=`<div class="ln-ov">`
+    +`<div class="ln-ov-i"><b>${dirs}</b><span>方向</span></div>`
+    +`<div class="ln-ov-i"><b>${activePlans}</b><span>进行中计划</span></div>`
+    +`<div class="ln-ov-i"><b>${openQ}</b><span>未解决问题</span></div>`
+    +`<div class="ln-ov-i"><b>${dueR}</b><span>待复习</span></div>`
+    +`</div>`;
+}
+function lnDirStats(d,L0){
+  const cnt=L0.contents.filter(c=>c.directionId===d.id).length;
+  const plans=L0.plans.filter(p=>p.directionId===d.id);
+  const tasks=plans.flatMap(p=>(p.milestones||[]).flatMap(m=>(m.tasks||[])));
+  const done=tasks.filter(t=>t.done).length;
+  const total=tasks.length;
+  const qTotal=L0.questions.filter(q=>q.directionId===d.id).length;
+  const qOpen=L0.questions.filter(q=>q.directionId===d.id&&q.status!=='solved').length;
+  const dueR=L0.reviews.filter(r=>r.directionId===d.id&&r.due<=todayStr()).length;
+  return {cnt,plans:plans.length,done,total,qTotal,qOpen,dueR};
+}
+function lnConfirm(msg,cb){modal(`<h4>确认</h4><p style="color:var(--text-2)">${msg}</p><div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnCfm" style="background:var(--bad)">删除</button></div>`);$('#lnCfm').onclick=()=>{closeModal();cb()}}
+/* —— 方向 —— */
+function openLnDirModal(id){
+  const L0=lnData();const d=id?L0.directions.find(x=>x.id===id):null;const cur=d?d.color:'#5a7a8a';
+  const dots=LN_COLORS.map(c=>`<span class="ln-dot" data-c="${c}" style="background:${c};${c===cur?'outline:2px solid var(--text);outline-offset:1px':''};cursor:pointer;margin:0 4px"></span>`).join('');
+  modal(`<h4>${d?'编辑方向':'新建学习方向'}</h4>
+    <div class="field"><span class="lab">名称</span><input id="lnDirName" value="${d?esc(d.name):''}" placeholder="如 Python / 项目管理"></div>
+    <div class="field"><span class="lab">描述</span><input id="lnDirDesc" value="${d?esc(d.desc||''):''}" placeholder="选填，一句话说明"></div>
+    <div class="ln-ms">颜色</div><div style="margin:6px 0 12px">${dots}</div>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnDirSave">保存</button></div>`);
+  let pick=cur;
+  $$('#modalBox .ln-dot').forEach(s=>s.onclick=()=>{pick=s.dataset.c;$$('#modalBox .ln-dot').forEach(x=>x.style.outline='');s.style.outline='2px solid var(--text)';s.style.outlineOffset='1px'});
+  $('#lnDirSave').onclick=()=>{
+    const name=$('#lnDirName').value.trim();if(!name){toast('请填写名称');return}
+    if(d){d.name=name;d.desc=$('#lnDirDesc').value.trim();d.color=pick;}
+    else{const nd={id:uid(),name,desc:$('#lnDirDesc').value.trim(),color:pick,active:true,createdAt:todayStr()};L0.directions.unshift(nd);lnCurrentDir=nd.id;lnDetailTab='plans'}
+    persist();closeModal();lnRefresh();
+  };
+}
+function lnToggleDir(id){const L0=lnData();const d=L0.directions.find(x=>x.id===id);if(!d)return;d.active=!d.active;persist();lnRefresh()}
+function lnDelDir(id){lnConfirm('确定删除该方向？其下内容与问题不会删除，但会变为「未设方向」。',()=>{const L0=lnData();L0.contents.forEach(c=>{if(c.directionId===id)c.directionId=null});L0.questions.forEach(q=>{if(q.directionId===id)q.directionId=null});L0.plans.forEach(p=>{if(p.directionId===id)p.directionId=null});L0.directions=L0.directions.filter(x=>x.id!==id);if(lnCurrentDir===id)lnCurrentDir=null;persist();lnRefresh()})}
+/* —— 计划 —— */
+const LN_PLAN_TEMPLATES={
+  '21days':[{title:'第 1 周：基础入门',tasks:['完成第 1-3 章/课时','整理基础笔记']},{title:'第 2 周：核心概念',tasks:['完成第 4-6 章/课时','做配套练习']},{title:'第 3 周：实战与复盘',tasks:['完成实战项目','输出总结/复盘']}],
+  'reading':[{title:'通读全书',tasks:['快速浏览目录与章节','标记重点与疑问']},{title:'精读与笔记',tasks:['逐章精读并做笔记','整理思维导图']},{title:'输出与复盘',tasks:['写读书笔记/书评','应用到实践']}],
+  'project':[{title:'需求分析',tasks:['明确目标与范围','收集参考资料']},{title:'开发实现',tasks:['搭建环境/框架','核心功能开发']},{title:'测试与复盘',tasks:['自测与修复','项目复盘总结']}]
+};
+function lnCloneMilestones(ms){
+  return (ms||[]).map(m=>({id:uid(),title:m.title||'',due:'',tasks:(m.tasks||[]).map(t=>({id:uid(),title:typeof t==='string'?t:t.title||'',done:false,due:''}))}));
+}
+function renderLnDirPlans(d,L0){
+  const plans=L0.plans.filter(p=>p.directionId===d.id);
+  let html=`<div class="ln-quick">
+    <input type="text" id="lnQpTitle_${d.id}" placeholder="计划标题，如「MySQL 入门 30 天」" onkeydown="if(event.key==='Enter')lnQuickAddPlan('${d.id}')">
+    <select id="lnQpTpl_${d.id}" title="选择计划模板"><option value="">空白计划</option><option value="21days">21 天入门计划</option><option value="reading">读书笔记计划</option><option value="project">项目实战计划</option></select>
+    <button onclick="lnQuickAddPlan('${d.id}')">新建</button>
+  </div>`;
+  if(!plans.length){html+='<div class="ln-empty">还没有计划，上方输入标题快速新建。</div>';return html}
+  plans.forEach(p=>{
+    const all=(p.milestones||[]).flatMap(m=>(m.tasks||[]));const done=all.filter(t=>t.done).length;const pct=all.length?Math.round(done/all.length*100):0;
+    html+=`<div class="ln-card">
+      <div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(p.title)}</div><div class="ln-sub">${done}/${all.length} 任务 · ${pct}%</div></div><div class="ln-acts"><button onclick="openLnPlanModal('${d.id}','${p.id}')">编辑</button><button onclick="lnDelPlan('${p.id}')" style="color:var(--bad)">删除</button></div></div>
+      <div class="ln-bar"><i style="width:${pct}%;background:${d.color}"></i></div>
+      ${renderLnPlanMilestones(p)}
+    </div>`;
+  });
+  return html;
+}
+function renderLnPlanMilestones(p){
+  if(!(p.milestones||[]).length)return '<div class="muted" style="font-size:12px">暂无阶段，点击编辑添加。</div>';
+  return (p.milestones||[]).map(m=>{
+    const tasks=(m.tasks||[]).map(t=>`<div class="ln-task"><input type="checkbox" ${t.done?'checked':''} onchange="lnToggleTask('${p.id}','${m.id}','${t.id}',this.checked)"><span class="ln-task-t ${t.done?'ln-done':''}">${t.title?esc(t.title):'<span style="color:var(--text-3)">未命名任务</span>'}</span>${t.due?`<span class="ln-sub">📅${t.due}</span>`:''}</div>`).join('')||'<div class="muted" style="font-size:12px">暂无任务</div>';
+    return `<div class="ln-card" style="margin-top:8px"><div class="ln-ms-top"><b>${esc(m.title)||'阶段'}</b>${m.due?`<span class="ln-sub">${m.due}</span>`:''}</div>${tasks}</div>`;
+  }).join('');
+}
+function lnQuickAddPlan(dirId){
+  const title=$(`#lnQpTitle_${dirId}`).value.trim();if(!title){toast('请填写计划标题');return}
+  const tpl=$(`#lnQpTpl_${dirId}`).value;const L0=lnData();
+  const p={id:uid(),directionId:dirId,title,milestones:tpl&&LN_PLAN_TEMPLATES[tpl]?lnCloneMilestones(LN_PLAN_TEMPLATES[tpl]):[]};
+  L0.plans.unshift(p);persist();lnCurrentDir=dirId;lnDetailTab='plans';lnRefresh();toast('计划已创建');
+}
+function openLnPlanModal(dirId,id){
+  const L0=lnData();const p=id?L0.plans.find(x=>x.id===id):null;
+  lnPlanDraft=p?JSON.parse(JSON.stringify(p)):{id:uid(),directionId:dirId||(L0.directions[0]&&L0.directions[0].id)||null,title:'',milestones:[]};
+  renderLnPlanModal();
+}
+function renderLnPlanModal(){
+  const L0=lnData();const p=lnPlanDraft;
+  const dirOpts=L0.directions.map(d=>`<option value="${d.id}" ${p.directionId===d.id?'selected':''}>${esc(d.name)}</option>`).join('')||'<option value="">（无方向）</option>';
+  let msHtml=(p.milestones||[]).map((m,mi)=>{
+    let tasksHtml=(m.tasks||[]).map((t,ti)=>`<div class="ln-task"><input type="checkbox" ${t.done?'checked':''} onchange="lnPlanTaskDone(${mi},${ti},this.checked)"><input class="ln-task-t" value="${esc(t.title)}" oninput="lnPlanTaskTitle(${mi},${ti},this.value)" placeholder="任务内容" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 8px;font:inherit;outline:none"><input type="date" value="${t.due||''}" onchange="lnPlanTaskDue(${mi},${ti},this.value)" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 8px;font:inherit"><button onclick="lnPlanDelTask(${mi},${ti})" style="border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;color:var(--bad)">×</button></div>`).join('')||'<div class="muted" style="font-size:12px">暂无任务</div>';
+    return `<div class="ln-card"><div class="ln-ms-top"><input class="ln-task-t" value="${esc(m.title)}" oninput="lnPlanMsTitle(${mi},this.value)" placeholder="阶段名称" style="flex:1;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;font:inherit;font-weight:600;outline:none"><input type="date" value="${m.due||''}" onchange="lnPlanMsDue(${mi},this.value)" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;font:inherit"><button onclick="lnPlanDelMs(${mi})" style="border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:6px 10px;color:var(--bad)">删除阶段</button></div>${tasksHtml}<button class="ln-add-btn" style="margin-top:4px" onclick="lnPlanAddTask(${mi})">+ 添加任务</button></div>`;
+  }).join('');
+  modal(`<h4>${p.id&&L0.plans.find(x=>x.id===p.id)?'编辑计划':'新建计划'}</h4>
+    <div class="field"><span class="lab">方向</span><select id="lnPlanDir">${dirOpts}</select></div>
+    <div class="field"><span class="lab">标题</span><input id="lnPlanTitle" value="${esc(p.title)}" placeholder="计划标题，如「Python 入门 30 天"></div>
+    <div class="ln-ms">阶段与任务</div>
+    ${msHtml||'<div class="muted" style="font-size:12px">暂无阶段</div>'}
+    <button class="ln-add-btn" onclick="lnPlanAddMs()">+ 添加阶段</button>
+    <div class="btns" style="margin-top:14px"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnPlanSave">保存</button></div>`);
+  $('#modalBox').classList.add('wide');
+  $('#lnPlanDir').onchange=e=>lnPlanDraft.directionId=e.target.value||null;
+  $('#lnPlanTitle').oninput=e=>lnPlanDraft.title=e.target.value;
+  $('#lnPlanSave').onclick=()=>{
+    if(!lnPlanDraft.title.trim()){toast('请填写计划标题');return}
+    const L0b=lnData();
+    if(lnPlanDraft.id&&L0b.plans.find(x=>x.id===lnPlanDraft.id)){const i=L0b.plans.findIndex(x=>x.id===lnPlanDraft.id);L0b.plans[i]=lnPlanDraft;}
+    else L0b.plans.unshift(lnPlanDraft);
+    persist();closeModal();lnRefresh();
+  };
+}
+function lnPlanAddMs(){lnPlanDraft.milestones.push({id:uid(),title:'',due:'',tasks:[]});renderLnPlanModal()}
+function lnPlanDelMs(i){lnPlanDraft.milestones.splice(i,1);renderLnPlanModal()}
+function lnPlanMsTitle(i,v){lnPlanDraft.milestones[i].title=v}
+function lnPlanMsDue(i,v){lnPlanDraft.milestones[i].due=v}
+function lnPlanAddTask(mi){lnPlanDraft.milestones[mi].tasks.push({id:uid(),title:'',done:false,due:''});renderLnPlanModal()}
+function lnPlanDelTask(mi,ti){lnPlanDraft.milestones[mi].tasks.splice(ti,1);renderLnPlanModal()}
+function lnPlanTaskTitle(mi,ti,v){lnPlanDraft.milestones[mi].tasks[ti].title=v}
+function lnPlanTaskDue(mi,ti,v){lnPlanDraft.milestones[mi].tasks[ti].due=v}
+function lnPlanTaskDone(mi,ti,v){lnPlanDraft.milestones[mi].tasks[ti].done=v}
+function lnToggleTask(pid,mid,tid,done){const L0=lnData();const p=L0.plans.find(x=>x.id===pid);if(!p)return;const m=p.milestones.find(x=>x.id===mid);if(!m)return;const t=m.tasks.find(x=>x.id===tid);if(!t)return;t.done=done;persist();lnRefresh()}
+function lnDelPlan(pid){lnConfirm('确定删除该计划？',()=>{const L0=lnData();L0.plans=L0.plans.filter(x=>x.id!==pid);persist();lnRefresh()})}
+/* —— 内容 —— */
+function renderLnDirContents(d,L0){
+  const contents=L0.contents.filter(c=>c.directionId===d.id);
+  let html=`<div class="ln-quick">
+    <input type="text" id="lnQcName_${d.id}" placeholder="资料/子主题名称，回车快速添加" onkeydown="if(event.key==='Enter')lnQuickAddContent('${d.id}')">
+    <select id="lnQcKind_${d.id}"><option value="resource">资料</option><option value="topic">子主题</option></select>
+    <button onclick="lnQuickAddContent('${d.id}')">添加</button>
+  </div>`;
+  if(!contents.length){html+='<div class="ln-empty">还没有内容，上方快速添加。</div>';return html}
+  contents.forEach(c=>{
+    const kindLabel=c.kind==='resource'?'资料':'子主题';
+    html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0">
+      <div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${kindLabel}</span></div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div>
+      <div class="ln-acts"><button onclick="openLnContentModal('${d.id}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${d.id}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div>
+    </div></div>`;
+  });
+  return html;
+}
+function lnQuickAddContent(dirId){
+  const name=$(`#lnQcName_${dirId}`).value.trim();if(!name){toast('请填写名称');return}
+  const kind=$(`#lnQcKind_${dirId}`).value;const L0=lnData();
+  L0.contents.unshift({id:uid(),name,directionId:dirId,kind,url:'',note:'',createdAt:todayStr()});persist();
+  lnCurrentDir=dirId;lnDetailTab='contents';lnRefresh();toast('已添加');
+}
+function openLnContentModal(dirId,id){
+  const L0=lnData();const c=id?L0.contents.find(x=>x.id===id):null;const selDir=c?c.directionId:(dirId||'');
+  const dirOpts=`<option value="">未设方向</option>`+L0.directions.map(d=>`<option value="${d.id}" ${selDir===d.id?'selected':''}>${esc(d.name)}</option>`).join('');
+  const kind=c?c.kind:'resource';
+  modal(`<h4>${c?'编辑内容':'添加学习内容'}</h4>
+    <div class="ln-seg" id="lnCtKind"><button data-k="resource" class="${kind==='resource'?'on':''}">资料（书/课/链接）</button><button data-k="topic" class="${kind==='topic'?'on':''}">子主题</button></div>
+    <div class="field"><span class="lab">方向</span><select id="lnCtDir">${dirOpts}</select></div>
+    <div class="field"><span class="lab">名称</span><input id="lnCtName" value="${c?esc(c.name):''}" placeholder="如《流畅的Python》/ 基础语法"></div>
+    <div class="field"><span class="lab">链接</span><input id="lnCtUrl" value="${c?esc(c.url||''):''}" placeholder="选填，资料链接"></div>
+    <div class="field"><span class="lab">备注</span><input id="lnCtNote" value="${c?esc(c.note||''):''}" placeholder="选填"></div>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnCtSave">保存</button></div>`);
+  $('#modalBox').classList.add('wide');
+  let k=kind;
+  $$('#lnCtKind button').forEach(b=>b.onclick=()=>{k=b.dataset.k;$$('#lnCtKind button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+  $('#lnCtSave').onclick=()=>{
+    const name=$('#lnCtName').value.trim();if(!name){toast('请填写名称');return}
+    const obj={name,directionId:$('#lnCtDir').value||null,kind:k,url:$('#lnCtUrl').value.trim(),note:$('#lnCtNote').value.trim()};
+    if(c){Object.assign(c,obj);}else{L0.contents.unshift(Object.assign({id:uid(),createdAt:todayStr()},obj));}
+    persist();closeModal();lnRefresh();
+  };
+}
+function lnDelContent(id){lnConfirm('确定删除该学习内容？',()=>{const L0=lnData();L0.questions.forEach(q=>{if(q.contentId===id)q.contentId=null});L0.contents=L0.contents.filter(x=>x.id!==id);persist();lnRefresh()})}
+/* —— 问题 —— */
+function renderLnDirQuestions(d,L0){
+  const questions=L0.questions.filter(q=>q.directionId===d.id);
+  const stName={open:'未解决',doing:'解决中',solved:'已解决'};
+  let html=`<div class="ln-quick"><input type="text" id="lnQqTitle_${d.id}" placeholder="一句话记录问题，回车快速添加" onkeydown="if(event.key==='Enter')lnQuickAddQuestion('${d.id}')"><button onclick="lnQuickAddQuestion('${d.id}')">记录</button></div>`;
+  if(!questions.length){html+='<div class="ln-empty">还没有问题，上方快速记录。</div>';return html}
+  questions.forEach(q=>{
+    const tags=(q.tags||[]).map(t=>`<span class="ln-tag">${esc(t)}</span>`).join('');
+    html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0">
+      <div class="ln-main">
+        <div class="ln-title">${esc(q.title)} <span class="ln-badge ${q.status}" onclick="lnCycleStatus('${q.id}')" style="cursor:pointer" title="点击切换状态">${stName[q.status]}</span></div>
+        <div class="ln-sub">${tags?tags+' · ':''}${q.detail?esc(q.detail).slice(0,80)+(q.detail.length>80?'...':''):'暂无详情'}</div>
+        ${q.status==='solved'&&q.answer?`<div class="ln-kb-a"><b>答案：</b>${esc(q.answer)}</div>`:''}
+      </div>
+      <div class="ln-acts">
+        ${q.status==='solved'?`<button onclick="addReview('question','${q.id}','${d.id}')">复习</button>`:''}
+        <button onclick="openLnQuestionModal('${q.id}')">编辑</button>
+        <button onclick="lnDelQuestion('${q.id}')" style="color:var(--bad)">删除</button>
+      </div>
+    </div></div>`;
+  });
+  return html;
+}
+function lnQuickAddQuestion(dirId){
+  const title=$(`#lnQqTitle_${dirId}`).value.trim();if(!title){toast('请填写问题');return}
+  const L0=lnData();
+  L0.questions.unshift({id:uid(),directionId:dirId,contentId:null,title,detail:'',status:'open',tags:[],answer:'',createdAt:todayStr()});
+  persist();lnCurrentDir=dirId;lnDetailTab='questions';lnRefresh();toast('问题已记录');
+}
+function openLnQuestionModal(id){
+  const L0=lnData();const q=id?L0.questions.find(x=>x.id===id):null;const curDir=q?q.directionId:null;
+  const dirOpts=`<option value="">未设方向</option>`+L0.directions.map(d=>`<option value="${d.id}" ${curDir===d.id?'selected':''}>${esc(d.name)}</option>`).join('');
+  const cOpts=`<option value="">不挂具体内容</option>`+(curDir?L0.contents.filter(c=>c.directionId===curDir).map(c=>`<option value="${c.id}" ${q&&q.contentId===c.id?'selected':''}>${esc(c.name)}</option>`).join(''):'');
+  const st=q?q.status:'open';const tags=(q?(q.tags||[]):[]).join(', ');
+  modal(`<h4>${q?'编辑问题':'记录学习问题'}</h4>
+    <div class="field"><span class="lab">方向</span><select id="lnQDir2">${dirOpts}</select></div>
+    <div class="field"><span class="lab">资料</span><select id="lnQCt2">${cOpts}</select></div>
+    <div class="field"><span class="lab">问题</span><input id="lnQT" value="${q?esc(q.title):''}" placeholder="一句话描述问题" maxlength="200"></div>
+    <div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">详情</span><textarea id="lnQD" style="flex:1;min-height:60px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none" maxlength="2000" placeholder="选填，详细描述（最多2000字）">${q?esc(q.detail||''):''}</textarea></div>
+    <div class="ln-seg" id="lnQSt"><button data-s="open" class="${st==='open'?'on':''}">未解决</button><button data-s="doing" class="${st==='doing'?'on':''}">解决中</button><button data-s="solved" class="${st==='solved'?'on':''}">已解决</button></div>
+    <div class="field"><span class="lab">标签</span><input id="lnQTags" value="${esc(tags)}" placeholder="逗号分隔，如 函数式,并发"></div>
+    <div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">答案</span><textarea id="lnQA" style="flex:1;min-height:50px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none" maxlength="2000" placeholder="解决后记录答案（最多2000字）">${q?esc(q.answer||''):''}</textarea></div>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnQSave">保存</button></div>`);
+  $('#modalBox').classList.add('wide');
+  let st2=st;
+  $$('#lnQSt button').forEach(b=>b.onclick=()=>{st2=b.dataset.s;$$('#lnQSt button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+  $('#lnQDir2').onchange=e=>{const did=e.target.value;const co=`<option value="">不挂具体内容</option>`+(did?L0.contents.filter(c=>c.directionId===did).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join(''):'');$('#lnQCt2').innerHTML=co};
+  $('#lnQSave').onclick=()=>{
+    const title=$('#lnQT').value.trim();if(!title){toast('请填写问题');return}
+    const tagsArr=$('#lnQTags').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const obj={directionId:$('#lnQDir2').value||null,contentId:$('#lnQCt2').value||null,title,detail:$('#lnQD').value.trim(),status:st2,tags:tagsArr,answer:$('#lnQA').value.trim()};
+    if(q){Object.assign(q,obj);if(st2==='solved'&&!q.solvedAt)q.solvedAt=todayStr();if(st2!=='solved')q.solvedAt=null;}
+    else{const nq=Object.assign({id:uid(),createdAt:todayStr()},obj);if(st2==='solved')nq.solvedAt=todayStr();L0.questions.unshift(nq);}
+    persist();closeModal();lnRefresh();
+  };
+}
+function lnCycleStatus(id){const L0=lnData();const q=L0.questions.find(x=>x.id===id);if(!q)return;const order=['open','doing','solved'];let i=order.indexOf(q.status);i=(i+1)%3;q.status=order[i];if(q.status==='solved'&&!q.solvedAt)q.solvedAt=todayStr();if(q.status!=='solved')q.solvedAt=null;persist();lnRefresh()}
+function lnDelQuestion(id){lnConfirm('确定删除该问题？',()=>{const L0=lnData();L0.questions=L0.questions.filter(x=>x.id!==id);persist();lnRefresh()})}
+/* —— 知识库 —— */
+function renderLnDirKb(d,L0){
+  let list=L0.questions.filter(q=>q.directionId===d.id&&q.status==='solved'&&q.answer&&q.answer.trim());
+  if(lnKbKw)list=list.filter(q=>(q.title+' '+q.answer+' '+(q.tags||[]).join(' ')).toLowerCase().includes(lnKbKw.toLowerCase()));
+  let html=`<div class="ln-quick"><input type="text" id="lnKbKw" placeholder="搜索知识库" value="${esc(lnKbKw)}" oninput="lnKbKw=this.value;renderLnDetail()"></div>`;
+  if(!list.length){html+='<div class="ln-empty">还没有沉淀知识。<br>把问题标记为已解决并填写答案后会自动出现在这里。</div>';return html}
+  list.forEach(q=>{
+    const tags=(q.tags||[]).map(t=>`<span class="ln-tag">${esc(t)}</span>`).join('');
+    html+=`<div class="card" style="margin-top:8px"><div class="ln-title">${esc(q.title)}</div><div class="ln-sub">${tags?tags+' · ':''}解决于 ${q.solvedAt||'—'}</div><div class="ln-kb-a"><b>答案：</b>${esc(q.answer)}</div></div>`;
+  });
+  return html;
+}
+/* —— 复习 —— */
+function addReview(refType,refId,dirId){
+  const L0=lnData();
+  if(L0.reviews.some(r=>r.refType===refType&&r.refId===refId)){toast('已在复习列表');return}
+  L0.reviews.unshift({id:uid(),refType,refId,directionId:dirId||null,due:todayStr(),lastReview:null,interval:1});
+  persist();toast('已加入复习');lnRefresh();
+}
+function lnMarkReviewed(id){
+  const L0=lnData();const r=L0.reviews.find(x=>x.id===id);if(!r)return;
+  r.lastReview=todayStr();r.interval=lnNextInterval(r.interval);r.due=addDays(todayStr(),r.interval);
+  persist();lnRefresh();
+}
+function lnDelReview(id){lnConfirm('从复习列表移除？',()=>{const L0=lnData();L0.reviews=L0.reviews.filter(x=>x.id!==id);persist();lnRefresh()})}
+function renderLnDirReviews(d,L0){
+  let list=L0.reviews.filter(r=>r.directionId===d.id).sort((a,b)=>a.due.localeCompare(b.due));
+  let html='';
+  if(!list.length){html+='<div class="ln-empty">还没有复习安排。<br>在「问题」或「内容」里点「复习」即可加入。</div>';return html}
+  list.forEach(r=>{
+    let title='',sub='';
+    if(r.refType==='question'){const q=L0.questions.find(x=>x.id===r.refId);if(!q)return;title=q.title;sub='问题';}
+    else{const c=L0.contents.find(x=>x.id===r.refId);if(!c)return;title=c.name;sub='内容';}
+    const due=r.due<=todayStr();
+    html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0">
+      <div class="ln-main"><div class="ln-title">${esc(title)}</div><div class="ln-sub">${sub} · 下次${due?'<b class="ln-due">今天</b>':r.due}${r.lastReview?` · 上次${r.lastReview}`:''}</div></div>
+      <div class="ln-acts"><button onclick="lnMarkReviewed('${r.id}')">${due?'标记已复习':'推迟复习'}</button><button onclick="lnDelReview('${r.id}')" style="color:var(--bad)">移除</button></div>
+    </div></div>`;
+  });
+  return html;
 }
 
 initFilters();
@@ -2440,6 +3028,9 @@ if(syncCfg&&syncCfg.binId){
     setInterval(()=>{if(navigator.onLine)cloudPull()},60000);
   });
   window.addEventListener('online',()=>{cloudPull();schedulePush()});
+  /* 页面切到后台/关闭时强制把本地未上云的数据 flush 出去，缩小"本地有、云端没有"的窗口 */
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'&&syncCfg&&syncCfg.binId) cloudPush(); });
+  window.addEventListener('pagehide',()=>{ if(syncCfg&&syncCfg.binId) cloudPush(); });
 }else{
   setSyncStatus('off');
 }
