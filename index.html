@@ -2963,6 +2963,23 @@ function lnNodeItems(L0,nodeId){return {
   reviews:L0.reviews.filter(r=>lnNodeMatches(r.nodeId,nodeId,L0)),
   mistakes:L0.mistakes.filter(m=>lnNodeMatches(m.nodeId,nodeId,L0))
 }}
+/* 取某节点（plan / milestone / task）下全部关联记录，向下聚合：计划级含其下所有阶段与任务、阶段级含其下所有任务 */
+function lnItemsForNode(L0,node){
+  const plan=L0.plans.find(p=>p.id===node.planId);if(!plan)return{contents:[],questions:[],reviews:[],selftests:[]};
+  const match=nodeId=>{
+    if(!nodeId)return false;
+    if(node.taskId)return nodeId===node.taskId;
+    if(node.msId){
+      if(nodeId==='ms:'+node.msId)return true;
+      const ms=plan.milestones.find(m=>m.id===node.msId);
+      return !!(ms&&(ms.tasks||[]).some(t=>t.id===nodeId));
+    }
+    if(nodeId==='plan:'+node.planId)return true;
+    for(const m of (plan.milestones||[])){if('ms:'+m.id===nodeId)return true;if((m.tasks||[]).some(t=>t.id===nodeId))return true;}
+    return false;
+  };
+  return{contents:L0.contents.filter(c=>match(c.nodeId)),questions:L0.questions.filter(q=>match(q.nodeId)),reviews:L0.reviews.filter(r=>match(r.nodeId)),selftests:L0.selftests.filter(s=>match(s.nodeId))};
+}
 /* 当前方向下所有 plan / milestone / task，用于“关联节点”下拉；返回 [{value,label}] */
 function lnNodeOptions(L0,dirId){
   const out=[{value:'',label:'不绑定（仅方向）'}];
@@ -3111,7 +3128,7 @@ function renderLnDirPlans(d,L0){
   plans.forEach(p=>{
     const all=(p.milestones||[]).flatMap(m=>(m.tasks||[]));const done=all.filter(t=>t.done).length;const pct=all.length?Math.round(done/all.length*100):0;
     html+=`<div class="ln-card">
-      <div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(p.title)}</div><div class="ln-sub">${done}/${all.length} 任务 · ${pct}%</div></div><div class="ln-acts"><button onclick="openLnPlanModal('${d.id}','${p.id}')">编辑</button><button onclick="lnDelPlan('${p.id}')" style="color:var(--bad)">删除</button></div></div>
+      <div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title" onclick="lnOpenNode('${d.id}','${p.id}','','')" style="cursor:pointer" title="查看该计划下关联的资料 / 问题">${esc(p.title)} <span style="color:var(--text-3);font-weight:400">› 关联</span></div><div class="ln-sub">${done}/${all.length} 任务 · ${pct}%</div></div><div class="ln-acts"><button onclick="openLnPlanModal('${d.id}','${p.id}')">编辑</button><button onclick="lnDelPlan('${p.id}')" style="color:var(--bad)">删除</button></div></div>
       <div class="ln-bar"><i style="width:${pct}%;background:${d.color}"></i></div>
       ${renderLnPlanMilestones(p,L0)}
     </div>`;
@@ -3135,7 +3152,7 @@ function renderLnPlanMilestones(p,L0){
         <span class="ln-task-go">›</span>
       </div>`;
     }).join('')||'<div class="muted" style="font-size:12px">暂无任务</div>';
-    return `<div class="ln-card" style="margin-top:8px"><div class="ln-ms-top"><b>${esc(m.title)||'阶段'}</b>${m.due?`<span class="ln-sub">${m.due}</span>`:''}</div>${tasks}</div>`;
+    return `<div class="ln-card" style="margin-top:8px"><div class="ln-ms-top"><b onclick="lnOpenNode('${p.directionId}','${p.id}','${m.id}','')" style="cursor:pointer" title="查看该阶段下关联的资料 / 问题">${esc(m.title)||'阶段'}</b>${m.due?`<span class="ln-sub">${m.due}</span>`:''}</div>${tasks}</div>`;
   }).join('');
 }
 function lnQuickAddPlan(dirId){
@@ -3361,26 +3378,31 @@ function renderLnNodeView(){
   const L0=lnData();
   const d=L0.directions.find(x=>x.id===lnNode.dirId);
   const p=L0.plans.find(x=>x.id===lnNode.planId);
-  const m=(p&&p.milestones||[]).find(x=>x.id===lnNode.msId);
-  const t=(m&&m.tasks||[]).find(x=>x.id===lnNode.taskId);
-  if(!d||!p||!m||!t){lnNode=null;renderLnHome();return}
+  if(!d||!p){lnNode=null;renderLnHome();return}
+  const m=lnNode.msId?(p.milestones||[]).find(x=>x.id===lnNode.msId):null;
+  const t=lnNode.taskId?(m&&m.tasks||[]).find(x=>x.id===lnNode.taskId):null;
   var ov=$('#lnOverview'); if(ov)ov.style.display='none';
-  const ni=lnNodeItems(L0,t.id);const col=d.color||'#888';
-  const statHtml=[['📄 资料',ni.contents.length],['💡 问题',ni.questions.length],['📚 知识',ni.knowledge.length],['🔁 复习',ni.reviews.length]].map(([s,n])=>`<div class="ln-ov-i"><b>${n}</b><span>${s}</span></div>`).join('');
+  const curNode=lnNode.taskId&&t?t.id:(lnNode.msId&&m?`ms:${lnNode.msId}`:`plan:${p.id}`);
+  const ni=lnItemsForNode(L0,lnNode);const col=d.color||'#888';
+  const crumb=p.title+(m?(' / '+(m.title||'阶段')):'')+(t?(' / '+(t.title||'任务')):'');
+  const curTitle=lnNode.taskId&&t?t.title:(lnNode.msId&&m?(m.title||'阶段'):p.title);
+  const statHtml=[['📄 资料',ni.contents.length],['💡 问题',ni.questions.length],['📚 知识',ni.questions.filter(q=>q.status==='solved'&&q.answer&&q.answer.trim()).length],['🔁 复习',ni.reviews.length],['🧪 自测',ni.selftests.length]].map(([s,n])=>`<div class="ln-ov-i"><b>${n}</b><span>${s}</span></div>`).join('');
   const contentHtml=ni.contents.length?ni.contents.map(c=>`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${c.kind==='resource'?'资料':'子主题'}</span></div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`).join(''):'<div class="ln-empty">还没有资料，点下方「+ 资料/子主题」添加。</div>';
   const qHtml=ni.questions.length?ni.questions.map(q=>{const stName={open:'未解决',doing:'解决中',solved:'已解决'};const tags=(q.tags||[]).map(x=>`<span class="ln-tag">${esc(x)}</span>`).join('');return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(q.title)} <span class="ln-badge ${q.status}">${stName[q.status]}</span>${q.hard?'<span class="ln-tag" style="color:var(--bad);border-color:var(--bad)">难点</span>':''}</div><div class="ln-sub">${tags?tags+' · ':''}${q.detail?esc(q.detail).slice(0,80):'暂无详情'}</div>${q.status==='solved'&&q.answer?`<div class="ln-kb-a"><b>答案：</b>${esc(q.answer)}</div>`:''}</div><div class="ln-acts">${q.status==='solved'?`<button onclick="addReview('question','${q.id}','${q.directionId}')">复习</button>`:''}<button onclick="openLnQuestionModal('${q.id}')">编辑</button><button onclick="lnToggleHard('${q.id}')">${q.hard?'取消难点':'标难点'}</button><button onclick="lnDelQuestion('${q.id}')" style="color:var(--bad)">删除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有问题，点下方「+ 问题」记录。</div>';
   const rHtml=ni.reviews.length?ni.reviews.map(r=>{let title='',sub='';if(r.refType==='question'){const qq=L0.questions.find(x=>x.id===r.refId);if(qq)title=qq.title;sub='问题'}else{const cc=L0.contents.find(x=>x.id===r.refId);if(cc)title=cc.name;sub='内容'}const due=r.due<=todayStr();return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(title)}</div><div class="ln-sub">${sub} · 下次${due?'<b class="ln-due">今天</b>':r.due}</div></div><div class="ln-acts"><button onclick="lnMarkReviewed('${r.id}')">${due?'已复习':'推迟'}</button><button onclick="lnDelReview('${r.id}')" style="color:var(--bad)">移除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有复习安排。</div>';
-  const quick=`<div class="ln-toolbar"><button onclick="openLnContentModal('${d.id}',null,'${t.id}')">+ 资料/子主题</button><button onclick="openLnQuestionModal(null,'${t.id}','${d.id}')">+ 问题</button></div>`;
+  const stHtml=ni.selftests.length?ni.selftests.map(s=>{const node=lnTaskTitleById(L0,s.nodeId);return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(s.title)} <span class="ln-tag">${s.score!=null?('得分 '+s.score):'未打分'}</span></div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${s.weak?('薄弱：'+esc(s.weak)+' · '):''}${s.date||''}</div>${s.note?`<div class="ln-kb-a">${esc(s.note)}</div>`:''}</div><div class="ln-acts"><button onclick="openLnSelftestModal('${d.id}','${s.id}')">编辑</button><button onclick="lnDelSelftest('${s.id}')" style="color:var(--bad)">删除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有自测记录。</div>';
+  const quick=`<div class="ln-toolbar"><button onclick="openLnContentModal('${d.id}',null,'${curNode}')">+ 资料/子主题</button><button onclick="openLnQuestionModal(null,'${curNode}','${d.id}')">+ 问题</button><button onclick="openLnSelftestModal('${d.id}',null,'${curNode}')">+ 自测</button></div>`;
   $('#lnBody').innerHTML=`<div class="ln-detail-head" style="box-shadow:inset 4px 0 0 ${col}">
       <button class="ln-back" onclick="lnBackNode()">‹ 返回</button>
       <span class="ln-dot" style="background:${col}"></span>
-      <div class="ln-detail-t"><b>${esc(t.title)}</b><div class="ln-sub" style="font-size:12px">${esc(p.title)} / ${esc(m.title||'阶段')}</div></div>
+      <div class="ln-detail-t"><b>${esc(curTitle)}</b><div class="ln-sub" style="font-size:12px">${esc(crumb)}</div></div>
     </div>
     <div class="ln-ov" style="margin:8px 0">${statHtml}</div>
     ${quick}
     <div class="ln-sec"><div class="ln-ms">📄 资料（${ni.contents.length}）</div>${contentHtml}</div>
     <div class="ln-sec"><div class="ln-ms">💡 问题（${ni.questions.length}）</div>${qHtml}</div>
-    <div class="ln-sec"><div class="ln-ms">🔁 复习（${ni.reviews.length}）</div>${rHtml}</div>`;
+    <div class="ln-sec"><div class="ln-ms">🔁 复习（${ni.reviews.length}）</div>${rHtml}</div>
+    <div class="ln-sec"><div class="ln-ms">🧪 自测（${ni.selftests.length}）</div>${stHtml}</div>`;
 }
 function lnToggleHard(id){const L0=lnData();const q=L0.questions.find(x=>x.id===id);if(!q)return;q.hard=!q.hard;persist();lnRefresh()}
 /* —— 错题 —— */
@@ -3436,7 +3458,7 @@ function renderLnDirSelftests(d,L0){
 }
 function lnQuickAddSelftest(dirId){const title=$(`#lnStTitle_${dirId}`).value.trim();if(!title){toast('请填写名称');return}const nodeId=$(`#lnStNode_${dirId}`).value||null;const L0=lnData();L0.selftests.unshift({id:uid(),directionId:dirId,title,nodeId,score:null,weak:'',note:'',date:todayStr()});persist();lnRefresh();toast('已记录')}
 function lnDelSelftest(id){lnConfirm('删除该自测记录？',()=>{const L0=lnData();L0.selftests=L0.selftests.filter(x=>x.id!==id);persist();lnRefresh()})}
-function openLnSelftestModal(dirId,id){const L0=lnData();const s=id?L0.selftests.find(x=>x.id===id):null;const nodeOpts=lnNodeOptions(L0,dirId).map(o=>`<option value="${o.value}" ${s&&s.nodeId===o.value?'selected':''}>${esc(o.label)}</option>`).join('');modal(`<h4>${s?'编辑自测':'记录自测'}</h4><div class="field"><span class="lab">名称</span><input id="lnStT" value="${s?esc(s.title):''}" placeholder="如 第1章小测"></div><div class="field"><span class="lab">关联节点</span><select id="lnStN">${nodeOpts}</select></div><div class="field"><span class="lab">得分</span><input id="lnStS" type="number" value="${s&&s.score!=null?s.score:''}" placeholder="选填，如 85"></div><div class="field"><span class="lab">薄弱点</span><input id="lnStW" value="${s?esc(s.weak||''):''}" placeholder="选填，逗号分隔"></div><div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">备注</span><textarea id="lnStNote" style="flex:1;min-height:50px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none">${s?esc(s.note||''):''}</textarea></div><div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnStSave">保存</button></div>`);$('#modalBox').classList.add('wide');$('#lnStSave').onclick=()=>{const title=$('#lnStT').value.trim();if(!title){toast('请填写名称');return}const obj={title,nodeId:$('#lnStN').value||null,score:($('#lnStS').value===''?null:Number($('#lnStS').value)),weak:$('#lnStW').value.trim(),note:$('#lnStNote').value.trim(),date:todayStr()};if(s){Object.assign(s,obj)}else{L0.selftests.unshift(Object.assign({id:uid(),directionId:dirId},obj))}persist();closeModal();lnRefresh()}}
+function openLnSelftestModal(dirId,id,nodeId){const L0=lnData();const s=id?L0.selftests.find(x=>x.id===id):null;const selNode=s?s.nodeId:(nodeId||'');const nodeOpts=lnNodeOptions(L0,dirId).map(o=>`<option value="${o.value}" ${selNode===o.value?'selected':''}>${esc(o.label)}</option>`).join('');modal(`<h4>${s?'编辑自测':'记录自测'}</h4><div class="field"><span class="lab">名称</span><input id="lnStT" value="${s?esc(s.title):''}" placeholder="如 第1章小测"></div><div class="field"><span class="lab">关联节点</span><select id="lnStN">${nodeOpts}</select></div><div class="field"><span class="lab">得分</span><input id="lnStS" type="number" value="${s&&s.score!=null?s.score:''}" placeholder="选填，如 85"></div><div class="field"><span class="lab">薄弱点</span><input id="lnStW" value="${s?esc(s.weak||''):''}" placeholder="选填，逗号分隔"></div><div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">备注</span><textarea id="lnStNote" style="flex:1;min-height:50px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none">${s?esc(s.note||''):''}</textarea></div><div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnStSave">保存</button></div>`);$('#modalBox').classList.add('wide');$('#lnStSave').onclick=()=>{const title=$('#lnStT').value.trim();if(!title){toast('请填写名称');return}const obj={title,nodeId:$('#lnStN').value||null,score:($('#lnStS').value===''?null:Number($('#lnStS').value)),weak:$('#lnStW').value.trim(),note:$('#lnStNote').value.trim(),date:todayStr()};if(s){Object.assign(s,obj)}else{L0.selftests.unshift(Object.assign({id:uid(),directionId:dirId},obj))}persist();closeModal();lnRefresh()}}
 
 initFilters();
 renderAll();
