@@ -1058,9 +1058,11 @@ function modal(html,opts={}){
 function confirmClose(saveFn,msg){
   msg=msg||'是否保存当前修改？';
   if(confirm(msg+'\n\n确定 = 保存并关闭\n取消 = 不保存并关闭')){
-    if(saveFn)saveFn();
+    let ok=true;
+    if(saveFn) ok=saveFn();
+    if(ok!==false) closeModal();
   }else{
-    if(confirm('确定不保存并关闭吗？'))closeModal();
+    closeModal();
   }
 }
 $('#modalMask').addEventListener('click',e=>{if(e.target.id==='modalMask'){if(modalOpts.noMaskClose)return;closeModal()}});
@@ -3172,7 +3174,7 @@ function renderLnPlanModal(){
   $('#modalBox').classList.add('wide');
   $('#lnPlanDir').onchange=e=>lnPlanDraft.directionId=e.target.value||null;
   $('#lnPlanTitle').oninput=e=>lnPlanDraft.title=e.target.value;
-  $('#lnPlanSave').onclick=()=>{lnPlanCommit()};
+  $('#lnPlanSave').onclick=()=>lnPlanCommit();
   $('#lnPlanClose').onclick=()=>{confirmClose(()=>{$('#lnPlanSave').click()})};
 }
 function lnPlanAddMs(){lnPlanDraft.milestones.push({id:uid(),title:'',due:'',tasks:[]});renderLnPlanModal()}
