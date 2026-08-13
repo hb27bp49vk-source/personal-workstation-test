@@ -608,6 +608,7 @@ summary::-webkit-details-marker{color:var(--text)}
         <div class="greet"><span class="dot"></span><span id="hGreet">你好</span></div>
         <div class="sub" id="hSub"></div>
         <div class="sub" style="margin-top:4px;color:var(--warn);font-weight:600">测试版 · 不影响正式链接</div>
+        
       </div>
       <button class="refresh-btn" id="refreshBtn" title="刷新页面">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -981,7 +982,7 @@ const daysBetween=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
-  {version:'v3.10-test',date:'2026-08-12',modules:['学习'],items:['学习模块强化：内容/问题/复习可绑定到计划任务节点（双轨：也允许只挂方向）','新增计划节点聚合页：点任务小标题查看该节点下资料/问题/知识/复习','录入表单增加关联节点下拉；复习自动继承来源节点','新增tab：错题(难点归集)/资源(资料型)/大纲(树+计数)/时间轴/自测记录','知识库按节点聚合；问题可一键标记难点'],status:'测试中'},
+  {version:'v3.10',date:'2026-08-12',modules:['学习'],items:['学习模块强化：内容/问题/复习可绑定到计划任务节点（双轨：也允许只挂方向）','新增计划节点聚合页：点任务小标题查看该节点下资料/问题/知识/复习','录入表单增加关联节点下拉；复习自动继承来源节点','新增tab：错题(难点归集)/资源(资料型)/大纲(树+计数)/时间轴/自测记录','知识库按节点聚合；问题可一键标记难点'],status:'已上线'},
   {version:'v3.9.1-test',date:'2026-08-12',modules:['云同步'],items:['同步防丢数据修复（与正式版 v3.8.1 同源）：改为按 id 合并同步，本地已有记录永不删除','推送失败指数退避自动重试（5s→10s→…上限60s）','页面切后台/关闭时强制 flush 本地未上云数据','「立即同步」改为先推本地再拉云合并的双向同步','注：本测试版同时含「学习」大模块（v3.9-test）'],status:'测试中'},
   {version:'v3.9-test',date:'2026-08-12',modules:['学习'],items:['新增「学习」大模块：自定义学习方向与内容（方向下挂「资料 / 子主题」二级）','UX 重构为「方向即主页」：取消顶部 6 Tab，改为方向卡片展开，一个卡片内直接切换计划/内容/问题/知识库/复习，减少来回切换','支持一键快速添加：方向内直接输入标题新建计划（带模板）/ 内容 / 问题，无需先切 Tab 再进弹窗','计划支持模板快速创建：21 天入门 / 读书笔记 / 项目实战，自动生成阶段与任务','问题状态支持点击徽章单键循环切换（未解决 → 解决中 → 已解决）','已解决问题可一键加入复习，按 1/3/7/16/30 天间隔递增提醒','手动制定学习计划：方向 → 阶段 → 任务 → 截止日，自动计算完成进度','已解决问题与答案自动沉淀为「知识库」，可搜索','学习数据随导出 / 导入 / 合并导入 / 云同步自动携带'],status:'测试中'},
   {version:'v3.7-test',date:'2026-08-10',modules:['账本'],items:[
@@ -1053,6 +1054,14 @@ function modal(html,opts={}){
   $('#modalBox').className='modal';
   $('#modalBox').innerHTML=html;
   $('#modalMask').classList.add('show');
+}
+function confirmClose(saveFn,msg){
+  msg=msg||'是否保存当前修改？';
+  if(confirm(msg+'\n\n确定 = 保存并关闭\n取消 = 不保存并关闭')){
+    if(saveFn)saveFn();
+  }else{
+    if(confirm('确定不保存并关闭吗？'))closeModal();
+  }
 }
 $('#modalMask').addEventListener('click',e=>{if(e.target.id==='modalMask'){if(modalOpts.noMaskClose)return;closeModal()}});
 
@@ -1193,14 +1202,14 @@ function habitStreak(h,t){
 function weekKey(d){const day=d.getDay()||7;const mon=new Date(d);mon.setDate(d.getDate()-(day-1));return fmtDate(mon)}
 $('#habitAddBtn').onclick=()=>{
   modal(`
-    <h4>新建习惯</h4>
+    <h4>新建习惯<span class="modal-close" onclick="confirmClose(()=>{$('#hSave').click()})">×</span></h4>
     <div class="field"><span class="lab" style="width:40px">名称</span><input id="hName" class="input-styled" placeholder="如：喝水 / 运动 / 阅读" maxlength="10"></div>
     <div style="margin-bottom:12px"><div class="muted" style="margin-bottom:6px;font-size:12px">选个图标</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap" id="hIcons"></div></div>
     <div><div class="muted" style="margin-bottom:6px;font-size:12px">选个颜色</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap" id="hColors"></div></div>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="hSave">创建</button></div>
-  `);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#hSave').click()})">关闭</button><button class="ok" id="hSave">保存</button></div>
+  `,{noMaskClose:true});
   let pickI=0,pickC=0;
   const icBox=$('#hIcons'),cBox=$('#hColors');
   HABIT_ICONS.forEach((n,i)=>{const b=document.createElement('div');b.className='cat-chip'+(i===0?' on':'');b.innerHTML=`<span style="color:${HABIT_COLORS[0]}">${catIcon(n)}</span>`;b.onclick=()=>{pickI=i;$$('.cat-chip',icBox).forEach(x=>x.classList.remove('on'));b.classList.add('on')};icBox.appendChild(b)});
@@ -1214,8 +1223,8 @@ $('#habitAddBtn').onclick=()=>{
 $('#habitGrid').addEventListener('contextmenu',e=>{
   const el=e.target.closest('.habit-card');if(!el)return;e.preventDefault();
   const h=S.habits.find(x=>x.id===el.dataset.id);
-  modal(`<h4>删除习惯</h4><p style="color:var(--text-2)">确定删除「${esc(h.name)}」及其打卡记录吗？</p>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="hDel" style="background:var(--bad)">删除</button></div>`);
+  modal(`<h4>删除习惯<span class="modal-close" onclick="closeModal()">×</span></h4><p style="color:var(--text-2)">确定删除「${esc(h.name)}」及其打卡记录吗？</p>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="hDel" style="background:var(--bad)">删除</button></div>`,{noMaskClose:true});
   $('#hDel').onclick=()=>{S.habits=S.habits.filter(x=>x.id!==h.id);closeModal();persist();renderHabits();renderHeader()};
 });
 $('#goMoney').onclick=()=>goTab('money');
@@ -1612,11 +1621,11 @@ function renderCountdown(){
   }).join('')+'<div class="cd-add" id="cdAdd"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 5v14M5 12h14"/></svg>新建倒计日</div>';
   $('#cdAdd').onclick=()=>{
     const colors=['#5a5a5a','#7a5a5a','#5a5a7a','#5a7a5a','#7a7a3a','#5a7a7a','#6a6a8a','#8a5a5a'];
-    modal(`<h4>新建倒计日</h4>
+    modal(`<h4>新建倒计日<span class="modal-close" onclick="confirmClose(()=>{$('#cdSave').click()})">×</span></h4>
       <div class="field"><span class="lab" style="width:40px">名称</span><input id="cdName" class="input-styled" placeholder="如：生日 / 考试 / 旅行" maxlength="12"></div>
       <div class="field"><span class="lab" style="width:40px">日期</span><input id="cdDate" type="date" class="input-styled"></div>
       <div style="margin:8px 0"><div class="muted" style="margin-bottom:6px;font-size:12px">选个颜色</div><div id="cdColors" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
-      <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="cdSave">创建</button></div>`);
+      <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#cdSave').click()})">关闭</button><button class="ok" id="cdSave">保存</button></div>`,{noMaskClose:true});
     let pickC=colors[0];
     const cb=$('#cdColors');colors.forEach(c=>{const b=document.createElement('div');b.className='cat-chip on'+(c===colors[0]?' on':'');b.innerHTML=`<span class="d" style="background:${c}"></span>`;b.onclick=()=>{pickC=c;$$('.cat-chip',cb).forEach(x=>x.classList.remove('on'));b.classList.add('on')};cb.appendChild(b)});
     $('#cdSave').onclick=()=>{const n=$('#cdName').value.trim();const d=$('#cdDate').value;if(!n||!d){toast('请填名称和日期');return}S.countdowns.push({id:uid(),name:n,date:d,color:pickC});closeModal();persist();renderCountdown();toast('倒计日已创建')};
@@ -1626,8 +1635,8 @@ $('#cdGrid').addEventListener('contextmenu',e=>{
   const el=e.target.closest('.cd-card');if(!el)return;e.preventDefault();
   const idx=$$('#cdGrid .cd-card').indexOf(el);
   const c=S.countdowns[idx];
-  modal(`<h4>删除倒计日</h4><p style="color:var(--text-2)">确定删除「${esc(c.name)}」吗？</p>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="cdDel" style="background:var(--bad)">删除</button></div>`);
+  modal(`<h4>删除倒计日<span class="modal-close" onclick="closeModal()">×</span></h4><p style="color:var(--text-2)">确定删除「${esc(c.name)}」吗？</p>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="cdDel" style="background:var(--bad)">删除</button></div>`,{noMaskClose:true});
   $('#cdDel').onclick=()=>{S.countdowns.splice(idx,1);closeModal();persist();renderCountdown()};
 });
 
@@ -1674,16 +1683,16 @@ function toggleNoteDone(id){
 }
 function deleteNote(id){
   const n=S.notes.find(x=>x.id===id);if(!n)return;
-  modal(`<h4>删除备忘</h4><p style="color:var(--text-2)">确定删除「${esc(n.title||noteTitle(n.content))}」吗？</p>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="nDel" style="background:var(--bad)">删除</button></div>`);
+  modal(`<h4>删除备忘<span class="modal-close" onclick="closeModal()">×</span></h4><p style="color:var(--text-2)">确定删除「${esc(n.title||noteTitle(n.content))}」吗？</p>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="nDel" style="background:var(--bad)">删除</button></div>`,{noMaskClose:true});
   $('#nDel').onclick=()=>{S.notes=S.notes.filter(x=>x.id!==id);closeModal();persist();renderNotes();toast('已删除')};
 }
 function editNote(id){
   const n=normalizeNote(S.notes.find(x=>x.id===id));if(!n)return;
-  modal(`<h4>编辑备忘</h4>
+  modal(`<h4>编辑备忘<span class="modal-close" onclick="confirmClose(()=>{$('#nSave').click()})">×</span></h4>
     <textarea id="nContent" class="qn-area" rows="8" maxlength="2000" placeholder="输入备忘内容…">${esc(n.content||'')}</textarea>
     <label style="display:flex;align-items:center;gap:7px;margin-top:10px;color:var(--text-2);font-size:13px"><input id="nDone" type="checkbox" ${n.done?'checked':''}>标记为已完成</label>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="nSave">保存</button></div>`);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#nSave').click()})">关闭</button><button class="ok" id="nSave">保存</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   $('#nSave').onclick=()=>{
     const text=$('#nContent').value.trim();if(!text){toast('内容不能为空');return}
@@ -1849,9 +1858,9 @@ $('#exportBtn').onclick=()=>{
   const json=JSON.stringify(Object.assign({},S,{modules:moduleCfg}),null,2);
   const blob=new Blob([json],{type:'application/json'});
   const dlName='我的工作台_'+todayStr()+'.json';
-  modal(`<h4>导出数据</h4>
+  modal(`<h4>导出数据<span class="modal-close" onclick="closeModal()">×</span></h4>
     <p class="muted" style="margin:0 0 10px;font-size:12.5px">共 ${(json.length/1024).toFixed(1)}KB。手机端可「复制 JSON」后粘贴发送到电脑。</p>
-    <div class="btns"><button class="ok" id="expDl">下载文件</button><button class="ok" id="expCp" style="background:var(--ok)">复制 JSON</button></div>`);
+    <div class="btns"><button class="ok" id="expDl">下载文件</button><button class="ok" id="expCp" style="background:var(--ok)">复制 JSON</button></div>`,{noMaskClose:true});
   $('#expDl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=dlName;a.click();URL.revokeObjectURL(a.href);closeModal();toast('已下载文件')};
   $('#expCp').onclick=()=>{
     const ok=()=>{closeModal();toast('已复制到剪贴板')};
@@ -1875,13 +1884,13 @@ $('#importFile').onchange=e=>{
 };
 $('#importPasteBtn').onclick=()=>openImportPaste();
 function openImportPaste(){
-  modal(`<h4>粘贴 JSON 覆盖导入</h4>
+  modal(`<h4>粘贴 JSON 覆盖导入<span class="modal-close" onclick="confirmClose(()=>{$('#ipGo').click()})">×</span></h4>
     <p class="muted" style="margin:0 0 10px;font-size:12.5px">粘贴 JSON 内容，将<b>覆盖</b>当前全部数据，不可恢复。</p>
     <textarea id="ipText" class="qn-area" style="min-height:180px;font-family:monospace;font-size:12px" placeholder='在此粘贴 JSON 内容&#10;&#10;将覆盖当前全部数据'></textarea>
     <div class="btns" style="margin-top:12px">
-      <button class="cancel" onclick="closeModal()">取消</button>
+      <button class="cancel" onclick="confirmClose(()=>{$('#ipGo').click()})">关闭</button>
       <button class="ok" id="ipGo">确认覆盖</button>
-    </div>`);
+    </div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   $('#ipGo').onclick=()=>{
     const txt=$('#ipText').value.trim();if(!txt){toast('请先粘贴 JSON');return}
@@ -1892,8 +1901,8 @@ function openImportPaste(){
   };
 }
 function confirmOverwrite(d){
-  modal(`<h4>确认导入</h4><p style="color:var(--text-2)">导入将<b>覆盖</b>当前全部数据，且不可恢复。确定继续？</p>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="impOk" style="background:var(--bad)">覆盖导入</button></div>`);
+  modal(`<h4>确认导入<span class="modal-close" onclick="closeModal()">×</span></h4><p style="color:var(--text-2)">导入将<b>覆盖</b>当前全部数据，且不可恢复。确定继续？</p>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="impOk" style="background:var(--bad)">覆盖导入</button></div>`,{noMaskClose:true});
   $('#impOk').onclick=()=>{S=Object.assign(structuredClone(DEFAULT),d);if(Array.isArray(d.modules))restoreModules(d.modules);persist();closeModal();renderAll();toast('导入成功')};
 }
 $('#mergeBtn').onclick=()=>$('#mergeFile').click();
@@ -1906,25 +1915,25 @@ $('#mergeFile').onchange=e=>{
       if(!d||typeof d!=='object')throw 0;
       const res=mergeData(d);
       persist();renderAll();
-      modal(`<h4>合并导入完成</h4>
+      modal(`<h4>合并导入完成<span class="modal-close" onclick="closeModal()">×</span></h4>
         <div class="qn-pv-sum">${res.chips.join('')}</div>
         ${res.warns.length?'<div class="qn-warn">'+res.warns.join('<br>')+'</div>':''}
         <p class="muted" style="margin:8px 0 0;font-size:12.5px">已有相同 ID 的数据已自动跳过，未覆盖。</p>
-        <div class="btns" style="margin-top:12px"><button class="ok" onclick="closeModal()">好的</button></div>`);
+        <div class="btns" style="margin-top:12px"><button class="ok" onclick="closeModal()">好的</button></div>`,{noMaskClose:true});
     }catch(err){toast('文件格式错误')}
   };
   r.readAsText(f);e.target.value='';
 };
 $('#mergePasteBtn').onclick=()=>openMergePaste();
 function openMergePaste(){
-  modal(`<h4>粘贴 JSON 合并导入</h4>
+  modal(`<h4>粘贴 JSON 合并导入<span class="modal-close" onclick="confirmClose(()=>{$('#mpGo').click()})">×</span></h4>
     <p class="muted" style="margin:0 0 10px;font-size:12.5px">把手机导出复制的 JSON 粘进来，按 ID 去重合并，不覆盖已有数据。</p>
     <textarea id="mpText" class="qn-area" style="min-height:180px;font-family:monospace;font-size:12px" placeholder='在此粘贴 JSON 内容&#10;&#10;可直接从手机导出的 JSON 粘贴'></textarea>
     <div id="mpPreview" class="qn-preview"></div>
     <div class="btns" style="margin-top:12px">
-      <button class="cancel" onclick="closeModal()">取消</button>
+      <button class="cancel" onclick="confirmClose(()=>{$('#mpGo').click()})">关闭</button>
       <button class="ok" id="mpGo">确认合并</button>
-    </div>`);
+    </div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   $('#mpGo').onclick=()=>{
     const txt=$('#mpText').value.trim();if(!txt){toast('请先粘贴 JSON');return}
@@ -1932,11 +1941,11 @@ function openMergePaste(){
       const d=JSON.parse(txt);if(!d||typeof d!=='object')throw 0;
       const res=mergeData(d);
       persist();renderAll();
-      modal(`<h4>合并导入完成</h4>
+      modal(`<h4>合并导入完成<span class="modal-close" onclick="closeModal()">×</span></h4>
         <div class="qn-pv-sum">${res.chips.join('')}</div>
         ${res.warns.length?'<div class="qn-warn">'+res.warns.join('<br>')+'</div>':''}
         <p class="muted" style="margin:8px 0 0;font-size:12.5px">已有相同 ID 的数据已自动跳过，未覆盖。</p>
-        <div class="btns" style="margin-top:12px"><button class="ok" onclick="closeModal()">好的</button></div>`);
+        <div class="btns" style="margin-top:12px"><button class="ok" onclick="closeModal()">好的</button></div>`,{noMaskClose:true});
     }catch(err){toast('JSON 格式错误，请检查后重试')}
   };
 }
@@ -1986,19 +1995,19 @@ function mergeData(d){
   return{chips,warns:[]};
 }
 $('#budgetBtn').onclick=()=>{
-  modal(`<h4>设置月预算</h4>
+  modal(`<h4>设置月预算<span class="modal-close" onclick="confirmClose(()=>{$('#bSave').click()})">×</span></h4>
     <div class="field"><span class="lab" style="width:40px">¥</span><input id="bIn" type="number" inputmode="decimal" class="input-styled" value="${S.budget||''}" placeholder="如 3000"></div>
     <p class="muted" style="margin:0 0 10px">设为 0 表示不使用预算</p>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="bSave">保存</button></div>`);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#bSave').click()})">关闭</button><button class="ok" id="bSave">保存</button></div>`,{noMaskClose:true});
   $('#bSave').onclick=()=>{S.budget=Math.max(0,parseFloat($('#bIn').value)||0);closeModal();persist();renderMonthStat();toast('预算已更新')};
 };
 $('#clearBtn').onclick=()=>{
   const syncOn=!!(syncCfg&&syncCfg.binId);
-  modal(`<h4>清空全部数据</h4>
+  modal(`<h4>清空全部数据<span class="modal-close" onclick="closeModal()">×</span></h4>
     <p style="color:var(--text-2)">将删除所有待办、习惯、账目、心情、备忘、倒计日、工作日志，<b>不可恢复</b>。</p>
     ${syncOn?'<div class="privacy-box" style="margin:8px 0"><b>云同步已开启</b><br>清空后空数据会自动推送到云端，所有设备都会同步清空。</div>':''}
     <div class="field"><span class="lab" style="width:60px">确认</span><input id="cIn" class="input-styled" placeholder='输入"清空"'></div>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="cOk" style="background:var(--bad)" disabled>清空</button></div>`);
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="cOk" style="background:var(--bad)" disabled>清空</button></div>`,{noMaskClose:true});
   const ok=$('#cOk');$('#cIn').addEventListener('input',e=>{ok.disabled=e.target.value!=='清空'});
   ok.onclick=()=>{S=structuredClone(DEFAULT);persist();closeModal();renderAll();toast('已清空全部')};
 };
@@ -2006,7 +2015,7 @@ $('#clearBtn').onclick=()=>{
 /* ============ 速记录入 ============ */
 $('#qnEntry').onclick=()=>openQuickNotes();
 function openQuickNotes(){
-  modal(`<h4>速记录入</h4>
+  modal(`<h4>速记录入<span class="modal-close" onclick="confirmClose(()=>{const b=$('#qnImportBtn');if(b)b.click();else closeModal()})">×</span></h4>
     <p class="muted" style="margin:0 0 10px;font-size:12.5px">把手机上记的内容粘进来，自动拆分到各模块（均记为今天）。</p>
     <details><summary style="font-size:13px;color:var(--text);font-weight:600">语法速查 ▾</summary>
       <div class="qn-syntax">
@@ -2022,9 +2031,9 @@ function openQuickNotes(){
     <textarea id="qnText" class="qn-area" placeholder="在此粘贴手机上记的内容&#10;&#10;示例：&#10;- 买牛奶&#10;花 28 餐饮 午饭&#10;做 完成了方案初稿&#10;打 喝水&#10;心 4&#10;记 周五开会"></textarea>
     <div class="qn-preview" id="qnPreview"></div>
     <div class="btns" style="margin-top:12px">
-      <button class="cancel" onclick="closeModal()">取消</button>
+      <button class="cancel" onclick="confirmClose(()=>{const b=$('#qnImportBtn');if(b)b.click();else closeModal()})">关闭</button>
       <button class="ok" id="qnPreviewBtn">预览解析</button>
-    </div>`);
+    </div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   $('#qnPreviewBtn').onclick=()=>{const p=parseQuickNotes($('#qnText').value);showQnPreview(p)};
 }
@@ -2256,8 +2265,8 @@ async function cloudPull(opts={}){
 
 
 async function previewSyncHistory(idx,version){
-  if(TEST_BUILD){toast('测试版不连接云同步');return;}
-  modal(`<h4>版本预览</h4><p class="muted" style="margin:0">正在解密历史版本…</p>`);
+  if(TEST_BUILD)return;
+  modal(`<h4>版本预览<span class="modal-close" onclick="closeModal()">×</span></h4><p class="muted" style="margin:0">正在解密历史版本…</p>`,{noMaskClose:true});
   $('#modalBox').classList.add('xl');
   try{
     const blob=await readRevisionBlob(version);
@@ -2274,14 +2283,14 @@ async function previewSyncHistory(idx,version){
     const body=`<div class="xl-body"><div class="sync-preview-body">${renderSyncHistoryPreview(st)}</div></div>`;
     const btns=`<div class="btns" style="margin-top:14px">
       <button class="cancel" id="histPreviewBack">返回历史版本</button>
-      <button class="ok" id="histPreviewRestore" disabled>测试版不可恢复</button>
+      <button class="ok" id="histPreviewRestore" ${idx===0?' disabled':''}>${idx===0?'重载当前版本':'先返回列表恢复'}</button>
     </div>`;
-    modal(`<h4>版本预览</h4>${headInfo}${body}${btns}`);
+    modal(`<h4>版本预览<span class="modal-close" onclick="closeModal()">×</span></h4>${headInfo}${body}${btns}`,{noMaskClose:true});
     $('#modalBox').classList.add('xl');
     $('#histPreviewBack').onclick=renderHistoryListModal;
-    $('#histPreviewRestore').onclick=()=>toast('测试版不可恢复，请在正式版操作');
+    $('#histPreviewRestore').onclick=()=>{ closeModal(); setTimeout(()=>openRestoreConfirm(idx,version),50); };
   }catch(e){
-    modal(`<h4>版本预览</h4><p class="muted" style="color:var(--bad)">无法预览：${esc(e.message||e)}</p><div class="btns"><button class="cancel" id="histPreviewBack">返回历史版本</button></div>`);
+    modal(`<h4>版本预览<span class="modal-close" onclick="closeModal()">×</span></h4><p class="muted" style="color:var(--bad)">无法预览：${esc(e.message||e)}</p><div class="btns"><button class="cancel" id="histPreviewBack">返回历史版本</button></div>`,{noMaskClose:true});
     $('#modalBox').classList.add('wide');
     $('#histPreviewBack').onclick=renderHistoryListModal;
   }
@@ -2348,13 +2357,24 @@ function renderSyncHistoryPage(){
     prevBtn.onclick=()=>{syncHistPage--;renderSyncHistoryPage();};
   }else if(prevBtn){ prevBtn.style.display='none'; }
   $$('.sync-history-item .preview-btn').forEach(b=>b.onclick=()=>previewSyncHistory(+b.dataset.idx,b.parentElement.parentElement.dataset.ver));
-  $$('.sync-history-item .restore-btn').forEach(b=>b.onclick=()=>toast('测试版不可恢复，请在正式版操作'));
+  $$('.sync-history-item .restore-btn').forEach(b=>b.onclick=async()=>{ const idx=+b.dataset.idx; const ver=syncHistAll[idx].version; openRestoreConfirm(idx,ver); });
+}
+function openRestoreConfirm(idx,ver){
+  const isReload=idx===0;
+  const msg=isReload?'确认重载当前云端版本？':'确认恢复这个历史版本？当前云端会被回退，但 GitHub 仍会保留恢复前的历史。';
+  if(!confirm(msg))return;
+  const b=document.querySelector('.restore-btn[data-idx="'+idx+'"]');
+  if(b){b.textContent='恢复中…';b.disabled=true;}
+  restoreGistRevision(ver).then(()=>closeModal()).catch(e=>{
+    if(b){b.disabled=false;b.textContent=isReload?'重载':'恢复';}
+    setSyncStatus('err');toast('恢复失败：'+(e.message||e));
+  });
 }
 function renderHistoryListModal(){
-  modal(`<h4>历史版本恢复</h4>
+  modal(`<h4>历史版本恢复<span class="modal-close" onclick="closeModal()">×</span></h4>
     <div class="sync-warn">已加载 ${syncHistAll.length} 个历史版本。先点「预览」查看内容，再点「恢复」回退到该版本。</div>
     <div class="sync-history-list" id="syncHistoryList"></div>
-    <div class="btns" style="margin-top:12px"><button class="cancel" id="histBack">返回</button></div>`);
+    <div class="btns" style="margin-top:12px"><button class="cancel" id="histBack">返回</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   $('#histBack').onclick=openSyncSetup;
   renderSyncHistoryPage();
@@ -2404,7 +2424,7 @@ async function fetchAllGistCommits(){
 }
 
 async function restoreGistRevision(version){
-  if(TEST_BUILD){toast('测试版不连接云同步');return;}
+  if(TEST_BUILD)return;
   const blob=await readRevisionBlob(version);
   const r=await fetch(GITHUB_API+'/'+syncCfg.binId,{method:'PATCH',headers:GH_HEADERS(syncCfg.masterKey),body:JSON.stringify({files:{'data.json':{content:JSON.stringify(blob)}}})});
   if(!r.ok)throw new Error('HTTP '+r.status);
@@ -2414,18 +2434,18 @@ async function restoreGistRevision(version){
   save();renderAll();setSyncStatus('ok');toast('已恢复历史版本');
 }
 async function openSyncHistory(){
-  if(TEST_BUILD){toast('测试版不连接云同步');return}
+  if(TEST_BUILD)return;
   if(!syncCfg||!syncCfg.binId){toast('请先开启云同步');return}
-  modal('<h4>历史版本恢复</h4><p class="muted" style="margin:0">正在读取 Gist 历史版本…</p>');
+  modal('<h4>历史版本恢复<span class="modal-close" onclick="closeModal()">×</span></h4><p class="muted" style="margin:0">正在读取 Gist 历史版本…</p>',{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   try{
     syncHistAll=await fetchAllGistCommits();
     syncHistPage=0;
     syncHistDecrypted={};
-    if(!syncHistAll.length){modal('<h4>历史版本恢复</h4><p class="muted">未找到历史版本。</p><div class="btns"><button class="cancel" onclick="openSyncSetup()">返回</button></div>');$('#modalBox').classList.add('wide');return}
+    if(!syncHistAll.length){modal('<h4>历史版本恢复<span class="modal-close" onclick="closeModal()">×</span></h4><p class="muted">未找到历史版本。</p><div class="btns"><button class="cancel" onclick="openSyncSetup()">返回</button></div>',{noMaskClose:true});$('#modalBox').classList.add('wide');return}
     renderHistoryListModal();
   }catch(e){
-    modal(`<h4>历史版本恢复</h4><p class="muted" style="color:var(--bad)">读取失败：${esc(e.message||e)}</p><div class="btns"><button class="cancel" id="histBack">返回</button></div>`);
+    modal(`<h4>历史版本恢复<span class="modal-close" onclick="closeModal()">×</span></h4><p class="muted" style="color:var(--bad)">读取失败：${esc(e.message||e)}</p><div class="btns"><button class="cancel" id="histBack">返回</button></div>`,{noMaskClose:true});
     $('#modalBox').classList.add('wide');
     $('#histBack').onclick=openSyncSetup;
   }
@@ -2451,7 +2471,7 @@ function openSyncSetup(){
       <div class="btn-pair" style="margin-top:10px">
         <button id="syncDisableBtn" style="color:var(--bad);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 16px;width:100%">关闭并清空云同步</button>
       </div>
-      <p class="muted" style="font-size:12px;margin-top:14px;margin-bottom:0">关闭云同步会清除本地保存的 Token 和 Gist ID，但<b>不会</b>删除 GitHub 上的 Gist。如需彻底删除云端数据，请到 GitHub Gist 管理页删除该 Gist。</p>`);
+      <p class="muted" style="font-size:12px;margin-top:14px;margin-bottom:0">关闭云同步会清除本地保存的 Token 和 Gist ID，但<b>不会</b>删除 GitHub 上的 Gist。如需彻底删除云端数据，请到 GitHub Gist 管理页删除该 Gist。</p>`,{noMaskClose:true});
     const s2=$('#syncStatus2');
     const ss=$('#syncStatus');
     if(ss)s2.className=ss.className,s2.textContent=ss.textContent;
@@ -2464,7 +2484,7 @@ function openSyncSetup(){
     };
     return;
   }
-  modal(`<h4>开启云同步<span class="modal-close" onclick="closeModal()">×</span></h4>
+  modal(`<h4>开启云同步<span class="modal-close" onclick="confirmClose(()=>{$('#syncCreateBtn').click()})">×</span></h4>
     <div class="privacy-box" style="margin-top:0">
       <b>工作原理</b><br>
       数据经 <b>AES-GCM 端到端加密</b>后存于 GitHub Gist（私有）。GitHub 只看到密文，<b>仅持有 Passcode 的你能解密</b>。
@@ -2478,10 +2498,10 @@ function openSyncSetup(){
       注意：Token 只显示一次，请立即复制保存。
     </div>
     <div class="btn-pair">
-      <button id="syncCancelBtn" style="flex:1;border:1px solid var(--line);border-radius:var(--r-sm);padding:11px">取消</button>
+      <button id="syncCancelBtn" style="flex:1;border:1px solid var(--line);border-radius:var(--r-sm);padding:11px">关闭</button>
       <button id="syncCreateBtn" style="flex:1;background:var(--text);color:#fff;border-radius:var(--r-sm);padding:11px;font-weight:600">开启同步</button>
-    </div>`);
-  $('#syncCancelBtn').onclick=closeModal;
+    </div>`,{noMaskClose:true});
+  $('#syncCancelBtn').onclick=()=>confirmClose(()=>{$('#syncCreateBtn').click()});
   $('#syncCreateBtn').onclick=async()=>{
     const mk=$('#syncMK').value.trim();
     const binId=$('#syncBinId').value.trim();
@@ -2519,6 +2539,8 @@ function openSyncSetup(){
 }
 
 const _sb=$('#syncBtn'); if(_sb)_sb.onclick=openSyncSetup;
+const _shd=$('#syncHistoryBtnDirect'); if(_shd)_shd.onclick=openSyncHistory;
+const _snd=$('#syncNowBtnDirect'); if(_snd)_snd.onclick=async()=>{ if(!syncCfg||!syncCfg.binId){toast('请先开启云同步');return} setSyncStatus('sync');toast('正在同步…'); try{ await cloudPull(); schedulePush(); toast('同步完成'); }catch(e){ toast('同步失败：'+(e.message||e)); } };
 
 
 /* ============ 更新日志 ============ */
@@ -2648,34 +2670,34 @@ function editHistoryRow(row){
 
 function editWorklogById(id){
   const x=S.worklog.find(z=>z.id===id);if(!x)return;
-  modal(`<h4>编辑工作日志</h4>
+  modal(`<h4>编辑工作日志<span class="modal-close" onclick="confirmClose(()=>{$('#ewSave').click()})">×</span></h4>
     <div class="field"><span class="lab">日期</span><input type="date" id="ewDate" class="input-styled" value="${esc(x.date)}"></div>
     <div class="field"><span class="lab">时间</span><input type="time" id="ewTime" class="input-styled" value="${esc(x.time)}"></div>
     <div class="field"><span class="lab">内容</span><textarea id="ewText" class="input-styled" rows="3">${esc(x.text)}</textarea></div>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="ewSave">保存</button></div>`);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#ewSave').click()})">关闭</button><button class="ok" id="ewSave">保存</button></div>`,{noMaskClose:true});
   $('#ewSave').onclick=()=>{x.date=$('#ewDate').value;x.time=$('#ewTime').value;x.text=$('#ewText').value.trim();persist();renderAll();closeModal();toast('已保存');};
 }
 
 function editTodoById(id){
   const x=S.todos.find(z=>z.id===id);if(!x)return;
-  modal(`<h4>编辑待办</h4>
+  modal(`<h4>编辑待办<span class="modal-close" onclick="confirmClose(()=>{$('#etSave').click()})">×</span></h4>
     <div class="field"><span class="lab">日期</span><input type="date" id="etDate" class="input-styled" value="${esc(x.date)}"></div>
     <div class="field"><span class="lab">内容</span><input id="etText" class="input-styled" value="${esc(x.text)}"></div>
     <div class="field"><span class="lab">状态</span><select id="etDone" class="input-styled"><option value="0" ${!x.done?'selected':''}>未完成</option><option value="1" ${x.done?'selected':''}>已完成</option></select></div>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="etSave">保存</button></div>`);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#etSave').click()})">关闭</button><button class="ok" id="etSave">保存</button></div>`,{noMaskClose:true});
   $('#etSave').onclick=()=>{x.date=$('#etDate').value;x.text=$('#etText').value.trim();x.done=$('#etDone').value==='1';persist();renderAll();closeModal();toast('已保存');};
 }
 
 function editLedgerById(id){
   const x=S.ledger.find(z=>z.id===id);if(!x)return;
   const cats=catsFor(x.type);
-  modal(`<h4>编辑账目</h4>
+  modal(`<h4>编辑账目<span class="modal-close" onclick="confirmClose(()=>{$('#elSave').click()})">×</span></h4>
     <div class="field"><span class="lab">日期</span><input type="date" id="elDate" class="input-styled" value="${esc(x.date)}"></div>
     <div class="field"><span class="lab">类型</span><select id="elType" class="input-styled"><option value="expense" ${x.type==='expense'?'selected':''}>支出</option><option value="income" ${x.type==='income'?'selected':''}>收入</option></select></div>
     <div class="field"><span class="lab">分类</span><select id="elCat" class="input-styled">${cats.map(c=>`<option value="${esc(c[0])}" ${c[0]===x.category?'selected':''}>${esc(c[0])}</option>`).join('')}</select></div>
     <div class="field"><span class="lab">金额</span><input type="number" id="elAmt" class="input-styled" value="${x.amount}"></div>
     <div class="field"><span class="lab">备注</span><input id="elNote" class="input-styled" value="${esc(x.note||'')}"></div>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="elSave">保存</button></div>`);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#elSave').click()})">关闭</button><button class="ok" id="elSave">保存</button></div>`,{noMaskClose:true});
   $('#elType').onchange=()=>{$('#elCat').innerHTML=catsFor($('#elType').value).map(c=>`<option value="${esc(c[0])}">${esc(c[0])}</option>`).join('');};
   $('#elSave').onclick=()=>{x.date=$('#elDate').value;x.type=$('#elType').value;x.category=$('#elCat').value;x.amount=parseFloat($('#elAmt').value)||0;x.note=$('#elNote').value.trim();persist();renderAll();closeModal();toast('已保存');};
 }
@@ -2846,7 +2868,7 @@ function openModuleManager(){
       +'</div>';
   }).join('');
   modal('<h4>编辑模块</h4>'
-    +'<p class="muted" style="margin:0 0 10px;font-size:12.5px">测试版支持显示/隐藏与排序，设置只保存在本机浏览器，不会影响正式版。</p>'
+    +'<p class="muted" style="margin:0 0 10px;font-size:12.5px">支持显示/隐藏与排序，设置只保存在本机浏览器。</p>'
     +'<div>'+rows+'</div>'
     +'<div class="btns" style="margin-top:12px"><button class="cancel" id="moduleResetBtn">恢复默认</button><button class="ok" id="moduleDoneBtn">完成</button></div>');
   $('#modalBox').classList.add('wide');
@@ -2909,20 +2931,44 @@ if(!syncCfg&&S.todos.length===0&&S.habits.length===0&&S.ledger.length===0&&S.not
 
 /* ============ 学习模块 ============ */
 function lnData(){if(!S.learning)S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[],mistakes:[],selftests:[]};['directions','contents','plans','questions','reviews','mistakes','selftests'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});return S.learning}
-/* 取某节点（plan 下某 task）下的全部关联记录 */
+/* 判断一条记录的 nodeId 是否属于目标节点（支持 plan / ms / task 三级向上聚合） */
+function lnNodeMatches(cNodeId,targetNodeId,L0){
+  if(!cNodeId||!targetNodeId)return false;
+  if(cNodeId===targetNodeId)return true;
+  if(targetNodeId.startsWith('plan:'))return cNodeId===targetNodeId;
+  if(targetNodeId.startsWith('ms:')){
+    if(cNodeId===targetNodeId)return true;
+    if(cNodeId.startsWith('plan:')){
+      const msId=targetNodeId.slice(3);
+      for(const p of L0.plans){if((p.milestones||[]).some(m=>m.id===msId))return cNodeId===`plan:${p.id}`;}
+    }
+    return false;
+  }
+  // targetNodeId 是 task id
+  if(cNodeId.startsWith('ms:')||cNodeId.startsWith('plan:')){
+    for(const p of L0.plans){
+      if(cNodeId===`plan:${p.id}`){for(const m of (p.milestones||[])){if((m.tasks||[]).some(t=>t.id===targetNodeId))return true;}}
+      for(const m of (p.milestones||[])){if(cNodeId===`ms:${m.id}`){if((m.tasks||[]).some(t=>t.id===targetNodeId))return true;}}
+    }
+  }
+  return false;
+}
+/* 取某节点（plan / milestone / task）下的全部关联记录 */
 function lnNodeItems(L0,nodeId){return {
-  contents:L0.contents.filter(c=>c.nodeId===nodeId),
-  questions:L0.questions.filter(q=>q.nodeId===nodeId),
-  knowledge:L0.questions.filter(q=>q.nodeId===nodeId&&q.status==='solved'&&q.answer&&q.answer.trim()),
-  reviews:L0.reviews.filter(r=>r.nodeId===nodeId),
-  mistakes:L0.mistakes.filter(m=>m.nodeId===nodeId)
+  contents:L0.contents.filter(c=>lnNodeMatches(c.nodeId,nodeId,L0)),
+  questions:L0.questions.filter(q=>lnNodeMatches(q.nodeId,nodeId,L0)),
+  knowledge:L0.questions.filter(q=>lnNodeMatches(q.nodeId,nodeId,L0)&&q.status==='solved'&&q.answer&&q.answer.trim()),
+  reviews:L0.reviews.filter(r=>lnNodeMatches(r.nodeId,nodeId,L0)),
+  mistakes:L0.mistakes.filter(m=>lnNodeMatches(m.nodeId,nodeId,L0))
 }}
-/* 当前方向下所有 plan 的阶段/任务，用于“关联节点”下拉；返回 [{value,label}] */
+/* 当前方向下所有 plan / milestone / task，用于“关联节点”下拉；返回 [{value,label}] */
 function lnNodeOptions(L0,dirId){
   const out=[{value:'',label:'不绑定（仅方向）'}];
   L0.plans.filter(p=>p.directionId===dirId).forEach(p=>{
+    out.push({value:`plan:${p.id}`,label:`计划：${p.title}`});
     (p.milestones||[]).forEach(m=>{
-      (m.tasks||[]).forEach(t=>{out.push({value:t.id,label:`${p.title} / ${m.title||'阶段'} / ${t.title||'未命名任务'}`})});
+      out.push({value:`ms:${m.id}`,label:`阶段：${p.title} / ${m.title||'未命名阶段'}`});
+      (m.tasks||[]).forEach(t=>{out.push({value:t.id,label:`任务：${p.title} / ${m.title||'阶段'} / ${t.title||'未命名任务'}`})});
     });
   });
   return out;
@@ -3022,16 +3068,16 @@ function lnDirStats(d,L0){
   const dueR=L0.reviews.filter(r=>r.directionId===d.id&&r.due<=todayStr()).length;
   return {cnt,plans:plans.length,done,total,qTotal,qOpen,dueR};
 }
-function lnConfirm(msg,cb){modal(`<h4>确认</h4><p style="color:var(--text-2)">${msg}</p><div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnCfm" style="background:var(--bad)">删除</button></div>`);$('#lnCfm').onclick=()=>{closeModal();cb()}}
+function lnConfirm(msg,cb){modal(`<h4>确认<span class="modal-close" onclick="closeModal()">×</span></h4><p style="color:var(--text-2)">${msg}</p><div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnCfm" style="background:var(--bad)">删除</button></div>`,{noMaskClose:true});$('#lnCfm').onclick=()=>{closeModal();cb()}}
 /* —— 方向 —— */
 function openLnDirModal(id){
   const L0=lnData();const d=id?L0.directions.find(x=>x.id===id):null;const cur=d?d.color:'#5a7a8a';
   const dots=LN_COLORS.map(c=>`<span class="ln-dot" data-c="${c}" style="background:${c};${c===cur?'outline:2px solid var(--text);outline-offset:1px':''};cursor:pointer;margin:0 4px"></span>`).join('');
-  modal(`<h4>${d?'编辑方向':'新建学习方向'}</h4>
+  modal(`<h4>${d?'编辑方向':'新建学习方向'}<span class="modal-close" onclick="confirmClose(()=>$('#lnDirSave').click())">×</span></h4>
     <div class="field"><span class="lab">名称</span><input id="lnDirName" value="${d?esc(d.name):''}" placeholder="如 Python / 项目管理"></div>
     <div class="field"><span class="lab">描述</span><input id="lnDirDesc" value="${d?esc(d.desc||''):''}" placeholder="选填，一句话说明"></div>
     <div class="ln-ms">颜色</div><div style="margin:6px 0 12px">${dots}</div>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnDirSave">保存</button></div>`);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#lnDirSave').click()})">关闭</button><button class="ok" id="lnDirSave">保存</button></div>`,{noMaskClose:true});
   let pick=cur;
   $$('#modalBox .ln-dot').forEach(s=>s.onclick=()=>{pick=s.dataset.c;$$('#modalBox .ln-dot').forEach(x=>x.style.outline='');s.style.outline='2px solid var(--text)';s.style.outlineOffset='1px'});
   $('#lnDirSave').onclick=()=>{
@@ -3116,7 +3162,7 @@ function renderLnPlanModal(){
     let tasksHtml=(m.tasks||[]).map((t,ti)=>`<div class="ln-task"><input type="checkbox" ${t.done?'checked':''} onchange="lnPlanTaskDone(${mi},${ti},this.checked)"><input class="ln-task-t" value="${esc(t.title)}" oninput="lnPlanTaskTitle(${mi},${ti},this.value)" placeholder="任务内容" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 8px;font:inherit;outline:none"><input type="date" value="${t.due||''}" onchange="lnPlanTaskDue(${mi},${ti},this.value)" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 8px;font:inherit"><button onclick="lnPlanDelTask(${mi},${ti})" style="border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;color:var(--bad)">×</button></div>`).join('')||'<div class="muted" style="font-size:12px">暂无任务</div>';
     return `<div class="ln-card"><div class="ln-ms-top"><input class="ln-task-t" value="${esc(m.title)}" oninput="lnPlanMsTitle(${mi},this.value)" placeholder="阶段名称" style="flex:1;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;font:inherit;font-weight:600;outline:none"><input type="date" value="${m.due||''}" onchange="lnPlanMsDue(${mi},this.value)" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;font:inherit"><button onclick="lnPlanDelMs(${mi})" style="border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:6px 10px;color:var(--bad)">删除阶段</button></div>${tasksHtml}<button class="ln-add-btn" style="margin-top:4px" onclick="lnPlanAddTask(${mi})">+ 添加任务</button></div>`;
   }).join('');
-  modal(`<h4>${p.id&&L0.plans.find(x=>x.id===p.id)?'编辑计划':'新建计划'}<span class="modal-close" onclick="if(lnPlanCommit())closeModal()">×</span></h4>
+  modal(`<h4>${p.id&&L0.plans.find(x=>x.id===p.id)?'编辑计划':'新建计划'}<span class="modal-close" onclick="confirmClose(()=>{$('#lnPlanSave').click()})">×</span></h4>
     <div class="field"><span class="lab">方向</span><select id="lnPlanDir">${dirOpts}</select></div>
     <div class="field"><span class="lab">标题</span><input id="lnPlanTitle" value="${esc(p.title)}" placeholder="计划标题，如「Python 入门 30 天"></div>
     <div class="ln-ms">阶段与任务</div>
@@ -3127,7 +3173,7 @@ function renderLnPlanModal(){
   $('#lnPlanDir').onchange=e=>lnPlanDraft.directionId=e.target.value||null;
   $('#lnPlanTitle').oninput=e=>lnPlanDraft.title=e.target.value;
   $('#lnPlanSave').onclick=()=>{lnPlanCommit()};
-  $('#lnPlanClose').onclick=()=>{if(lnPlanCommit())closeModal()};
+  $('#lnPlanClose').onclick=()=>{confirmClose(()=>{$('#lnPlanSave').click()})};
 }
 function lnPlanAddMs(){lnPlanDraft.milestones.push({id:uid(),title:'',due:'',tasks:[]});renderLnPlanModal()}
 function lnPlanDelMs(i){lnPlanDraft.milestones.splice(i,1);renderLnPlanModal()}
@@ -3143,9 +3189,11 @@ function lnDelPlan(pid){lnConfirm('确定删除该计划？',()=>{const L0=lnDat
 /* —— 内容 —— */
 function renderLnDirContents(d,L0){
   const contents=L0.contents.filter(c=>c.directionId===d.id);
+  const nodeOpts=lnNodeOptions(L0,d.id).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');
   let html=`<div class="ln-quick">
     <input type="text" id="lnQcName_${d.id}" placeholder="资料/子主题名称，回车快速添加" onkeydown="if(event.key==='Enter')lnQuickAddContent('${d.id}')">
     <select id="lnQcKind_${d.id}"><option value="resource">资料</option><option value="topic">子主题</option></select>
+    <select id="lnQcNode_${d.id}" title="关联节点">${nodeOpts}</select>
     <button onclick="lnQuickAddContent('${d.id}')">添加</button>
   </div>`;
   if(!contents.length){html+='<div class="ln-empty">还没有内容，上方快速添加。</div>';return html}
@@ -3160,8 +3208,8 @@ function renderLnDirContents(d,L0){
 }
 function lnQuickAddContent(dirId){
   const name=$(`#lnQcName_${dirId}`).value.trim();if(!name){toast('请填写名称');return}
-  const kind=$(`#lnQcKind_${dirId}`).value;const L0=lnData();
-  L0.contents.unshift({id:uid(),name,directionId:dirId,kind,url:'',note:'',createdAt:todayStr()});persist();
+  const kind=$(`#lnQcKind_${dirId}`).value;const nodeId=$(`#lnQcNode_${dirId}`).value||null;const L0=lnData();
+  L0.contents.unshift({id:uid(),name,directionId:dirId,kind,nodeId,url:'',note:'',createdAt:todayStr()});persist();
   lnCurrentDir=dirId;lnDetailTab='contents';lnRefresh();toast('已添加');
 }
 function openLnContentModal(dirId,id,nodeId){
@@ -3170,14 +3218,14 @@ function openLnContentModal(dirId,id,nodeId){
   const kind=c?c.kind:'resource';
   const selNode=c?c.nodeId:(nodeId||'');
   const nodeOpts=lnNodeOptions(L0,selDir).map(o=>`<option value="${o.value}" ${selNode===o.value?'selected':''}>${esc(o.label)}</option>`).join('');
-  modal(`<h4>${c?'编辑内容':'添加学习内容'}</h4>
+  modal(`<h4>${c?'编辑内容':'添加学习内容'}<span class="modal-close" onclick="confirmClose(()=>{$('#lnCtSave').click()})">×</span></h4>
     <div class="ln-seg" id="lnCtKind"><button data-k="resource" class="${kind==='resource'?'on':''}">资料（书/课/链接）</button><button data-k="topic" class="${kind==='topic'?'on':''}">子主题</button></div>
     <div class="field"><span class="lab">方向</span><select id="lnCtDir">${dirOpts}</select></div>
     <div class="field"><span class="lab">关联节点</span><select id="lnCtNode">${nodeOpts}</select></div>
     <div class="field"><span class="lab">名称</span><input id="lnCtName" value="${c?esc(c.name):''}" placeholder="如《流畅的Python》/ 基础语法"></div>
     <div class="field"><span class="lab">链接</span><input id="lnCtUrl" value="${c?esc(c.url||''):''}" placeholder="选填，资料链接"></div>
     <div class="field"><span class="lab">备注</span><input id="lnCtNote" value="${c?esc(c.note||''):''}" placeholder="选填"></div>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnCtSave">保存</button></div>`);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#lnCtSave').click()})">关闭</button><button class="ok" id="lnCtSave">保存</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   let k=kind;
   $$('#lnCtKind button').forEach(b=>b.onclick=()=>{k=b.dataset.k;$$('#lnCtKind button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
@@ -3194,7 +3242,8 @@ function lnDelContent(id){lnConfirm('确定删除该学习内容？',()=>{const 
 function renderLnDirQuestions(d,L0){
   const questions=L0.questions.filter(q=>q.directionId===d.id);
   const stName={open:'未解决',doing:'解决中',solved:'已解决'};
-  let html=`<div class="ln-quick"><input type="text" id="lnQqTitle_${d.id}" placeholder="一句话记录问题，回车快速添加" onkeydown="if(event.key==='Enter')lnQuickAddQuestion('${d.id}')"><button onclick="lnQuickAddQuestion('${d.id}')">记录</button></div>`;
+  const nodeOpts=lnNodeOptions(L0,d.id).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');
+  let html=`<div class="ln-quick"><input type="text" id="lnQqTitle_${d.id}" placeholder="一句话记录问题，回车快速添加" onkeydown="if(event.key==='Enter')lnQuickAddQuestion('${d.id}')"><select id="lnQqNode_${d.id}" title="关联节点">${nodeOpts}</select><button onclick="lnQuickAddQuestion('${d.id}')">记录</button></div>`;
   if(!questions.length){html+='<div class="ln-empty">还没有问题，上方快速记录。</div>';return html}
   questions.forEach(q=>{
     const tags=(q.tags||[]).map(t=>`<span class="ln-tag">${esc(t)}</span>`).join('');
@@ -3215,8 +3264,8 @@ function renderLnDirQuestions(d,L0){
 }
 function lnQuickAddQuestion(dirId){
   const title=$(`#lnQqTitle_${dirId}`).value.trim();if(!title){toast('请填写问题');return}
-  const L0=lnData();
-  L0.questions.unshift({id:uid(),directionId:dirId,contentId:null,title,detail:'',status:'open',tags:[],answer:'',createdAt:todayStr()});
+  const nodeId=$(`#lnQqNode_${dirId}`).value||null;const L0=lnData();
+  L0.questions.unshift({id:uid(),directionId:dirId,contentId:null,nodeId,title,detail:'',status:'open',tags:[],answer:'',createdAt:todayStr()});
   persist();lnCurrentDir=dirId;lnDetailTab='questions';lnRefresh();toast('问题已记录');
 }
 function openLnQuestionModal(id,nodeId,dirId){
@@ -3225,7 +3274,7 @@ function openLnQuestionModal(id,nodeId,dirId){
   const cOpts=`<option value="">不挂具体内容</option>`+(curDir?L0.contents.filter(c=>c.directionId===curDir).map(c=>`<option value="${c.id}" ${q&&q.contentId===c.id?'selected':''}>${esc(c.name)}</option>`).join(''):'');
   const nodeOpts=lnNodeOptions(L0,curDir).map(o=>`<option value="${o.value}" ${((q?q.nodeId:nodeId)||'')===o.value?'selected':''}>${esc(o.label)}</option>`).join('');
   const st=q?q.status:'open';const tags=(q?(q.tags||[]):[]).join(', ');const hard=q?!!q.hard:false;
-  modal(`<h4>${q?'编辑问题':'记录学习问题'}</h4>
+  modal(`<h4>${q?'编辑问题':'记录学习问题'}<span class="modal-close" onclick="confirmClose(()=>{$('#lnQSave').click()})">×</span></h4>
     <div class="field"><span class="lab">方向</span><select id="lnQDir2">${dirOpts}</select></div>
     <div class="field"><span class="lab">资料</span><select id="lnQCt2">${cOpts}</select></div>
     <div class="field"><span class="lab">关联节点</span><select id="lnQNode2">${nodeOpts}</select></div>
@@ -3235,7 +3284,7 @@ function openLnQuestionModal(id,nodeId,dirId){
     <div class="field"><span class="lab">标签</span><input id="lnQTags" value="${esc(tags)}" placeholder="逗号分隔，如 函数式,并发"></div>
     <div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">答案</span><textarea id="lnQA" style="flex:1;min-height:50px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none" maxlength="2000" placeholder="解决后记录答案（最多2000字）">${q?esc(q.answer||''):''}</textarea></div>
     <label class="ln-check"><input type="checkbox" id="lnQHard" ${hard?'checked':''}> 标记为难点 / 易错（归集到「错题」）</label>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnQSave">保存</button></div>`);
+    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#lnQSave').click()})">关闭</button><button class="ok" id="lnQSave">保存</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   let st2=st;
   $$('#lnQSt button').forEach(b=>b.onclick=()=>{st2=b.dataset.s;$$('#lnQSt button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
@@ -3298,7 +3347,14 @@ function renderLnDirReviews(d,L0){
 
 /* —— 计划节点聚合页（点任务进入） —— */
 function lnOpenNode(dirId,planId,msId,taskId){lnNode={dirId,planId,msId,taskId};lnNodeTab='items';renderLearning();}
-function lnTaskTitleById(L0,nodeId){if(!nodeId)return '';for(const p of L0.plans){for(const m of (p.milestones||[])){const t=(m.tasks||[]).find(x=>x.id===nodeId);if(t)return p.title+' / '+(m.title||'阶段')+' / '+(t.title||'任务');}}return ''}
+function lnNodeTitle(L0,nodeId){
+  if(!nodeId)return '';
+  if(nodeId.startsWith('plan:')){const p=L0.plans.find(x=>x.id===nodeId.slice(5));return p?p.title:''}
+  if(nodeId.startsWith('ms:')){for(const p of L0.plans){const m=(p.milestones||[]).find(x=>x.id===nodeId.slice(3));if(m)return p.title+' / '+(m.title||'阶段');}}
+  for(const p of L0.plans){for(const m of (p.milestones||[])){const t=(m.tasks||[]).find(x=>x.id===nodeId);if(t)return p.title+' / '+(m.title||'阶段')+' / '+(t.title||'任务');}}
+  return ''
+}
+function lnTaskTitleById(L0,nodeId){return lnNodeTitle(L0,nodeId)}
 function renderLnNodeView(){
   const L0=lnData();
   const d=L0.directions.find(x=>x.id===lnNode.dirId);
@@ -3370,12 +3426,13 @@ function renderLnDirTimeline(d,L0){
 /* —— 自测 —— */
 function renderLnDirSelftests(d,L0){
   const list=L0.selftests.filter(s=>s.directionId===d.id);
-  let html=`<div class="ln-quick"><input type="text" id="lnStTitle_${d.id}" placeholder="自测名称，如 第1章小测" onkeydown="if(event.key==='Enter')lnQuickAddSelftest('${d.id}')"><button onclick="lnQuickAddSelftest('${d.id}')">记录</button></div>`;
+  const nodeOpts=lnNodeOptions(L0,d.id).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');
+  let html=`<div class="ln-quick"><input type="text" id="lnStTitle_${d.id}" placeholder="自测名称，如 第1章小测" onkeydown="if(event.key==='Enter')lnQuickAddSelftest('${d.id}')"><select id="lnStNode_${d.id}" title="关联节点">${nodeOpts}</select><button onclick="lnQuickAddSelftest('${d.id}')">记录</button></div>`;
   if(!list.length){html+='<div class="ln-empty">还没有自测记录。<br>学完一个节点后做自测，记录得分与薄弱点，帮助安排复习。</div>';return html}
   list.forEach(s=>{const node=lnTaskTitleById(L0,s.nodeId);html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(s.title)} <span class="ln-tag">${s.score!=null?('得分 '+s.score):'未打分'}</span></div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${s.weak?('薄弱：'+esc(s.weak)+' · '):''}${s.date||''}</div>${s.note?`<div class="ln-kb-a">${esc(s.note)}</div>`:''}</div><div class="ln-acts"><button onclick="openLnSelftestModal('${d.id}','${s.id}')">编辑</button><button onclick="lnDelSelftest('${s.id}')" style="color:var(--bad)">删除</button></div></div></div>`});
   return html;
 }
-function lnQuickAddSelftest(dirId){const title=$(`#lnStTitle_${dirId}`).value.trim();if(!title){toast('请填写名称');return}const L0=lnData();L0.selftests.unshift({id:uid(),directionId:dirId,title,nodeId:null,score:null,weak:'',note:'',date:todayStr()});persist();lnRefresh();toast('已记录')}
+function lnQuickAddSelftest(dirId){const title=$(`#lnStTitle_${dirId}`).value.trim();if(!title){toast('请填写名称');return}const nodeId=$(`#lnStNode_${dirId}`).value||null;const L0=lnData();L0.selftests.unshift({id:uid(),directionId:dirId,title,nodeId,score:null,weak:'',note:'',date:todayStr()});persist();lnRefresh();toast('已记录')}
 function lnDelSelftest(id){lnConfirm('删除该自测记录？',()=>{const L0=lnData();L0.selftests=L0.selftests.filter(x=>x.id!==id);persist();lnRefresh()})}
 function openLnSelftestModal(dirId,id){const L0=lnData();const s=id?L0.selftests.find(x=>x.id===id):null;const nodeOpts=lnNodeOptions(L0,dirId).map(o=>`<option value="${o.value}" ${s&&s.nodeId===o.value?'selected':''}>${esc(o.label)}</option>`).join('');modal(`<h4>${s?'编辑自测':'记录自测'}</h4><div class="field"><span class="lab">名称</span><input id="lnStT" value="${s?esc(s.title):''}" placeholder="如 第1章小测"></div><div class="field"><span class="lab">关联节点</span><select id="lnStN">${nodeOpts}</select></div><div class="field"><span class="lab">得分</span><input id="lnStS" type="number" value="${s&&s.score!=null?s.score:''}" placeholder="选填，如 85"></div><div class="field"><span class="lab">薄弱点</span><input id="lnStW" value="${s?esc(s.weak||''):''}" placeholder="选填，逗号分隔"></div><div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">备注</span><textarea id="lnStNote" style="flex:1;min-height:50px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none">${s?esc(s.note||''):''}</textarea></div><div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnStSave">保存</button></div>`);$('#modalBox').classList.add('wide');$('#lnStSave').onclick=()=>{const title=$('#lnStT').value.trim();if(!title){toast('请填写名称');return}const obj={title,nodeId:$('#lnStN').value||null,score:($('#lnStS').value===''?null:Number($('#lnStS').value)),weak:$('#lnStW').value.trim(),note:$('#lnStNote').value.trim(),date:todayStr()};if(s){Object.assign(s,obj)}else{L0.selftests.unshift(Object.assign({id:uid(),directionId:dirId},obj))}persist();closeModal();lnRefresh()}}
 
