@@ -575,6 +575,23 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-detail-acts button{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;font-size:12px;color:var(--text-2)}
 .ln-back{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 11px;font-size:13px;color:var(--text-2);flex:none}
 .ln-dir-section{padding-top:8px}
+
+.hist-row .hr-actions{display:flex;gap:6px;flex:none;opacity:0;transition:opacity .12s}
+.hist-row:hover .hr-actions{opacity:1}
+.hist-row .hr-edit,.hist-row .hr-del{cursor:pointer;border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:var(--r-xs);width:26px;height:26px;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center}
+.hist-row .hr-del:hover{border-color:var(--bad);color:var(--bad)}
+.hist-row .hr-edit:hover{border-color:var(--text);color:var(--text)}
+.sync-history-actions{display:flex;gap:8px;align-items:center}
+.preview-btn,.restore-btn{flex:none;background:var(--text);color:#fff;border-radius:var(--r-xs);padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.preview-btn:disabled,.restore-btn:disabled{opacity:.45;cursor:default}
+.sync-history-preview{width:100%;margin-top:10px;padding:10px;background:var(--card-soft);border-radius:var(--r-sm);font-size:12.5px}
+.sync-prev-section{margin:8px 0 4px;font-size:12.5px}
+.sync-prev-section>b{font-size:12.5px}
+.sync-prev-row{font-size:12px;color:var(--text-2);padding:2px 0;border-bottom:1px dashed var(--line-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync-prev-more{font-size:11.5px;color:var(--text-3);padding:2px 0}
+.hist-more{width:100%;margin-top:12px;padding:9px;border:1px dashed var(--line);border-radius:var(--r-sm);background:transparent;color:var(--text-2);cursor:pointer;font-size:13px}
+.hist-more:hover{border-color:var(--text);color:var(--text)}
+
 </style>
 </head>
 <body>
@@ -2121,6 +2138,28 @@ function renderSyncBtn(){
   btn.textContent=syncCfg&&syncCfg.binId?'管理':'设置';
 }
 
+let syncHistAll=[],syncHistPage=0,syncHistDecrypted={};
+function renderSyncHistoryPreview(st){
+  st=normalizeState(st||{});
+  const parts=[];
+  const push=(title,arr,fmt)=>{
+    if(!arr||!arr.length)return;
+    parts.push(`<div class="sync-prev-section"><b>${esc(title)} (${arr.length})</b>`);
+    arr.slice(0,6).forEach(x=>parts.push(`<div class="sync-prev-row">${fmt(x)}</div>`));
+    if(arr.length>6)parts.push(`<div class="sync-prev-more">…还有 ${arr.length-6} 条</div>`);
+    parts.push('</div>');
+  };
+  push('工作日志',st.worklog,x=>`${esc(x.date)} ${esc(x.time||'')} ${esc(String(x.text||'').slice(0,60))}`);
+  push('账目',st.ledger,x=>`${esc(x.date)} ${x.type==='income'?'收入':'支出'} ${esc(x.category||'')} ${money(x.amount)}${x.note?' · '+esc(x.note):''}`);
+  push('待办',st.todos,x=>`${esc(x.date)} ${x.done?'✓':'○'} ${esc(String(x.text||'').slice(0,60))}`);
+  push('习惯',st.habits,x=>`${esc(x.name||'')} ${Object.keys(x.history||{}).length}天`);
+  push('备忘',st.notes,x=>`${esc(String(x.content||x.title||'').slice(0,60))}${x.done?' ✓':''}`);
+  push('倒计日',st.countdowns,x=>`${esc(x.name||'')} ${x.date||''}`);
+  const moodDays=Object.keys(st.moods||{}).length;
+  if(moodDays)parts.push(`<div class="sync-prev-section"><b>心情 (${moodDays} 天)</b></div>`);
+  return parts.length?parts.join(''):'<div class="muted">该版本没有记录</div>';
+}
+
 async function cloudPush(){
   if(TEST_BUILD)return;
   if(!syncCfg||!syncCfg.binId||syncBusy)return;
@@ -2211,6 +2250,84 @@ async function cloudPull(opts={}){
 }
 
 
+async function previewSyncHistory(idx,version){
+  if(TEST_BUILD){toast('测试版不连接云同步');return;}
+  const box=$('#syncPrev_'+idx);if(!box)return;
+  box.style.display='block';
+  box.innerHTML='<div class="muted">正在解密预览…</div>';
+  try{
+    const blob=await readRevisionBlob(version);
+    const st=await decryptState(blob);
+    const size=(JSON.stringify(blob).length/1024).toFixed(1)+' KB';
+    const summary=syncStateSummary(st);
+    syncHistDecrypted[version]={summary,size,ok:true};
+    const sumEl=$('#syncSum_'+idx);if(sumEl)sumEl.textContent=size+'｜'+summary;
+    const btn=$('.restore-btn[data-idx="'+idx+'"]');if(btn)btn.disabled=false;
+    box.innerHTML=renderSyncHistoryPreview(st);
+  }catch(e){
+    box.innerHTML='<div style="color:var(--bad)">无法预览：'+(e.message||e)+'</div>';
+  }
+}
+
+function renderSyncHistoryPage(){
+  const per=30;
+  const start=syncHistPage*per;
+  const end=Math.min(start+per,syncHistAll.length);
+  const listEl=$('#syncHistoryList');
+  if(!listEl)return;
+  const frag=document.createDocumentFragment();
+  for(let i=start;i<end;i++){
+    const h=syncHistAll[i];
+    const dec=syncHistDecrypted[h.version];
+    let summary='点击「预览」查看内容',size='',ok=false;
+    if(dec){summary=dec.summary;size=dec.size;ok=dec.ok}
+    const div=document.createElement('div');
+    div.className='sync-history-item';
+    div.dataset.idx=i;
+    div.dataset.ver=esc(h.version);
+    div.innerHTML=`<div class="sync-history-meta">
+      <b>${i===0?'当前版本':'历史版本 '+i}</b> · ${syncFmtTime(h.committed_at)}<br>
+      <code>${esc(String(h.version||'').slice(0,12))}…</code>
+      <div class="sync-history-summary" id="syncSum_${i}">${esc(size)}${size?'｜':''}${esc(summary)}</div>
+    </div>
+    <div class="sync-history-actions" style="display:flex;gap:8px;align-items:center">
+      <button class="preview-btn" data-idx="${i}" style="padding:6px 10px;font-size:12px">预览</button>
+      <button class="restore-btn" data-idx="${i}" ${ok?'':'disabled'} style="padding:6px 10px;font-size:12px">${i===0?'重载':'恢复'}</button>
+    </div>
+    <div class="sync-history-preview" id="syncPrev_${i}" style="display:none;width:100%;margin-top:10px;padding:10px;background:var(--card-soft);border-radius:var(--r-sm);font-size:12.5px"></div>`;
+    frag.appendChild(div);
+  }
+  listEl.appendChild(frag);
+  const moreBtn=$('#syncHistMore');
+  if(end<syncHistAll.length){
+    if(!moreBtn){
+      const btn=document.createElement('button');
+      btn.id='syncHistMore';
+      btn.className='hist-more';
+      btn.style.cssText='width:100%;margin-top:12px';
+      btn.textContent='加载更多（还有 '+(syncHistAll.length-end)+' 条）';
+      btn.onclick=()=>{syncHistPage++;renderSyncHistoryPage();};
+      listEl.parentElement.appendChild(btn);
+    }else{
+      moreBtn.textContent='加载更多（还有 '+(syncHistAll.length-end)+' 条）';
+      moreBtn.style.display='block';
+    }
+  }else if(moreBtn){
+    moreBtn.style.display='none';
+  }
+  $$('.sync-history-item .preview-btn').forEach(b=>b.onclick=()=>previewSyncHistory(+b.dataset.idx,b.parentElement.parentElement.dataset.ver));
+  $$('.sync-history-item .restore-btn').forEach(b=>b.onclick=async()=>{
+    const idx=+b.dataset.idx;
+    const ver=syncHistAll[idx].version;
+    const isReload=idx===0;
+    const msg=isReload?'确认重载当前云端版本？':'确认恢复这个历史版本？当前云端会被回退，但 GitHub 仍会保留恢复前的历史。';
+    if(!confirm(msg))return;
+    b.textContent='恢复中…';b.disabled=true;
+    try{await restoreGistRevision(ver);closeModal()}
+    catch(e){b.disabled=false;b.textContent=isReload?'重载':'恢复';setSyncStatus('err');toast('恢复失败：'+(e.message||e))}
+  });
+}
+
 function syncFmtTime(iso){
   if(!iso)return '未知时间';
   const d=new Date(iso);
@@ -2238,6 +2355,7 @@ async function readRevisionBlob(version){
   return JSON.parse(content);
 }
 async function restoreGistRevision(version){
+  if(TEST_BUILD){toast('测试版不连接云同步');return;}
   const blob=await readRevisionBlob(version);
   const r=await fetch(GITHUB_API+'/'+syncCfg.binId,{method:'PATCH',headers:GH_HEADERS(syncCfg.masterKey),body:JSON.stringify({files:{'data.json':{content:JSON.stringify(blob)}}})});
   if(!r.ok)throw new Error('HTTP '+r.status);
@@ -2247,6 +2365,7 @@ async function restoreGistRevision(version){
   save();renderAll();setSyncStatus('ok');toast('已恢复历史版本');
 }
 async function openSyncHistory(){
+  if(TEST_BUILD){toast('测试版不连接云同步');return}
   if(!syncCfg||!syncCfg.binId){toast('请先开启云同步');return}
   modal('<h4>历史版本恢复</h4><p class="muted" style="margin:0">正在读取 Gist 历史版本…</p>');
   $('#modalBox').classList.add('wide');
@@ -2254,52 +2373,24 @@ async function openSyncHistory(){
     const r=await fetch(GITHUB_API+'/'+syncCfg.binId,{headers:GH_HEADERS(syncCfg.masterKey)});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const data=await r.json();
-    const hist=(data.history||[]).slice(0,30);
-    if(!hist.length){modal('<h4>历史版本恢复</h4><p class="muted">未找到历史版本。</p><div class="btns"><button class="cancel" onclick="openSyncSetup()">返回</button></div>');$('#modalBox').classList.add('wide');return}
-    const items=[];
-    for(let i=0;i<hist.length;i++){
-      const h=hist[i];
-      let summary='读取中…',size='未知大小',ok=false;
-      try{
-        const blob=await readRevisionBlob(h.version);
-        const content=JSON.stringify(blob);
-        size=(content.length/1024).toFixed(1)+' KB';
-        const st=await decryptState(blob);
-        summary=syncStateSummary(st);
-        ok=true;
-      }catch(e){summary='无法预览：'+(e.message||e)}
-      items.push(`<div class="sync-history-item">
-        <div class="sync-history-meta">
-          <b>${i===0?'当前版本':'历史版本 '+i}</b> · ${syncFmtTime(h.committed_at)}<br>
-          <code>${esc(String(h.version||'').slice(0,12))}…</code>
-          <div class="sync-history-summary">${esc(size)}｜${esc(summary)}</div>
-        </div>
-        <button data-ver="${esc(h.version)}" ${ok?'':'disabled'}>${i===0?'重载':'恢复'}</button>
-      </div>`);
-    }
+    syncHistAll=data.history||[];
+    syncHistPage=0;
+    syncHistDecrypted={};
+    if(!syncHistAll.length){modal('<h4>历史版本恢复</h4><p class="muted">未找到历史版本。</p><div class="btns"><button class="cancel" onclick="openSyncSetup()">返回</button></div>');$('#modalBox').classList.add('wide');return}
     modal(`<h4>历史版本恢复</h4>
-      <div class="sync-warn">建议先看每个版本的记录数量和时间。点“恢复”会把该历史版本重新写回当前云端，并同步到本机。</div>
-      <div class="sync-history-list">${items.join('')}</div>
+      <div class="sync-warn">已加载 ${syncHistAll.length} 个历史版本。先点「预览」查看内容，再点「恢复」回退到该版本。</div>
+      <div class="sync-history-list" id="syncHistoryList"></div>
       <div class="btns" style="margin-top:12px"><button class="cancel" id="histBack">返回</button></div>`);
     $('#modalBox').classList.add('wide');
     $('#histBack').onclick=openSyncSetup;
-    $$('.sync-history-item button[data-ver]').forEach(btn=>{
-      btn.onclick=async()=>{
-        const ver=btn.dataset.ver;
-        const msg=btn.textContent==='重载'?'确认重载当前云端版本？':'确认恢复这个历史版本？当前云端会被回退，但 GitHub 仍会保留恢复前的历史。';
-        if(!confirm(msg))return;
-        const oldTxt=btn.textContent;
-        btn.textContent='恢复中…';btn.disabled=true;
-        try{await restoreGistRevision(ver);closeModal()}
-        catch(e){btn.disabled=false;btn.textContent=oldTxt;setSyncStatus('err');toast('恢复失败：'+(e.message||e))}
-      };
-    });
+    renderSyncHistoryPage();
   }catch(e){
     modal(`<h4>历史版本恢复</h4><p class="muted" style="color:var(--bad)">读取失败：${esc(e.message||e)}</p><div class="btns"><button class="cancel" id="histBack">返回</button></div>`);
     $('#modalBox').classList.add('wide');
     $('#histBack').onclick=openSyncSetup;
   }
 }
+
 
 function openSyncSetup(){
   if(syncCfg&&syncCfg.binId){
@@ -2419,14 +2510,15 @@ function setHisRange(from,to,activeKey){
 function historyEvents(from,to){
   const inR=d=>!!d&&(!from||d>=from)&&(!to||d<=to);
   const ev=[];
-  (S.worklog||[]).forEach(x=>{if(inR(x.date))ev.push({date:x.date,time:x.time||'',kind:'worklog',tag:'日志',text:x.text||''})});
-  (S.todos||[]).forEach(x=>{if(inR(x.date))ev.push({date:x.date,time:'',kind:'todo',tag:x.done?'待办 ✓':'待办 ○',text:x.text||'',done:!!x.done})});
-  (S.habits||[]).forEach(h=>Object.keys(h.history||{}).forEach(d=>{if(inR(d))ev.push({date:d,time:'',kind:'habit',tag:'打卡',text:h.name||'',color:h.color})}));
-  (S.ledger||[]).forEach(x=>{if(inR(x.date))ev.push({date:x.date,time:'',kind:'ledger',tag:x.type==='income'?'收入':'支出',text:(x.category||'')+(x.note?' · '+x.note:''),amount:x.amount,type:x.type})});
-  Object.keys(S.moods||{}).forEach(d=>{if(inR(d)){const m=MOODS.find(m=>m.k===S.moods[d]);ev.push({date:d,time:'',kind:'mood',tag:'心情',text:m?m.name:String(S.moods[d])})}});
-  (S.notes||[]).forEach(n=>{const ds=String(n.updatedAt||'').slice(0,10);if(inR(ds))ev.push({date:ds,time:String(n.updatedAt||'').slice(11,16),kind:'note',tag:n.done?'备忘 ✓':'备忘',text:n.content||n.title||''})});
+  (S.worklog||[]).forEach((x,i)=>{if(inR(x.date))ev.push({date:x.date,time:x.time||'',kind:'worklog',tag:'日志',text:x.text||'',_src:'worklog',_idx:i,_id:x.id})});
+  (S.todos||[]).forEach((x,i)=>{if(inR(x.date))ev.push({date:x.date,time:'',kind:'todo',tag:x.done?'待办 ✓':'待办 ○',text:x.text||'',done:!!x.done,_src:'todos',_idx:i,_id:x.id})});
+  (S.habits||[]).forEach((h,hi)=>Object.keys(h.history||{}).forEach(d=>{if(inR(d))ev.push({date:d,time:'',kind:'habit',tag:'打卡',text:h.name||'',color:h.color,_src:'habits',_hIdx:hi,_date:d})}));
+  (S.ledger||[]).forEach((x,i)=>{if(inR(x.date))ev.push({date:x.date,time:'',kind:'ledger',tag:x.type==='income'?'收入':'支出',text:(x.category||'')+(x.note?' · '+x.note:''),amount:x.amount,type:x.type,_src:'ledger',_idx:i,_id:x.id})});
+  Object.keys(S.moods||{}).forEach(d=>{if(inR(d)){const m=MOODS.find(m=>m.k===S.moods[d]);ev.push({date:d,time:'',kind:'mood',tag:'心情',text:m?m.name:String(S.moods[d]),_src:'moods',_date:d})}});
+  (S.notes||[]).forEach((n,i)=>{const ds=String(n.updatedAt||'').slice(0,10);if(inR(ds))ev.push({date:ds,time:String(n.updatedAt||'').slice(11,16),kind:'note',tag:n.done?'备忘 ✓':'备忘',text:n.content||n.title||'',_src:'notes',_idx:i,_id:n.id})});
   return ev;
 }
+
 function filteredHistory(){
   const from=$('#hisFrom').value,to=$('#hisTo').value;
   const kw=$('#hisKw').value.trim().toLowerCase();
@@ -2468,17 +2560,87 @@ function renderHistory(){
     return `<div class="hist-day">
       <div class="hist-day-head"><div class="hd-date">${d} ${wk}${d===todayStr()?' · 今天':''}</div><div class="hd-meta">${metaTxt}</div></div>
       <div class="hist-body">${items.map(x=>`
-        <div class="hist-row">
+        <div class="hist-row" data-hsrc="${esc(x._src||'')}" data-hid="${esc(x._id||'')}" data-hidx="${x._hIdx!==undefined?x._hIdx:''}" data-hdate="${esc(x._date||'')}">
           <span class="hr-time">${esc(x.time||'—')}</span>
           <span class="hr-tag">${esc(x.tag)}</span>
           <span class="hr-txt">${esc(x.text)}</span>
           ${x.kind==='ledger'?`<span class="hr-amt" style="color:${x.type==='income'?'var(--income)':'var(--expense)'}">${x.type==='income'?'+':'-'}${money(x.amount)}</span>`:''}
+          <span class="hr-actions">
+            <button class="hr-edit" title="编辑">✎</button>
+            <button class="hr-del" title="删除">✕</button>
+          </span>
         </div>`).join('')}</div>
     </div>`;
   }).join('')+(dates.length>hisLimit?`<button class="hist-more" id="hisMore">继续加载（还有 ${dates.length-hisLimit} 天）</button>`:'')
    :'<div class="empty-mini">所选时间区间内没有记录，换个日期或类型试试</div>';
+  $$('#hisList .hist-row').forEach(row=>{
+    row.querySelector('.hr-edit').onclick=(e)=>{e.stopPropagation();editHistoryRow(row)};
+    row.querySelector('.hr-del').onclick=(e)=>{e.stopPropagation();deleteHistoryRow(row)};
+  });
   const more=$('#hisMore');if(more)more.onclick=()=>{hisLimit+=14;renderHistory()};
 }
+function deleteHistoryRow(row){
+  const src=row.dataset.hsrc, id=row.dataset.hid, hidx=row.dataset.hidx, hdate=row.dataset.hdate;
+  if(!src){toast('无法识别记录来源');return}
+  if(!confirm('确认删除这条记录？删除后不可恢复。'))return;
+  switch(src){
+    case 'worklog': S.worklog=S.worklog.filter(x=>x.id!==id); break;
+    case 'todos': S.todos=S.todos.filter(x=>x.id!==id); break;
+    case 'ledger': S.ledger=S.ledger.filter(x=>x.id!==id); break;
+    case 'notes': S.notes=S.notes.filter(x=>x.id!==id); break;
+    case 'habits': if(S.habits[hidx])delete S.habits[hidx].history[hdate]; break;
+    case 'moods': delete S.moods[hdate]; break;
+    default: toast('该类型暂不支持删除'); return;
+  }
+  persist();renderAll();toast('已删除');
+}
+
+function editHistoryRow(row){
+  const src=row.dataset.hsrc, id=row.dataset.hid;
+  switch(src){
+    case 'worklog': editWorklogById(id); break;
+    case 'todos': editTodoById(id); break;
+    case 'ledger': editLedgerById(id); break;
+    case 'notes': editNote(id); break;
+    default: toast('该类型暂不支持编辑');
+  }
+}
+
+function editWorklogById(id){
+  const x=S.worklog.find(z=>z.id===id);if(!x)return;
+  modal(`<h4>编辑工作日志</h4>
+    <div class="field"><span class="lab">日期</span><input type="date" id="ewDate" class="input-styled" value="${esc(x.date)}"></div>
+    <div class="field"><span class="lab">时间</span><input type="time" id="ewTime" class="input-styled" value="${esc(x.time)}"></div>
+    <div class="field"><span class="lab">内容</span><textarea id="ewText" class="input-styled" rows="3">${esc(x.text)}</textarea></div>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="ewSave">保存</button></div>`);
+  $('#ewSave').onclick=()=>{x.date=$('#ewDate').value;x.time=$('#ewTime').value;x.text=$('#ewText').value.trim();persist();renderAll();closeModal();toast('已保存');};
+}
+
+function editTodoById(id){
+  const x=S.todos.find(z=>z.id===id);if(!x)return;
+  modal(`<h4>编辑待办</h4>
+    <div class="field"><span class="lab">日期</span><input type="date" id="etDate" class="input-styled" value="${esc(x.date)}"></div>
+    <div class="field"><span class="lab">内容</span><input id="etText" class="input-styled" value="${esc(x.text)}"></div>
+    <div class="field"><span class="lab">状态</span><select id="etDone" class="input-styled"><option value="0" ${!x.done?'selected':''}>未完成</option><option value="1" ${x.done?'selected':''}>已完成</option></select></div>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="etSave">保存</button></div>`);
+  $('#etSave').onclick=()=>{x.date=$('#etDate').value;x.text=$('#etText').value.trim();x.done=$('#etDone').value==='1';persist();renderAll();closeModal();toast('已保存');};
+}
+
+function editLedgerById(id){
+  const x=S.ledger.find(z=>z.id===id);if(!x)return;
+  const cats=catsFor(x.type);
+  modal(`<h4>编辑账目</h4>
+    <div class="field"><span class="lab">日期</span><input type="date" id="elDate" class="input-styled" value="${esc(x.date)}"></div>
+    <div class="field"><span class="lab">类型</span><select id="elType" class="input-styled"><option value="expense" ${x.type==='expense'?'selected':''}>支出</option><option value="income" ${x.type==='income'?'selected':''}>收入</option></select></div>
+    <div class="field"><span class="lab">分类</span><select id="elCat" class="input-styled">${cats.map(c=>`<option value="${esc(c[0])}" ${c[0]===x.category?'selected':''}>${esc(c[0])}</option>`).join('')}</select></div>
+    <div class="field"><span class="lab">金额</span><input type="number" id="elAmt" class="input-styled" value="${x.amount}"></div>
+    <div class="field"><span class="lab">备注</span><input id="elNote" class="input-styled" value="${esc(x.note||'')}"></div>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="elSave">保存</button></div>`);
+  $('#elType').onchange=()=>{$('#elCat').innerHTML=catsFor($('#elType').value).map(c=>`<option value="${esc(c[0])}">${esc(c[0])}</option>`).join('');};
+  $('#elSave').onclick=()=>{x.date=$('#elDate').value;x.type=$('#elType').value;x.category=$('#elCat').value;x.amount=parseFloat($('#elAmt').value)||0;x.note=$('#elNote').value.trim();persist();renderAll();closeModal();toast('已保存');};
+}
+
+
 function historyExportText(){
   const{ev,from,to}=filteredHistory();
   const groups={};ev.forEach(x=>{(groups[x.date]=groups[x.date]||[]).push(x)});
