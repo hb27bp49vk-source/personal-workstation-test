@@ -1046,13 +1046,15 @@ function save(){localStorage.setItem(KEY,JSON.stringify(S))}
 function persist(){S.updatedAt=Date.now();save();schedulePush()}
 
 /* ============ 弹窗 ============ */
-function closeModal(){$('#modalMask').classList.remove('show');$('#modalBox').innerHTML='';$('#modalBox').classList.remove('wide');$('#modalBox').classList.remove('xl')}
-function modal(html){
+let modalOpts={};
+function closeModal(){$('#modalMask').classList.remove('show');$('#modalBox').innerHTML='';$('#modalBox').classList.remove('wide');$('#modalBox').classList.remove('xl');modalOpts={}}
+function modal(html,opts={}){
+  modalOpts=opts;
   $('#modalBox').className='modal';
   $('#modalBox').innerHTML=html;
   $('#modalMask').classList.add('show');
 }
-$('#modalMask').addEventListener('click',e=>{if(e.target.id==='modalMask')closeModal()});
+$('#modalMask').addEventListener('click',e=>{if(e.target.id==='modalMask'){if(modalOpts.noMaskClose)return;closeModal()}});
 
 /* ============ 刷新按钮 ============ */
 $('#refreshBtn').onclick=()=>{
@@ -3099,6 +3101,14 @@ function openLnPlanModal(dirId,id){
   lnPlanDraft=p?JSON.parse(JSON.stringify(p)):{id:uid(),directionId:dirId||(L0.directions[0]&&L0.directions[0].id)||null,title:'',milestones:[]};
   renderLnPlanModal();
 }
+function lnPlanCommit(){
+  if(!lnPlanDraft.title.trim()){toast('请填写计划标题');return false}
+  const L0b=lnData();
+  if(lnPlanDraft.id&&L0b.plans.find(x=>x.id===lnPlanDraft.id)){const i=L0b.plans.findIndex(x=>x.id===lnPlanDraft.id);L0b.plans[i]=lnPlanDraft;}
+  else L0b.plans.unshift(lnPlanDraft);
+  persist();lnRefresh();
+  return true
+}
 function renderLnPlanModal(){
   const L0=lnData();const p=lnPlanDraft;
   const dirOpts=L0.directions.map(d=>`<option value="${d.id}" ${p.directionId===d.id?'selected':''}>${esc(d.name)}</option>`).join('')||'<option value="">（无方向）</option>';
@@ -3106,23 +3116,18 @@ function renderLnPlanModal(){
     let tasksHtml=(m.tasks||[]).map((t,ti)=>`<div class="ln-task"><input type="checkbox" ${t.done?'checked':''} onchange="lnPlanTaskDone(${mi},${ti},this.checked)"><input class="ln-task-t" value="${esc(t.title)}" oninput="lnPlanTaskTitle(${mi},${ti},this.value)" placeholder="任务内容" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 8px;font:inherit;outline:none"><input type="date" value="${t.due||''}" onchange="lnPlanTaskDue(${mi},${ti},this.value)" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 8px;font:inherit"><button onclick="lnPlanDelTask(${mi},${ti})" style="border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;color:var(--bad)">×</button></div>`).join('')||'<div class="muted" style="font-size:12px">暂无任务</div>';
     return `<div class="ln-card"><div class="ln-ms-top"><input class="ln-task-t" value="${esc(m.title)}" oninput="lnPlanMsTitle(${mi},this.value)" placeholder="阶段名称" style="flex:1;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;font:inherit;font-weight:600;outline:none"><input type="date" value="${m.due||''}" onchange="lnPlanMsDue(${mi},this.value)" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;font:inherit"><button onclick="lnPlanDelMs(${mi})" style="border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:6px 10px;color:var(--bad)">删除阶段</button></div>${tasksHtml}<button class="ln-add-btn" style="margin-top:4px" onclick="lnPlanAddTask(${mi})">+ 添加任务</button></div>`;
   }).join('');
-  modal(`<h4>${p.id&&L0.plans.find(x=>x.id===p.id)?'编辑计划':'新建计划'}</h4>
+  modal(`<h4>${p.id&&L0.plans.find(x=>x.id===p.id)?'编辑计划':'新建计划'}<span class="modal-close" onclick="if(lnPlanCommit())closeModal()">×</span></h4>
     <div class="field"><span class="lab">方向</span><select id="lnPlanDir">${dirOpts}</select></div>
     <div class="field"><span class="lab">标题</span><input id="lnPlanTitle" value="${esc(p.title)}" placeholder="计划标题，如「Python 入门 30 天"></div>
     <div class="ln-ms">阶段与任务</div>
     ${msHtml||'<div class="muted" style="font-size:12px">暂无阶段</div>'}
     <button class="ln-add-btn" onclick="lnPlanAddMs()">+ 添加阶段</button>
-    <div class="btns" style="margin-top:14px"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnPlanSave">保存</button></div>`);
+    <div class="btns" style="margin-top:14px"><button class="cancel" id="lnPlanClose">关闭</button><button class="ok" id="lnPlanSave">保存</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   $('#lnPlanDir').onchange=e=>lnPlanDraft.directionId=e.target.value||null;
   $('#lnPlanTitle').oninput=e=>lnPlanDraft.title=e.target.value;
-  $('#lnPlanSave').onclick=()=>{
-    if(!lnPlanDraft.title.trim()){toast('请填写计划标题');return}
-    const L0b=lnData();
-    if(lnPlanDraft.id&&L0b.plans.find(x=>x.id===lnPlanDraft.id)){const i=L0b.plans.findIndex(x=>x.id===lnPlanDraft.id);L0b.plans[i]=lnPlanDraft;}
-    else L0b.plans.unshift(lnPlanDraft);
-    persist();closeModal();lnRefresh();
-  };
+  $('#lnPlanSave').onclick=()=>{lnPlanCommit()};
+  $('#lnPlanClose').onclick=()=>{if(lnPlanCommit())closeModal()};
 }
 function lnPlanAddMs(){lnPlanDraft.milestones.push({id:uid(),title:'',due:'',tasks:[]});renderLnPlanModal()}
 function lnPlanDelMs(i){lnPlanDraft.milestones.splice(i,1);renderLnPlanModal()}
