@@ -379,7 +379,7 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
 .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:60;display:none;align-items:center;justify-content:center;padding:24px}
 .modal-mask.show{display:flex;animation:fade .15s ease}
 .modal{background:#fff;border:1px solid var(--line);border-radius:var(--r);width:100%;max-width:380px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.08)}
-.modal h4{margin:0 0 14px;font-size:16px;font-weight:700}
+.modal h4{margin:0 0 14px;font-size:16px;font-weight:700;position:relative;padding-right:28px}.modal-close{position:absolute;right:0;top:50%;transform:translateY(-50%);width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:20px;line-height:1;color:var(--text-3);cursor:pointer;user-select:none}.modal-close:hover{background:var(--card-soft);color:var(--text)}
 .modal .field{margin-bottom:12px}
 .modal .btns{display:flex;gap:10px;margin-top:6px}
 .modal .btns button{flex:1;padding:11px;border-radius:var(--r-sm);font-weight:600;transition:transform .12s}
@@ -2432,7 +2432,7 @@ async function openSyncHistory(){
 
 function openSyncSetup(){
   if(syncCfg&&syncCfg.binId){
-    modal(`<h4>云同步管理</h4>
+    modal(`<h4>云同步管理<span class="modal-close" onclick="closeModal()">×</span></h4>
       <div class="sync-status-box">
         <div class="sync-row"><span>当前状态</span><span id="syncStatus2" class="sync-dot on">已同步</span></div>
         <div class="sync-row"><span>Gist ID</span><code title="${syncCfg.binId}">${syncCfg.binId}</code></div>
@@ -2462,7 +2462,7 @@ function openSyncSetup(){
     };
     return;
   }
-  modal(`<h4>开启云同步</h4>
+  modal(`<h4>开启云同步<span class="modal-close" onclick="closeModal()">×</span></h4>
     <div class="privacy-box" style="margin-top:0">
       <b>工作原理</b><br>
       数据经 <b>AES-GCM 端到端加密</b>后存于 GitHub Gist（私有）。GitHub 只看到密文，<b>仅持有 Passcode 的你能解密</b>。
