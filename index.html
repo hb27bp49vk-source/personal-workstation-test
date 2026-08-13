@@ -330,27 +330,30 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .privacy-box{background:var(--card-soft);border-left:3px solid var(--text);border-radius:0 var(--r-xs) var(--r-xs) 0;padding:10px 12px;margin:12px 0;font-size:12px;color:var(--text-2);line-height:1.7}
 .privacy-box b{color:var(--text)}
 .sync-link{color:var(--text);text-decoration:underline;text-underline-offset:2px;font-weight:500}
-.sync-history-list{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card-soft)}
+.sync-history-list{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card-soft)}
 .sync-history-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line-soft)}
 .sync-history-item:last-child{border-bottom:none}
-.sync-history-meta{font-size:12px;color:var(--text-2);line-height:1.6}
+.sync-history-meta{font-size:12px;color:var(--text-2);line-height:1.6;flex:1;min-width:0}
 .sync-history-meta b{font-size:13px;color:var(--text)}
 .sync-history-meta code{font-size:10.5px;color:var(--text-3)}
 .sync-history-summary{font-size:11.5px;color:var(--text-3);margin-top:2px}
-.sync-history-item button{flex:none;background:var(--text);color:#fff;border-radius:var(--r-xs);padding:7px 10px;font-size:12px;font-weight:600}
-.sync-history-item button:disabled{opacity:.45}
+.sync-history-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:none}
+.sync-history-actions button{flex:none;background:var(--text);color:#fff;border-radius:var(--r-xs);padding:7px 10px;font-size:12px;font-weight:600;border:none;cursor:pointer}
+.sync-history-actions button:disabled{opacity:.45;cursor:not-allowed}
+.sync-history-actions button.preview-btn{background:var(--card);color:var(--text);border:1px solid var(--line)}
+.sync-page-info{font-size:12px;color:var(--text-3);text-align:center;padding:8px 0}
 .sync-warn{border-left:3px solid var(--warn);background:var(--card-soft);border-radius:0 var(--r-xs) var(--r-xs) 0;padding:9px 11px;font-size:12px;color:var(--text-2);line-height:1.7;margin:10px 0}
 .sync-restore-btn{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 16px;width:100%;font-weight:600;background:var(--card-soft);color:var(--text)}
 .sync-restore-btn:active{transform:scale(.98)}
-.sync-history-list{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card-soft)}
-.sync-history-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line-soft)}
-.sync-history-item:last-child{border-bottom:none}
-.sync-history-meta{font-size:12px;color:var(--text-2);line-height:1.6}
-.sync-history-meta b{font-size:13px;color:var(--text)}
-.sync-history-meta code{font-size:10.5px;color:var(--text-3)}
-.sync-history-summary{font-size:11.5px;color:var(--text-3);margin-top:2px}
-.sync-history-item button{flex:none;background:var(--text);color:#fff;border-radius:var(--r-xs);padding:7px 10px;font-size:12px;font-weight:600}
-.sync-warn{border-left:3px solid var(--warn);background:var(--card-soft);border-radius:0 var(--r-xs) var(--r-xs) 0;padding:9px 11px;font-size:12px;color:var(--text-2);line-height:1.7;margin:10px 0}
+.sync-prev-section{margin-bottom:12px;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px}
+.sync-prev-section>b{display:block;margin-bottom:6px;color:var(--text);font-size:12.5px}
+.sync-prev-row{padding:5px 0;border-bottom:1px dashed var(--line-soft);color:var(--text-2);font-size:12.5px;line-height:1.55}
+.sync-prev-row:last-child{border-bottom:none}
+.sync-prev-more{color:var(--text-3);font-size:11.5px;padding:3px 0 0}
+.sync-preview-head{padding:10px 12px;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);line-height:1.7}
+.sync-preview-head b{font-size:14px;color:var(--text)}
+.sync-preview-body{flex:1;overflow:auto;padding:2px;border-radius:var(--r-sm)}
+.sync-preview-body .muted{padding:20px 0;text-align:center}
 
 /* ====== 底部 Tab ====== */
 nav.tabbar{
@@ -2252,29 +2255,43 @@ async function cloudPull(opts={}){
 
 async function previewSyncHistory(idx,version){
   if(TEST_BUILD){toast('测试版不连接云同步');return;}
-  const box=$('#syncPrev_'+idx);if(!box)return;
-  box.style.display='block';
-  box.innerHTML='<div class="muted">正在解密预览…</div>';
+  modal(`<h4>版本预览</h4><p class="muted" style="margin:0">正在解密历史版本…</p>`);
+  $('#modalBox').classList.add('xl');
   try{
     const blob=await readRevisionBlob(version);
     const st=await decryptState(blob);
     const size=(JSON.stringify(blob).length/1024).toFixed(1)+' KB';
     const summary=syncStateSummary(st);
     syncHistDecrypted[version]={summary,size,ok:true};
-    const sumEl=$('#syncSum_'+idx);if(sumEl)sumEl.textContent=size+'｜'+summary;
-    const btn=$('.restore-btn[data-idx="'+idx+'"]');if(btn)btn.disabled=false;
-    box.innerHTML=renderSyncHistoryPreview(st);
+    const headInfo=`<div class="xl-head" style="margin-bottom:12px">
+      <div class="sync-preview-head">
+        <div><b>${idx===0?'当前版本':'历史版本 '+idx}</b> · ${syncFmtTime(syncHistAll[idx].committed_at)}</div>
+        <div class="muted" style="font-size:12px">大小 ${esc(size)}｜${esc(summary)}</div>
+      </div>
+    </div>`;
+    const body=`<div class="xl-body"><div class="sync-preview-body">${renderSyncHistoryPreview(st)}</div></div>`;
+    const btns=`<div class="btns" style="margin-top:14px">
+      <button class="cancel" id="histPreviewBack">返回历史版本</button>
+      <button class="ok" id="histPreviewRestore" disabled>测试版不可恢复</button>
+    </div>`;
+    modal(`<h4>版本预览</h4>${headInfo}${body}${btns}`);
+    $('#modalBox').classList.add('xl');
+    $('#histPreviewBack').onclick=renderHistoryListModal;
+    $('#histPreviewRestore').onclick=()=>toast('测试版不可恢复，请在正式版操作');
   }catch(e){
-    box.innerHTML='<div style="color:var(--bad)">无法预览：'+(e.message||e)+'</div>';
+    modal(`<h4>版本预览</h4><p class="muted" style="color:var(--bad)">无法预览：${esc(e.message||e)}</p><div class="btns"><button class="cancel" id="histPreviewBack">返回历史版本</button></div>`);
+    $('#modalBox').classList.add('wide');
+    $('#histPreviewBack').onclick=renderHistoryListModal;
   }
 }
 
 function renderSyncHistoryPage(){
-  const per=30;
+  const per=50;
   const start=syncHistPage*per;
   const end=Math.min(start+per,syncHistAll.length);
   const listEl=$('#syncHistoryList');
   if(!listEl)return;
+  listEl.innerHTML='';
   const frag=document.createDocumentFragment();
   for(let i=start;i<end;i++){
     const h=syncHistAll[i];
@@ -2288,44 +2305,57 @@ function renderSyncHistoryPage(){
     div.innerHTML=`<div class="sync-history-meta">
       <b>${i===0?'当前版本':'历史版本 '+i}</b> · ${syncFmtTime(h.committed_at)}<br>
       <code>${esc(String(h.version||'').slice(0,12))}…</code>
-      <div class="sync-history-summary" id="syncSum_${i}">${esc(size)}${size?'｜':''}${esc(summary)}</div>
+      <div class="sync-history-summary">${esc(size)}${size?'｜':''}${esc(summary)}</div>
     </div>
-    <div class="sync-history-actions" style="display:flex;gap:8px;align-items:center">
-      <button class="preview-btn" data-idx="${i}" style="padding:6px 10px;font-size:12px">预览</button>
-      <button class="restore-btn" data-idx="${i}" ${ok?'':'disabled'} style="padding:6px 10px;font-size:12px">${i===0?'重载':'恢复'}</button>
-    </div>
-    <div class="sync-history-preview" id="syncPrev_${i}" style="display:none;width:100%;margin-top:10px;padding:10px;background:var(--card-soft);border-radius:var(--r-sm);font-size:12.5px"></div>`;
+    <div class="sync-history-actions">
+      <button class="preview-btn" data-idx="${i}">预览</button>
+      <button class="restore-btn" data-idx="${i}" disabled>恢复</button>
+    </div>`;
     frag.appendChild(div);
   }
   listEl.appendChild(frag);
-  const moreBtn=$('#syncHistMore');
+  const pages=Math.ceil(syncHistAll.length/per)||1;
+  let infoEl=$('#syncHistInfo');
+  if(!infoEl){
+    infoEl=document.createElement('div');infoEl.id='syncHistInfo';listEl.parentElement.insertBefore(infoEl,listEl.nextSibling);
+  }
+  infoEl.className='sync-page-info';
+  infoEl.textContent=`第 ${syncHistPage+1} / ${pages} 页（共 ${syncHistAll.length} 个版本）`;
+  let moreBtn=$('#syncHistMore');
   if(end<syncHistAll.length){
     if(!moreBtn){
       const btn=document.createElement('button');
-      btn.id='syncHistMore';
-      btn.className='hist-more';
-      btn.style.cssText='width:100%;margin-top:12px';
-      btn.textContent='加载更多（还有 '+(syncHistAll.length-end)+' 条）';
-      btn.onclick=()=>{syncHistPage++;renderSyncHistoryPage();};
+      btn.id='syncHistMore';btn.className='hist-more';btn.style.cssText='width:100%;margin-top:10px';
       listEl.parentElement.appendChild(btn);
-    }else{
-      moreBtn.textContent='加载更多（还有 '+(syncHistAll.length-end)+' 条）';
-      moreBtn.style.display='block';
     }
-  }else if(moreBtn){
-    moreBtn.style.display='none';
-  }
+    moreBtn=$('#syncHistMore');
+    moreBtn.textContent='下一页（还有 '+(syncHistAll.length-end)+' 条）';
+    moreBtn.style.display='block';
+    moreBtn.onclick=()=>{syncHistPage++;renderSyncHistoryPage();};
+  }else if(moreBtn){ moreBtn.style.display='none'; }
+  let prevBtn=$('#syncHistPrev');
+  if(syncHistPage>0){
+    if(!prevBtn){
+      prevBtn=document.createElement('button');
+      prevBtn.id='syncHistPrev';prevBtn.className='hist-more';
+      prevBtn.style.cssText='width:100%;margin-top:10px;margin-bottom:8px';
+      listEl.parentElement.insertBefore(prevBtn,listEl);
+    }
+    prevBtn.textContent='上一页';
+    prevBtn.style.display='block';
+    prevBtn.onclick=()=>{syncHistPage--;renderSyncHistoryPage();};
+  }else if(prevBtn){ prevBtn.style.display='none'; }
   $$('.sync-history-item .preview-btn').forEach(b=>b.onclick=()=>previewSyncHistory(+b.dataset.idx,b.parentElement.parentElement.dataset.ver));
-  $$('.sync-history-item .restore-btn').forEach(b=>b.onclick=async()=>{
-    const idx=+b.dataset.idx;
-    const ver=syncHistAll[idx].version;
-    const isReload=idx===0;
-    const msg=isReload?'确认重载当前云端版本？':'确认恢复这个历史版本？当前云端会被回退，但 GitHub 仍会保留恢复前的历史。';
-    if(!confirm(msg))return;
-    b.textContent='恢复中…';b.disabled=true;
-    try{await restoreGistRevision(ver);closeModal()}
-    catch(e){b.disabled=false;b.textContent=isReload?'重载':'恢复';setSyncStatus('err');toast('恢复失败：'+(e.message||e))}
-  });
+  $$('.sync-history-item .restore-btn').forEach(b=>b.onclick=()=>toast('测试版不可恢复，请在正式版操作'));
+}
+function renderHistoryListModal(){
+  modal(`<h4>历史版本恢复</h4>
+    <div class="sync-warn">已加载 ${syncHistAll.length} 个历史版本。先点「预览」查看内容，再点「恢复」回退到该版本。</div>
+    <div class="sync-history-list" id="syncHistoryList"></div>
+    <div class="btns" style="margin-top:12px"><button class="cancel" id="histBack">返回</button></div>`);
+  $('#modalBox').classList.add('wide');
+  $('#histBack').onclick=openSyncSetup;
+  renderSyncHistoryPage();
 }
 
 function syncFmtTime(iso){
@@ -2354,6 +2384,23 @@ async function readRevisionBlob(version){
   if(!content)throw new Error('历史版本没有 data.json');
   return JSON.parse(content);
 }
+
+async function fetchAllGistCommits(){
+  const per=100;
+  let page=1, all=[];
+  while(true){
+    const r=await fetch(GITHUB_API+'/'+syncCfg.binId+'/commits?per_page='+per+'&page='+page,{headers:GH_HEADERS(syncCfg.masterKey)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const arr=await r.json();
+    if(!Array.isArray(arr)||!arr.length)break;
+    all=all.concat(arr);
+    if(arr.length<per)break;
+    page++;
+    if(page>50){console.warn('too many gist commits, stop at 5000');break}
+  }
+  return all;
+}
+
 async function restoreGistRevision(version){
   if(TEST_BUILD){toast('测试版不连接云同步');return;}
   const blob=await readRevisionBlob(version);
@@ -2370,20 +2417,11 @@ async function openSyncHistory(){
   modal('<h4>历史版本恢复</h4><p class="muted" style="margin:0">正在读取 Gist 历史版本…</p>');
   $('#modalBox').classList.add('wide');
   try{
-    const r=await fetch(GITHUB_API+'/'+syncCfg.binId,{headers:GH_HEADERS(syncCfg.masterKey)});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const data=await r.json();
-    syncHistAll=data.history||[];
+    syncHistAll=await fetchAllGistCommits();
     syncHistPage=0;
     syncHistDecrypted={};
     if(!syncHistAll.length){modal('<h4>历史版本恢复</h4><p class="muted">未找到历史版本。</p><div class="btns"><button class="cancel" onclick="openSyncSetup()">返回</button></div>');$('#modalBox').classList.add('wide');return}
-    modal(`<h4>历史版本恢复</h4>
-      <div class="sync-warn">已加载 ${syncHistAll.length} 个历史版本。先点「预览」查看内容，再点「恢复」回退到该版本。</div>
-      <div class="sync-history-list" id="syncHistoryList"></div>
-      <div class="btns" style="margin-top:12px"><button class="cancel" id="histBack">返回</button></div>`);
-    $('#modalBox').classList.add('wide');
-    $('#histBack').onclick=openSyncSetup;
-    renderSyncHistoryPage();
+    renderHistoryListModal();
   }catch(e){
     modal(`<h4>历史版本恢复</h4><p class="muted" style="color:var(--bad)">读取失败：${esc(e.message||e)}</p><div class="btns"><button class="cancel" id="histBack">返回</button></div>`);
     $('#modalBox').classList.add('wide');
