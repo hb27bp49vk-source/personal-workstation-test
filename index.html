@@ -378,7 +378,7 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:60;display:none;align-items:center;justify-content:center;padding:24px}
 .modal-mask.show{display:flex;animation:fade .15s ease}
-.modal{background:#fff;border:1px solid var(--line);border-radius:var(--r);width:100%;max-width:380px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.08)}
+.modal{position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--r);width:100%;max-width:380px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.08)}
 .modal h4{margin:0 0 14px;font-size:16px;font-weight:700;position:relative;padding-right:28px}.modal-close{position:absolute;right:0;top:50%;transform:translateY(-50%);width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:20px;line-height:1;color:var(--text-3);cursor:pointer;user-select:none}.modal-close:hover{background:var(--card-soft);color:var(--text)}
 .modal .field{margin-bottom:12px}
 .modal .btns{display:flex;gap:10px;margin-top:6px}
@@ -387,6 +387,11 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
 .modal .btns .cancel:active{background:var(--card-hover)}
 .modal .btns .ok{background:var(--text);color:#fff}
 .modal .btns .ok:active{transform:scale(.97)}
+.ln-close-confirm{position:absolute;inset:0;background:rgba(255,255,255,.96);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.ln-close-confirm-box{text-align:center;width:100%}
+.ln-close-confirm-msg{font-weight:600;margin-bottom:18px;font-size:15px;color:var(--text)}
+.ln-close-confirm-btns{display:flex;gap:10px;justify-content:center}
+.ln-close-confirm-btns button{flex:1;max-width:120px;padding:10px 6px;border-radius:var(--r-sm);font-weight:600;font-size:14px}
 .input-styled{width:100%;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;outline:none;transition:border .15s}
 .input-styled:focus{border-color:var(--text);background:#fff}
 select.input-styled{appearance:none;-webkit-appearance:none}
@@ -1064,6 +1069,23 @@ function confirmClose(saveFn,msg){
   }else{
     closeModal();
   }
+}
+/* 学习模块编辑弹窗专用：底部"关闭"三选一（保存并关闭 / 仅关闭 / 取消返回编辑），右上角×直接不保存关闭 */
+let _lnCloseSaveFn=null;
+function lnConfirmClose(saveFn){
+  _lnCloseSaveFn=saveFn;
+  const box=$('#modalBox');if(!box)return;
+  const ov=document.createElement('div');
+  ov.className='ln-close-confirm';
+  ov.innerHTML=`<div class="ln-close-confirm-box"><div class="ln-close-confirm-msg">是否保存当前修改？</div><div class="ln-close-confirm-btns"><button class="ok" onclick="lnCloseConfirmSave()">保存并关闭</button><button class="cancel" onclick="lnCloseConfirmNoSave()">仅关闭</button><button class="cancel" onclick="lnCloseConfirmCancel()">取消</button></div></div>`;
+  box.appendChild(ov);
+}
+function lnCloseConfirmCancel(){ const ov=$('.ln-close-confirm'); if(ov) ov.remove(); _lnCloseSaveFn=null; }
+function lnCloseConfirmNoSave(){ _lnCloseSaveFn=null; closeModal(); }
+function lnCloseConfirmSave(){
+  const fn=_lnCloseSaveFn; _lnCloseSaveFn=null;
+  const ov=$('.ln-close-confirm'); if(ov) ov.remove();
+  if(fn){ const ok=fn(); if(ok!==false) closeModal(); }
 }
 $('#modalMask').addEventListener('click',e=>{if(e.target.id==='modalMask'){if(modalOpts.noMaskClose)return;closeModal()}});
 
@@ -3237,24 +3259,26 @@ function openLnContentModal(dirId,id,nodeId){
   const kind=c?c.kind:'resource';
   const selNode=c?c.nodeId:(nodeId||'');
   const nodeOpts=lnNodeOptions(L0,selDir).map(o=>`<option value="${o.value}" ${selNode===o.value?'selected':''}>${esc(o.label)}</option>`).join('');
-  modal(`<h4>${c?'编辑内容':'添加学习内容'}<span class="modal-close" onclick="confirmClose(()=>{$('#lnCtSave').click()})">×</span></h4>
+  modal(`<h4>${c?'编辑内容':'添加学习内容'}<span class="modal-close" onclick="closeModal()">×</span></h4>
     <div class="ln-seg" id="lnCtKind"><button data-k="resource" class="${kind==='resource'?'on':''}">资料（书/课/链接）</button><button data-k="topic" class="${kind==='topic'?'on':''}">子主题</button></div>
     <div class="field"><span class="lab">方向</span><select id="lnCtDir">${dirOpts}</select></div>
     <div class="field"><span class="lab">关联节点</span><select id="lnCtNode">${nodeOpts}</select></div>
     <div class="field"><span class="lab">名称</span><input id="lnCtName" value="${c?esc(c.name):''}" placeholder="如《流畅的Python》/ 基础语法"></div>
     <div class="field"><span class="lab">链接</span><input id="lnCtUrl" value="${c?esc(c.url||''):''}" placeholder="选填，资料链接"></div>
     <div class="field"><span class="lab">备注</span><input id="lnCtNote" value="${c?esc(c.note||''):''}" placeholder="选填"></div>
-    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#lnCtSave').click()})">关闭</button><button class="ok" id="lnCtSave">保存</button></div>`,{noMaskClose:true});
+    <div class="btns"><button class="cancel" onclick="lnConfirmClose(()=>{$('#lnCtSave').click()})">关闭</button><button class="ok" id="lnCtSave">保存</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   let k=kind;
   $$('#lnCtKind button').forEach(b=>b.onclick=()=>{k=b.dataset.k;$$('#lnCtKind button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
   $('#lnCtDir').onchange=e=>{const did=e.target.value;$('#lnCtNode').innerHTML=lnNodeOptions(L0,did).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('')};
-  $('#lnCtSave').onclick=()=>{
-    const name=$('#lnCtName').value.trim();if(!name){toast('请填写名称');return}
+  function lnContentCommit(){
+    const name=$('#lnCtName').value.trim();if(!name){toast('请填写名称');return false}
     const obj={name,directionId:$('#lnCtDir').value||null,kind:k,url:$('#lnCtUrl').value.trim(),note:$('#lnCtNote').value.trim(),nodeId:$('#lnCtNode').value||null};
     if(c){Object.assign(c,obj);}else{L0.contents.unshift(Object.assign({id:uid(),createdAt:todayStr()},obj));}
-    persist();closeModal();lnRefresh();
-  };
+    persist();lnRefresh();
+    return true;
+  }
+  $('#lnCtSave').onclick=()=>{ if(lnContentCommit()) closeModal(); };
 }
 function lnDelContent(id){lnConfirm('确定删除该学习内容？',()=>{const L0=lnData();L0.questions.forEach(q=>{if(q.contentId===id)q.contentId=null});L0.contents=L0.contents.filter(x=>x.id!==id);persist();lnRefresh()})}
 /* —— 问题 —— */
@@ -3293,7 +3317,7 @@ function openLnQuestionModal(id,nodeId,dirId){
   const cOpts=`<option value="">不挂具体内容</option>`+(curDir?L0.contents.filter(c=>c.directionId===curDir).map(c=>`<option value="${c.id}" ${q&&q.contentId===c.id?'selected':''}>${esc(c.name)}</option>`).join(''):'');
   const nodeOpts=lnNodeOptions(L0,curDir).map(o=>`<option value="${o.value}" ${((q?q.nodeId:nodeId)||'')===o.value?'selected':''}>${esc(o.label)}</option>`).join('');
   const st=q?q.status:'open';const tags=(q?(q.tags||[]):[]).join(', ');const hard=q?!!q.hard:false;
-  modal(`<h4>${q?'编辑问题':'记录学习问题'}<span class="modal-close" onclick="confirmClose(()=>{$('#lnQSave').click()})">×</span></h4>
+  modal(`<h4>${q?'编辑问题':'记录学习问题'}<span class="modal-close" onclick="closeModal()">×</span></h4>
     <div class="field"><span class="lab">方向</span><select id="lnQDir2">${dirOpts}</select></div>
     <div class="field"><span class="lab">资料</span><select id="lnQCt2">${cOpts}</select></div>
     <div class="field"><span class="lab">关联节点</span><select id="lnQNode2">${nodeOpts}</select></div>
@@ -3303,19 +3327,21 @@ function openLnQuestionModal(id,nodeId,dirId){
     <div class="field"><span class="lab">标签</span><input id="lnQTags" value="${esc(tags)}" placeholder="逗号分隔，如 函数式,并发"></div>
     <div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">答案</span><textarea id="lnQA" style="flex:1;min-height:50px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none" maxlength="2000" placeholder="解决后记录答案（最多2000字）">${q?esc(q.answer||''):''}</textarea></div>
     <label class="ln-check"><input type="checkbox" id="lnQHard" ${hard?'checked':''}> 标记为难点 / 易错（归集到「错题」）</label>
-    <div class="btns"><button class="cancel" onclick="confirmClose(()=>{$('#lnQSave').click()})">关闭</button><button class="ok" id="lnQSave">保存</button></div>`,{noMaskClose:true});
+    <div class="btns"><button class="cancel" onclick="lnConfirmClose(()=>{$('#lnQSave').click()})">关闭</button><button class="ok" id="lnQSave">保存</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   let st2=st;
   $$('#lnQSt button').forEach(b=>b.onclick=()=>{st2=b.dataset.s;$$('#lnQSt button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
   $('#lnQDir2').onchange=e=>{const did=e.target.value;const co=`<option value="">不挂具体内容</option>`+(did?L0.contents.filter(c=>c.directionId===did).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join(''):'');$('#lnQCt2').innerHTML=co;$('#lnQNode2').innerHTML=lnNodeOptions(L0,did).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('')};
-  $('#lnQSave').onclick=()=>{
-    const title=$('#lnQT').value.trim();if(!title){toast('请填写问题');return}
+  function lnQuestionCommit(){
+    const title=$('#lnQT').value.trim();if(!title){toast('请填写问题');return false}
     const tagsArr=$('#lnQTags').value.split(',').map(s=>s.trim()).filter(Boolean);
     const obj={directionId:$('#lnQDir2').value||null,contentId:$('#lnQCt2').value||null,nodeId:$('#lnQNode2').value||null,title,detail:$('#lnQD').value.trim(),status:st2,tags:tagsArr,answer:$('#lnQA').value.trim(),hard:$('#lnQHard').checked};
     if(q){Object.assign(q,obj);if(st2==='solved'&&!q.solvedAt)q.solvedAt=todayStr();if(st2!=='solved')q.solvedAt=null;}
     else{const nq=Object.assign({id:uid(),createdAt:todayStr()},obj);if(st2==='solved')nq.solvedAt=todayStr();L0.questions.unshift(nq);}
-    persist();closeModal();lnRefresh();
-  };
+    persist();lnRefresh();
+    return true;
+  }
+  $('#lnQSave').onclick=()=>{ if(lnQuestionCommit()) closeModal(); };
 }
 function lnCycleStatus(id){const L0=lnData();const q=L0.questions.find(x=>x.id===id);if(!q)return;const order=['open','doing','solved'];let i=order.indexOf(q.status);i=(i+1)%3;q.status=order[i];if(q.status==='solved'&&!q.solvedAt)q.solvedAt=todayStr();if(q.status!=='solved')q.solvedAt=null;persist();lnRefresh()}
 function lnDelQuestion(id){lnConfirm('确定删除该问题？',()=>{const L0=lnData();L0.questions=L0.questions.filter(x=>x.id!==id);persist();lnRefresh()})}
@@ -3458,7 +3484,26 @@ function renderLnDirSelftests(d,L0){
 }
 function lnQuickAddSelftest(dirId){const title=$(`#lnStTitle_${dirId}`).value.trim();if(!title){toast('请填写名称');return}const nodeId=$(`#lnStNode_${dirId}`).value||null;const L0=lnData();L0.selftests.unshift({id:uid(),directionId:dirId,title,nodeId,score:null,weak:'',note:'',date:todayStr()});persist();lnRefresh();toast('已记录')}
 function lnDelSelftest(id){lnConfirm('删除该自测记录？',()=>{const L0=lnData();L0.selftests=L0.selftests.filter(x=>x.id!==id);persist();lnRefresh()})}
-function openLnSelftestModal(dirId,id,nodeId){const L0=lnData();const s=id?L0.selftests.find(x=>x.id===id):null;const selNode=s?s.nodeId:(nodeId||'');const nodeOpts=lnNodeOptions(L0,dirId).map(o=>`<option value="${o.value}" ${selNode===o.value?'selected':''}>${esc(o.label)}</option>`).join('');modal(`<h4>${s?'编辑自测':'记录自测'}</h4><div class="field"><span class="lab">名称</span><input id="lnStT" value="${s?esc(s.title):''}" placeholder="如 第1章小测"></div><div class="field"><span class="lab">关联节点</span><select id="lnStN">${nodeOpts}</select></div><div class="field"><span class="lab">得分</span><input id="lnStS" type="number" value="${s&&s.score!=null?s.score:''}" placeholder="选填，如 85"></div><div class="field"><span class="lab">薄弱点</span><input id="lnStW" value="${s?esc(s.weak||''):''}" placeholder="选填，逗号分隔"></div><div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">备注</span><textarea id="lnStNote" style="flex:1;min-height:50px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none">${s?esc(s.note||''):''}</textarea></div><div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnStSave">保存</button></div>`);$('#modalBox').classList.add('wide');$('#lnStSave').onclick=()=>{const title=$('#lnStT').value.trim();if(!title){toast('请填写名称');return}const obj={title,nodeId:$('#lnStN').value||null,score:($('#lnStS').value===''?null:Number($('#lnStS').value)),weak:$('#lnStW').value.trim(),note:$('#lnStNote').value.trim(),date:todayStr()};if(s){Object.assign(s,obj)}else{L0.selftests.unshift(Object.assign({id:uid(),directionId:dirId},obj))}persist();closeModal();lnRefresh()}}
+function openLnSelftestModal(dirId,id,nodeId){
+  const L0=lnData();const s=id?L0.selftests.find(x=>x.id===id):null;const selNode=s?s.nodeId:(nodeId||'');
+  const nodeOpts=lnNodeOptions(L0,dirId).map(o=>`<option value="${o.value}" ${selNode===o.value?'selected':''}>${esc(o.label)}</option>`).join('');
+  modal(`<h4>${s?'编辑自测':'记录自测'}<span class="modal-close" onclick="closeModal()">×</span></h4>
+    <div class="field"><span class="lab">名称</span><input id="lnStT" value="${s?esc(s.title):''}" placeholder="如 第1章小测"></div>
+    <div class="field"><span class="lab">关联节点</span><select id="lnStN">${nodeOpts}</select></div>
+    <div class="field"><span class="lab">得分</span><input id="lnStS" type="number" value="${s&&s.score!=null?s.score:''}" placeholder="选填，如 85"></div>
+    <div class="field"><span class="lab">薄弱点</span><input id="lnStW" value="${s?esc(s.weak||''):''}" placeholder="选填，逗号分隔"></div>
+    <div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">备注</span><textarea id="lnStNote" style="flex:1;min-height:50px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none">${s?esc(s.note||''):''}</textarea></div>
+    <div class="btns"><button class="cancel" onclick="lnConfirmClose(()=>{$('#lnStSave').click()})">关闭</button><button class="ok" id="lnStSave">保存</button></div>`,{noMaskClose:true});
+  $('#modalBox').classList.add('wide');
+  function lnSelftestCommit(){
+    const title=$('#lnStT').value.trim();if(!title){toast('请填写名称');return false}
+    const obj={title,nodeId:$('#lnStN').value||null,score:($('#lnStS').value===''?null:Number($('#lnStS').value)),weak:$('#lnStW').value.trim(),note:$('#lnStNote').value.trim(),date:todayStr()};
+    if(s){Object.assign(s,obj)}else{L0.selftests.unshift(Object.assign({id:uid(),directionId:dirId},obj))}
+    persist();lnRefresh();
+    return true;
+  }
+  $('#lnStSave').onclick=()=>{ if(lnSelftestCommit()) closeModal(); };
+}
 
 initFilters();
 renderAll();
