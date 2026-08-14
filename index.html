@@ -538,6 +538,10 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-caret{display:inline-block;width:16px;flex:none;color:var(--text-2);cursor:pointer;user-select:none;font-size:12px}
 .ln-caret:hover{color:var(--text)}
 .ln-caret-ph{display:inline-block;width:16px;flex:none}
+.ln-notes{display:none}
+.ln-notes-open{display:block}
+.ln-notes-toggle{margin-top:6px;border:none;background:transparent;color:var(--text-2);font-size:12px;cursor:pointer;padding:0}
+.ln-notes-toggle:hover{color:var(--text)}
 .ln-seg{display:flex;gap:6px;margin:8px 0}
 .ln-seg button{flex:1;padding:7px;border-radius:var(--r-sm);background:var(--card-soft);border:1px solid var(--line);font-size:13px;color:var(--text-2);font-weight:600}
 .ln-seg button.on{background:var(--text);color:#fff;border-color:var(--text)}
@@ -3233,7 +3237,10 @@ function lnDelPlan(pid){lnConfirm('确定删除该计划？',()=>{const L0=lnDat
 /* 内容层级 helpers */
 function lnDescendantIds(L0,id){const res=[];const stack=[id];while(stack.length){const cur=stack.pop();L0.contents.forEach(c=>{if((c.parentId||null)===cur){res.push(c.id);stack.push(c.id);}});}return res;}
 var lnTopicCollapsed={};
+var lnNoteExpanded={};
 function lnToggleTopic(id){ if(lnTopicCollapsed[id]) delete lnTopicCollapsed[id]; else lnTopicCollapsed[id]=true; lnRefresh(); }
+function lnToggleNotes(id){ if(lnNoteExpanded[id]) delete lnNoteExpanded[id]; else lnNoteExpanded[id]=true; lnRefresh(); }
+function lnNotesHtml(c,mode){ return (c.notes&&c.notes.trim())?`<div class="ln-notes${lnNoteExpanded[c.id]?' ln-notes-open':''}" style="margin-top:6px;padding:10px 12px;background:var(--card-soft);border-radius:var(--r-sm);border:1px solid var(--line);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word">${esc(c.notes)}</div>${mode!=='compact'?`<button class="ln-notes-toggle" onclick="lnToggleNotes('${c.id}')">${lnNoteExpanded[c.id]?'收起心得':'展开心得'}</button>`:''}`:''; }
 function lnQuickAddChild(dirId,parentId){ const L0=lnData(); const p=L0.contents.find(c=>c.id===parentId); openLnContentModal(p?p.directionId:dirId,null,null,parentId); }
 function lnContentListHtml(L0,dirId,parentId,depth){
   depth=depth||0; if(depth>12) return '';
@@ -3244,9 +3251,11 @@ function lnContentListHtml(L0,dirId,parentId,depth){
     const hasKids=L0.contents.some(x=>x.directionId===dirId&&(x.parentId||null)===c.id);
     const open=!lnTopicCollapsed[c.id];
     const indent=10*depth;
+    const hasNotes=c.notes&&c.notes.trim();
+    const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
     let h=`<div class="card" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0">`;
     h+= (isTopic&&hasKids) ? `<span class="ln-caret" onclick="lnToggleTopic('${c.id}')">${open?'▼':'▶'}</span>` : `<span class="ln-caret-ph"></span>`;
-    h+=`<div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span></div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button>${isTopic?`<button onclick="lnQuickAddChild('${c.directionId}','${c.id}')">+ 子内容</button>`:''}<button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`;
+    h+=`<div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span>${notesTag}</div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div>${lnNotesHtml(c)}</div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button>${isTopic?`<button onclick="lnQuickAddChild('${c.directionId}','${c.id}')">+ 子内容</button>`:''}<button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`;
     if(isTopic&&hasKids&&open) h+=lnContentListHtml(L0,dirId,c.id,depth+1);
     return h;
   }).join('');
@@ -3266,7 +3275,9 @@ function lnNodeContentsHtml(L0,roots,hit,depth){
   return roots.map(c=>{
     const isTopic=c.kind==='topic';
     const indent=10*depth;
-    let h=`<div class="card" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span></div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`;
+    const hasNotes=c.notes&&c.notes.trim();
+    const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
+    let h=`<div class="card" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span>${notesTag}</div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div>${lnNotesHtml(c)}</div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`;
     const kids=L0.contents.filter(x=>(x.parentId||null)===c.id&&hit.has(x.id));
     if(kids.length) h+=lnNodeContentsHtml(L0,kids,hit,depth+1);
     return h;
@@ -3290,7 +3301,7 @@ function renderLnDirContents(d,L0){
 function lnQuickAddContent(dirId,parentId){
   const name=$(`#lnQcName_${dirId}`).value.trim();if(!name){toast('请填写名称');return}
   const kind=$(`#lnQcKind_${dirId}`).value;const nodeId=$(`#lnQcNode_${dirId}`).value||null;const L0=lnData();
-  const obj={id:uid(),name,directionId:dirId,kind,nodeId,url:'',note:'',createdAt:todayStr()};
+  const obj={id:uid(),name,directionId:dirId,kind,nodeId,url:'',note:'',notes:'',createdAt:todayStr()};
   if(parentId){obj.parentId=parentId;const p=L0.contents.find(c=>c.id===parentId);if(p&&!nodeId)obj.nodeId=p.nodeId||null;}
   L0.contents.unshift(obj);persist();
   lnCurrentDir=dirId;lnDetailTab='contents';lnRefresh();toast('已添加');
@@ -3313,7 +3324,8 @@ function openLnContentModal(dirId,id,nodeId,parentId){
     <div class="field"><span class="lab">关联节点</span><select id="lnCtNode">${nodeOpts}</select></div>
     <div class="field"><span class="lab">名称</span><input id="lnCtName" value="${c?esc(c.name):''}" placeholder="如《流畅的Python》/ 基础语法"></div>
     <div class="field"><span class="lab">链接</span><input id="lnCtUrl" value="${c?esc(c.url||''):''}" placeholder="选填，资料链接"></div>
-    <div class="field"><span class="lab">备注</span><input id="lnCtNote" value="${c?esc(c.note||''):''}" placeholder="选填"></div>
+    <div class="field"><span class="lab">备注</span><input id="lnCtNote" value="${c?esc(c.note||''):''}" placeholder="一句话备注"></div>
+    <div class="field" style="align-items:flex-start"><span class="lab" style="margin-top:8px">学习心得</span><textarea id="lnCtNotes" style="flex:1;min-height:120px;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;font:inherit;outline:none;line-height:1.6;resize:vertical" placeholder="在这里记录详细的学习心得、理解、示例、注意事项等">${c?esc(c.notes||''):''}</textarea></div>
     <div class="btns"><button class="cancel" onclick="lnConfirmClose(()=>{$('#lnCtSave').click()})">关闭</button><button class="ok" id="lnCtSave">保存</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
   let k=kind;
@@ -3321,8 +3333,8 @@ function openLnContentModal(dirId,id,nodeId,parentId){
   $('#lnCtDir').onchange=e=>{const did=e.target.value;$('#lnCtNode').innerHTML=lnNodeOptions(L0,did).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');$('#lnCtParent').innerHTML=parentOptsHtml(did,id,$('#lnCtParent').value)};
   function lnContentCommit(){
     const name=$('#lnCtName').value.trim();if(!name){toast('请填写名称');return false}
-    const obj={name,directionId:$('#lnCtDir').value||null,kind:k,url:$('#lnCtUrl').value.trim(),note:$('#lnCtNote').value.trim(),nodeId:$('#lnCtNode').value||null,parentId:$('#lnCtParent').value||null};
-    if(c){Object.assign(c,obj);}else{L0.contents.unshift(Object.assign({id:uid(),createdAt:todayStr()},obj));}
+    const obj={name,directionId:$('#lnCtDir').value||null,kind:k,url:$('#lnCtUrl').value.trim(),note:$('#lnCtNote').value.trim(),notes:$('#lnCtNotes').value.trim(),nodeId:$('#lnCtNode').value||null,parentId:$('#lnCtParent').value||null};
+    if(c){Object.assign(c,obj);}else{L0.contents.unshift(Object.assign({id:uid(),createdAt:todayStr(),notes:''},obj));}
     persist();lnRefresh();
     return true;
   }
@@ -3495,7 +3507,7 @@ function renderLnDirResources(d,L0){
   const list=L0.contents.filter(c=>c.directionId===d.id&&c.kind==='resource');
   let html='';
   if(!list.length){html='<div class="ln-empty">还没有资源型资料。<br>在「内容」里添加时选择「资料（书/课/链接）」即可。</div>';return html}
-  list.forEach(c=>{const node=lnTaskTitleById(L0,c.nodeId);html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(c.name)}</div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`});
+  list.forEach(c=>{const node=lnTaskTitleById(L0,c.nodeId);const hasNotes=c.notes&&c.notes.trim();const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(c.name)}${notesTag}</div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div>${lnNotesHtml(c)}</div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`});
   return html;
 }
 /* —— 大纲（树） —— */
