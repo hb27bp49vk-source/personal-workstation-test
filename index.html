@@ -535,6 +535,9 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-item .ln-sub{font-size:12px;color:var(--text-3);margin-top:3px;line-height:1.5}
 .ln-item .ln-acts{display:flex;gap:6px;flex:none}
 .ln-item .ln-acts button{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;font-size:12px;color:var(--text-2)}
+.ln-caret{display:inline-block;width:16px;flex:none;color:var(--text-2);cursor:pointer;user-select:none;font-size:12px}
+.ln-caret:hover{color:var(--text)}
+.ln-caret-ph{display:inline-block;width:16px;flex:none}
 .ln-seg{display:flex;gap:6px;margin:8px 0}
 .ln-seg button{flex:1;padding:7px;border-radius:var(--r-sm);background:var(--card-soft);border:1px solid var(--line);font-size:13px;color:var(--text-2);font-weight:600}
 .ln-seg button.on{background:var(--text);color:#fff;border-color:var(--text)}
@@ -3227,9 +3230,50 @@ function lnPlanTaskDue(mi,ti,v){lnPlanDraft.milestones[mi].tasks[ti].due=v}
 function lnPlanTaskDone(mi,ti,v){lnPlanDraft.milestones[mi].tasks[ti].done=v}
 function lnToggleTask(pid,mid,tid,done){const L0=lnData();const p=L0.plans.find(x=>x.id===pid);if(!p)return;const m=p.milestones.find(x=>x.id===mid);if(!m)return;const t=m.tasks.find(x=>x.id===tid);if(!t)return;t.done=done;persist();lnRefresh()}
 function lnDelPlan(pid){lnConfirm('确定删除该计划？',()=>{const L0=lnData();L0.plans=L0.plans.filter(x=>x.id!==pid);persist();lnRefresh()})}
+/* 内容层级 helpers */
+function lnDescendantIds(L0,id){const res=[];const stack=[id];while(stack.length){const cur=stack.pop();L0.contents.forEach(c=>{if((c.parentId||null)===cur){res.push(c.id);stack.push(c.id);}});}return res;}
+var lnTopicCollapsed={};
+function lnToggleTopic(id){ if(lnTopicCollapsed[id]) delete lnTopicCollapsed[id]; else lnTopicCollapsed[id]=true; lnRefresh(); }
+function lnQuickAddChild(dirId,parentId){ const L0=lnData(); const p=L0.contents.find(c=>c.id===parentId); openLnContentModal(p?p.directionId:dirId,null,null,parentId); }
+function lnContentListHtml(L0,dirId,parentId,depth){
+  depth=depth||0; if(depth>12) return '';
+  const kids=L0.contents.filter(c=>c.directionId===dirId&&(c.parentId||null)===parentId);
+  if(!kids.length) return '';
+  return kids.map(c=>{
+    const isTopic=c.kind==='topic';
+    const hasKids=L0.contents.some(x=>x.directionId===dirId&&(x.parentId||null)===c.id);
+    const open=!lnTopicCollapsed[c.id];
+    const indent=10*depth;
+    let h=`<div class="card" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0">`;
+    h+= (isTopic&&hasKids) ? `<span class="ln-caret" onclick="lnToggleTopic('${c.id}')">${open?'▼':'▶'}</span>` : `<span class="ln-caret-ph"></span>`;
+    h+=`<div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span></div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button>${isTopic?`<button onclick="lnQuickAddChild('${c.directionId}','${c.id}')">+ 子内容</button>`:''}<button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`;
+    if(isTopic&&hasKids&&open) h+=lnContentListHtml(L0,dirId,c.id,depth+1);
+    return h;
+  }).join('');
+}
+function lnContentOptions(L0,dirId,excludeId,selId){
+  const excl=excludeId?lnDescendantIds(L0,excludeId):[];
+  function walk(pid,dep){
+    return L0.contents.filter(c=>c.directionId===dirId&&(c.parentId||null)===pid&&!excl.includes(c.id)).map(c=>{
+      const pad='　'.repeat(dep);
+      return `<option value="${c.id}" ${selId===c.id?'selected':''}>${pad}${esc(c.name)}${c.kind==='topic'?'（主题）':''}</option>`+walk(c.id,dep+1);
+    }).join('');
+  }
+  return `<option value="">不挂具体内容</option>`+walk(null,0);
+}
+function lnNodeContentsHtml(L0,roots,hit,depth){
+  depth=depth||0; if(depth>12) return '';
+  return roots.map(c=>{
+    const isTopic=c.kind==='topic';
+    const indent=10*depth;
+    let h=`<div class="card" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span></div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`;
+    const kids=L0.contents.filter(x=>(x.parentId||null)===c.id&&hit.has(x.id));
+    if(kids.length) h+=lnNodeContentsHtml(L0,kids,hit,depth+1);
+    return h;
+  }).join('');
+}
 /* —— 内容 —— */
 function renderLnDirContents(d,L0){
-  const contents=L0.contents.filter(c=>c.directionId===d.id);
   const nodeOpts=lnNodeOptions(L0,d.id).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');
   let html=`<div class="ln-quick">
     <input type="text" id="lnQcName_${d.id}" placeholder="资料/子主题名称，回车快速添加" onkeydown="if(event.key==='Enter')lnQuickAddContent('${d.id}')">
@@ -3237,31 +3281,35 @@ function renderLnDirContents(d,L0){
     <select id="lnQcNode_${d.id}" title="关联节点">${nodeOpts}</select>
     <button onclick="lnQuickAddContent('${d.id}')">添加</button>
   </div>`;
-  if(!contents.length){html+='<div class="ln-empty">还没有内容，上方快速添加。</div>';return html}
-  contents.forEach(c=>{
-    const kindLabel=c.kind==='resource'?'资料':'子主题';
-    html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0">
-      <div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${kindLabel}</span></div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div>
-      <div class="ln-acts"><button onclick="openLnContentModal('${d.id}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${d.id}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div>
-    </div></div>`;
-  });
+  const hasAny=L0.contents.some(c=>c.directionId===d.id);
+  if(!hasAny){html+='<div class="ln-empty">还没有内容，上方快速添加。</div>';return html}
+  const tree=lnContentListHtml(L0,d.id,null,0);
+  html+= tree || '<div class="ln-empty">还没有内容，上方快速添加。</div>';
   return html;
 }
-function lnQuickAddContent(dirId){
+function lnQuickAddContent(dirId,parentId){
   const name=$(`#lnQcName_${dirId}`).value.trim();if(!name){toast('请填写名称');return}
   const kind=$(`#lnQcKind_${dirId}`).value;const nodeId=$(`#lnQcNode_${dirId}`).value||null;const L0=lnData();
-  L0.contents.unshift({id:uid(),name,directionId:dirId,kind,nodeId,url:'',note:'',createdAt:todayStr()});persist();
+  const obj={id:uid(),name,directionId:dirId,kind,nodeId,url:'',note:'',createdAt:todayStr()};
+  if(parentId){obj.parentId=parentId;const p=L0.contents.find(c=>c.id===parentId);if(p&&!nodeId)obj.nodeId=p.nodeId||null;}
+  L0.contents.unshift(obj);persist();
   lnCurrentDir=dirId;lnDetailTab='contents';lnRefresh();toast('已添加');
 }
-function openLnContentModal(dirId,id,nodeId){
+function openLnContentModal(dirId,id,nodeId,parentId){
   const L0=lnData();const c=id?L0.contents.find(x=>x.id===id):null;const selDir=c?c.directionId:(dirId||'');
   const dirOpts=`<option value="">未设方向</option>`+L0.directions.map(d=>`<option value="${d.id}" ${selDir===d.id?'selected':''}>${esc(d.name)}</option>`).join('');
   const kind=c?c.kind:'resource';
   const selNode=c?c.nodeId:(nodeId||'');
+  const selParent=c?c.parentId:(parentId||'');
+  function parentOptsHtml(dir,exclId,sel){
+    const excl=exclId?lnDescendantIds(L0,exclId):[];
+    return `<option value="">（顶级，不归属子主题）</option>`+L0.contents.filter(x=>x.directionId===dir&&x.kind==='topic'&&x.id!==exclId&&!excl.includes(x.id)).map(x=>`<option value="${x.id}" ${sel===x.id?'selected':''}>${esc(x.name)}</option>`).join('');
+  }
   const nodeOpts=lnNodeOptions(L0,selDir).map(o=>`<option value="${o.value}" ${selNode===o.value?'selected':''}>${esc(o.label)}</option>`).join('');
   modal(`<h4>${c?'编辑内容':'添加学习内容'}<span class="modal-close" onclick="closeModal()">×</span></h4>
     <div class="ln-seg" id="lnCtKind"><button data-k="resource" class="${kind==='resource'?'on':''}">资料（书/课/链接）</button><button data-k="topic" class="${kind==='topic'?'on':''}">子主题</button></div>
     <div class="field"><span class="lab">方向</span><select id="lnCtDir">${dirOpts}</select></div>
+    <div class="field"><span class="lab">归属父主题</span><select id="lnCtParent">${parentOptsHtml(selDir,id,selParent)}</select></div>
     <div class="field"><span class="lab">关联节点</span><select id="lnCtNode">${nodeOpts}</select></div>
     <div class="field"><span class="lab">名称</span><input id="lnCtName" value="${c?esc(c.name):''}" placeholder="如《流畅的Python》/ 基础语法"></div>
     <div class="field"><span class="lab">链接</span><input id="lnCtUrl" value="${c?esc(c.url||''):''}" placeholder="选填，资料链接"></div>
@@ -3270,17 +3318,17 @@ function openLnContentModal(dirId,id,nodeId){
   $('#modalBox').classList.add('wide');
   let k=kind;
   $$('#lnCtKind button').forEach(b=>b.onclick=()=>{k=b.dataset.k;$$('#lnCtKind button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
-  $('#lnCtDir').onchange=e=>{const did=e.target.value;$('#lnCtNode').innerHTML=lnNodeOptions(L0,did).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('')};
+  $('#lnCtDir').onchange=e=>{const did=e.target.value;$('#lnCtNode').innerHTML=lnNodeOptions(L0,did).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');$('#lnCtParent').innerHTML=parentOptsHtml(did,id,$('#lnCtParent').value)};
   function lnContentCommit(){
     const name=$('#lnCtName').value.trim();if(!name){toast('请填写名称');return false}
-    const obj={name,directionId:$('#lnCtDir').value||null,kind:k,url:$('#lnCtUrl').value.trim(),note:$('#lnCtNote').value.trim(),nodeId:$('#lnCtNode').value||null};
+    const obj={name,directionId:$('#lnCtDir').value||null,kind:k,url:$('#lnCtUrl').value.trim(),note:$('#lnCtNote').value.trim(),nodeId:$('#lnCtNode').value||null,parentId:$('#lnCtParent').value||null};
     if(c){Object.assign(c,obj);}else{L0.contents.unshift(Object.assign({id:uid(),createdAt:todayStr()},obj));}
     persist();lnRefresh();
     return true;
   }
   $('#lnCtSave').onclick=()=>{ if(lnContentCommit()) closeModal(); };
 }
-function lnDelContent(id){lnConfirm('确定删除该学习内容？',()=>{const L0=lnData();L0.questions.forEach(q=>{if(q.contentId===id)q.contentId=null});L0.contents=L0.contents.filter(x=>x.id!==id);persist();lnRefresh()})}
+function lnDelContent(id){lnConfirm('确定删除该学习内容？',()=>{const L0=lnData();L0.questions.forEach(q=>{if(q.contentId===id)q.contentId=null});L0.contents.forEach(c=>{if(c.parentId===id)c.parentId=null});L0.contents=L0.contents.filter(x=>x.id!==id);persist();lnRefresh()})}
 /* —— 问题 —— */
 function renderLnDirQuestions(d,L0){
   const questions=L0.questions.filter(q=>q.directionId===d.id);
@@ -3314,7 +3362,7 @@ function lnQuickAddQuestion(dirId){
 function openLnQuestionModal(id,nodeId,dirId){
   const L0=lnData();const q=id?L0.questions.find(x=>x.id===id):null;const curDir=q?q.directionId:(dirId||null);
   const dirOpts=`<option value="">未设方向</option>`+L0.directions.map(d=>`<option value="${d.id}" ${curDir===d.id?'selected':''}>${esc(d.name)}</option>`).join('');
-  const cOpts=`<option value="">不挂具体内容</option>`+(curDir?L0.contents.filter(c=>c.directionId===curDir).map(c=>`<option value="${c.id}" ${q&&q.contentId===c.id?'selected':''}>${esc(c.name)}</option>`).join(''):'');
+  const cOpts=lnContentOptions(L0,curDir,q?id:null,q?q.contentId:null);
   const nodeOpts=lnNodeOptions(L0,curDir).map(o=>`<option value="${o.value}" ${((q?q.nodeId:nodeId)||'')===o.value?'selected':''}>${esc(o.label)}</option>`).join('');
   const st=q?q.status:'open';const tags=(q?(q.tags||[]):[]).join(', ');const hard=q?!!q.hard:false;
   modal(`<h4>${q?'编辑问题':'记录学习问题'}<span class="modal-close" onclick="closeModal()">×</span></h4>
@@ -3331,7 +3379,7 @@ function openLnQuestionModal(id,nodeId,dirId){
   $('#modalBox').classList.add('wide');
   let st2=st;
   $$('#lnQSt button').forEach(b=>b.onclick=()=>{st2=b.dataset.s;$$('#lnQSt button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
-  $('#lnQDir2').onchange=e=>{const did=e.target.value;const co=`<option value="">不挂具体内容</option>`+(did?L0.contents.filter(c=>c.directionId===did).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join(''):'');$('#lnQCt2').innerHTML=co;$('#lnQNode2').innerHTML=lnNodeOptions(L0,did).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('')};
+  $('#lnQDir2').onchange=e=>{const did=e.target.value;$('#lnQCt2').innerHTML=lnContentOptions(L0,did,null,$('#lnQCt2').value);$('#lnQNode2').innerHTML=lnNodeOptions(L0,did).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('')};
   function lnQuestionCommit(){
     const title=$('#lnQT').value.trim();if(!title){toast('请填写问题');return false}
     const tagsArr=$('#lnQTags').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -3412,8 +3460,10 @@ function renderLnNodeView(){
   const ni=lnItemsForNode(L0,lnNode);const col=d.color||'#888';
   const crumb=p.title+(m?(' / '+(m.title||'阶段')):'')+(t?(' / '+(t.title||'任务')):'');
   const curTitle=lnNode.taskId&&t?t.title:(lnNode.msId&&m?(m.title||'阶段'):p.title);
-  const statHtml=[['📄 资料',ni.contents.length],['💡 问题',ni.questions.length],['📚 知识',ni.questions.filter(q=>q.status==='solved'&&q.answer&&q.answer.trim()).length],['🔁 复习',ni.reviews.length],['🧪 自测',ni.selftests.length]].map(([s,n])=>`<div class="ln-ov-i"><b>${n}</b><span>${s}</span></div>`).join('');
-  const contentHtml=ni.contents.length?ni.contents.map(c=>`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${c.kind==='resource'?'资料':'子主题'}</span></div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`).join(''):'<div class="ln-empty">还没有资料，点下方「+ 资料/子主题」添加。</div>';
+  const _hit=new Set(ni.contents.map(c=>c.id));{let _a=true;while(_a){_a=false;for(const _c of L0.contents){if(!_hit.has(_c.id)&&_c.parentId&&_hit.has(_c.parentId)){_hit.add(_c.id);_a=true;}}}}
+  const _roots=L0.contents.filter(c=>_hit.has(c.id)&&(!c.parentId||!_hit.has(c.parentId)));
+  const statHtml=[['📄 资料',_hit.size],['💡 问题',ni.questions.length],['📚 知识',ni.questions.filter(q=>q.status==='solved'&&q.answer&&q.answer.trim()).length],['🔁 复习',ni.reviews.length],['🧪 自测',ni.selftests.length]].map(([s,n])=>`<div class="ln-ov-i"><b>${n}</b><span>${s}</span></div>`).join('');
+  const contentHtml=_hit.size?lnNodeContentsHtml(L0,_roots,_hit,0):'<div class="ln-empty">还没有资料，点下方「+ 资料/子主题」添加。</div>';
   const qHtml=ni.questions.length?ni.questions.map(q=>{const stName={open:'未解决',doing:'解决中',solved:'已解决'};const tags=(q.tags||[]).map(x=>`<span class="ln-tag">${esc(x)}</span>`).join('');return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(q.title)} <span class="ln-badge ${q.status}">${stName[q.status]}</span>${q.hard?'<span class="ln-tag" style="color:var(--bad);border-color:var(--bad)">难点</span>':''}</div><div class="ln-sub">${tags?tags+' · ':''}${q.detail?esc(q.detail).slice(0,80):'暂无详情'}</div>${q.status==='solved'&&q.answer?`<div class="ln-kb-a"><b>答案：</b>${esc(q.answer)}</div>`:''}</div><div class="ln-acts">${q.status==='solved'?`<button onclick="addReview('question','${q.id}','${q.directionId}')">复习</button>`:''}<button onclick="openLnQuestionModal('${q.id}')">编辑</button><button onclick="lnToggleHard('${q.id}')">${q.hard?'取消难点':'标难点'}</button><button onclick="lnDelQuestion('${q.id}')" style="color:var(--bad)">删除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有问题，点下方「+ 问题」记录。</div>';
   const rHtml=ni.reviews.length?ni.reviews.map(r=>{let title='',sub='';if(r.refType==='question'){const qq=L0.questions.find(x=>x.id===r.refId);if(qq)title=qq.title;sub='问题'}else{const cc=L0.contents.find(x=>x.id===r.refId);if(cc)title=cc.name;sub='内容'}const due=r.due<=todayStr();return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(title)}</div><div class="ln-sub">${sub} · 下次${due?'<b class="ln-due">今天</b>':r.due}</div></div><div class="ln-acts"><button onclick="lnMarkReviewed('${r.id}')">${due?'已复习':'推迟'}</button><button onclick="lnDelReview('${r.id}')" style="color:var(--bad)">移除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有复习安排。</div>';
   const stHtml=ni.selftests.length?ni.selftests.map(s=>{const node=lnTaskTitleById(L0,s.nodeId);return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(s.title)} <span class="ln-tag">${s.score!=null?('得分 '+s.score):'未打分'}</span></div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${s.weak?('薄弱：'+esc(s.weak)+' · '):''}${s.date||''}</div>${s.note?`<div class="ln-kb-a">${esc(s.note)}</div>`:''}</div><div class="ln-acts"><button onclick="openLnSelftestModal('${d.id}','${s.id}')">编辑</button><button onclick="lnDelSelftest('${s.id}')" style="color:var(--bad)">删除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有自测记录。</div>';
