@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="我的工作台">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1a1a">
-<title>我的工作台</title>
+<title>个人工作台（测试版）</title>
 <style>
 /* ====== 设计令牌 · 墨白极简 ====== */
 :root{
@@ -1011,7 +1011,7 @@ summary::-webkit-details-marker{color:var(--text)}
 <script>
 /* ====== 测试版存储隔离：正式版与测试版同属 github.io 域名，localStorage 按 origin 共享，故给测试版加命名空间前缀，避免互相读写同一份本地数据 ====== */
 const _realLS = window.localStorage;
-const _LS_NS = 'wbtest_';
+const _LS_NS = '';
 const localStorage = {
   getItem(k){ return _realLS.getItem(_LS_NS + k); },
   setItem(k, v){ return _realLS.setItem(_LS_NS + k, String(v)); },
@@ -2404,10 +2404,28 @@ function mergeState(remote){
     (rem||[]).forEach(x=>{if(x&&x.id&&!map.has(x.id)){map.set(x.id,x);changed=true}});
     return [...map.values()];
   };
-  /* 习惯合并时剔除本机已删除（归档）的习惯，避免另一端仍活跃的同名习惯把已删习惯“复活” */
+  /* 习惯合并：同 id 习惯保留本地属性（名称/图标/颜色等可能刚改过），但 history 深度合并取并集
+     ——避免「本地空 history 覆盖远端已打卡记录」导致打卡数据跨设备丢失 */
   const delIds=new Set(Object.keys(S.habitArchive||{}));
   S.todos=unionArr(S.todos,remote.todos);
-  S.habits=unionArr(S.habits,remote.habits).filter(x=>!delIds.has(x.id));
+  (function(){
+    const map=new Map();
+    (S.habits||[]).forEach(x=>{if(x&&x.id)map.set(x.id,x)});
+    (remote.habits||[]).forEach(x=>{
+      if(!x||!x.id||delIds.has(x.id))return;
+      if(map.has(x.id)){
+        /* 同 id：保留本地属性，history 取并集 */
+        const loc=map.get(x.id);
+        const lh=loc.history||{}, rh=x.history||{};
+        let merged=false;
+        Object.keys(rh).forEach(d=>{ if(!(d in lh)){ lh[d]=rh[d]; merged=true; } });
+        if(merged)changed=true;
+      }else{
+        map.set(x.id,x);changed=true;
+      }
+    });
+    S.habits=[...map.values()];
+  }());
   S.ledger=unionArr(S.ledger,remote.ledger);
   S.notes=unionArr(S.notes,remote.notes);
   S.countdowns=unionArr(S.countdowns,remote.countdowns);
