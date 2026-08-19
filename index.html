@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="我的工作台">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1a1a">
-<title>我的工作台 · 测试版</title>
+<title>我的工作台</title>
 <style>
 /* ====== 设计令牌 · 墨白极简 ====== */
 :root{
@@ -133,6 +133,32 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .habit-card.done .h-streak{color:var(--text)}
 .habit-add{border:1px dashed var(--line);background:transparent;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:13px;min-height:78px;transition:all .15s}
 .habit-add:hover{border-color:var(--text);color:var(--text);background:var(--pri-soft)}
+.habit-card .h-acts{position:absolute;top:5px;right:5px;display:flex;gap:4px}
+.habit-card .h-edit,.habit-card .h-del{width:22px;height:22px;border:none;border-radius:6px;background:var(--card-soft);color:var(--text-2);font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.8}
+.habit-card .h-del:active{background:rgba(176,74,74,.15);color:#b04a4a}
+
+/* ====== 补卡 ====== */
+.mk-datebar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.mk-nav{width:34px;height:34px;border-radius:99px;border:1px solid var(--line);background:var(--card-soft);font-size:18px;color:var(--text);flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mk-nav:active{transform:scale(.93)}
+.mk-date{flex:1;text-align:center}
+.mk-date .mk-d{font-size:15px;font-weight:700}
+.mk-date input[type=date]{margin-top:4px;font-size:12px;color:var(--text-2);border:1px solid var(--line);border-radius:var(--r-xs);padding:4px 6px;background:var(--card-soft)}
+.mk-quick{display:flex;gap:8px;margin-bottom:10px}
+.mk-quick .quick-chip{flex:1}
+.mk-sum{font-size:13px;color:var(--text-2);margin-bottom:8px}
+.mk-list{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto}
+.mk-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);cursor:pointer;transition:all .15s}
+.mk-row:active{transform:scale(.98)}
+.mk-row.on{border-color:var(--m-habits);background:rgba(106,181,138,.10)}
+.mk-ic{width:22px;height:22px;flex:none}
+.mk-name{flex:1;font-size:14px;font-weight:500}
+.mk-state{font-size:12px;color:var(--text-3)}
+.mk-row.on .mk-state{color:var(--m-habits)}
+.mk-toggle{width:22px;height:22px;border-radius:99px;border:1.5px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--m-habits);font-weight:700}
+.mk-row.on .mk-toggle{background:var(--m-habits);border-color:var(--m-habits);color:#fff}
+.ci-day{cursor:pointer}
+.ci-day:active{opacity:.7}
 
 /* ====== 记账 ====== */
 .money-head{display:flex;gap:10px;margin-bottom:12px}
@@ -231,6 +257,16 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .mood-btn:active .f{transform:scale(.92)}
 .mood-btn.on .f{border-color:var(--text);transform:scale(1.08);background:var(--pri-soft)}
 .mood-streak{text-align:center;font-size:12px;color:var(--text-2);margin-top:6px}
+.checkin-feed{display:flex;flex-direction:column;gap:9px;max-height:440px;overflow:auto}
+.ci-day{display:flex;gap:10px;align-items:flex-start}
+.ci-date{flex:0 0 64px;font-size:12px;color:var(--text-3);padding-top:5px;font-variant-numeric:tabular-nums}
+.ci-wk{color:var(--text-3);font-size:11px}
+.ci-items{display:flex;flex-wrap:wrap;gap:7px;flex:1}
+.ci-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:99px;background:var(--card-soft);border:1px solid var(--line);font-size:12px;font-weight:600}
+.ci-chip .ci-ic{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center}
+.ci-chip .ci-ic svg{width:16px;height:16px}
+.ci-chip.habit.arch{opacity:.6;border-style:dashed}
+.ci-chip.mood{background:transparent}
 .cd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cd-card{border:1px solid var(--line);border-radius:var(--r-sm);padding:13px;background:#fff;position:relative;overflow:hidden;transition:transform .12s}
 .cd-card:active{transform:scale(.97)}
@@ -619,7 +655,6 @@ summary::-webkit-details-marker{color:var(--text)}
         <div class="date" id="hDate"></div>
         <div class="greet"><span class="dot"></span><span id="hGreet">你好</span></div>
         <div class="sub" id="hSub"></div>
-        <div class="sub" style="margin-top:4px;color:var(--warn);font-weight:600">测试版 · 不影响正式链接</div>
         
       </div>
       <button class="refresh-btn" id="refreshBtn" title="刷新页面">
@@ -670,8 +705,9 @@ summary::-webkit-details-marker{color:var(--text)}
         <div class="page-title">习惯打卡</div>
         <div class="card">
           <div class="habit-grid" id="habitGrid"></div>
-          <div style="margin-top:10px" id="habitAddWrap">
-            <button class="habit-add" id="habitAddBtn" style="width:100%"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 5v14M5 12h14"/></svg>新建习惯</button>
+          <div style="margin-top:10px;display:flex;gap:8px" id="habitAddWrap">
+            <button class="habit-add" id="habitAddBtn" style="flex:1"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 5v14M5 12h14"/></svg>新建习惯</button>
+            <button class="habit-add" id="habitMakeupBtn" style="flex:1"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 4v4h4"/></svg>补卡</button>
           </div>
         </div>
       </div>
@@ -807,6 +843,13 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="cd-grid" id="cdGrid"></div>
         </div>
       </div>
+      <div class="sec" data-module="checkins">
+        <div class="page-title">打卡记录</div>
+        <div class="card">
+          <div class="muted" style="margin:-2px 0 10px;font-size:12px">每日心情打卡与习惯打卡，含已删除习惯的归档历史 · 点某天可补卡</div>
+          <div id="checkinFeed" class="checkin-feed"></div>
+        </div>
+      </div>
     </section>
 
     <!-- 历史 -->
@@ -907,14 +950,12 @@ summary::-webkit-details-marker{color:var(--text)}
         </div>
       </div>
       <div class="sec" data-module="cloudSync">
-        <div class="page-title">云同步（测试版已禁用）</div>
+        <div class="page-title">云同步</div>
         <div class="card">
-          <div class="set-row" id="syncRow"><span class="lab">状态</span><span id="syncStatus" class="sync-dot off">测试版不可用</span></div>
-          <div class="privacy-box">
-            <b>测试版不连接云同步</b><br>
-            · 为避免测试数据污染你的正式云库，测试版<b>禁止</b>开启云同步、也不读取你的云端数据。<br>
-            · 需要数据时请用正式版「数据管理 → 导出 JSON」，再到测试版「粘贴 JSON 导入」。<br>
-          </div>
+          <div class="set-row" id="syncRow"><span class="lab">状态</span><span id="syncStatus" class="sync-dot off">未开启</span></div>
+          <div class="set-row"><span class="lab">云同步设置</span><button id="syncBtn">设置</button></div>
+          <div class="set-row"><span class="lab">手动同步</span><button id="syncNowBtnDirect">立即同步</button></div>
+          <div class="set-row" style="align-items:center"><span class="lab" style="color:var(--bad)">数据被污染？一键恢复</span><button id="syncHistoryBtnDirect" style="color:#fff;background:var(--bad);border:none;border-radius:var(--r-sm);padding:8px 14px;font-weight:600">历史版本恢复</button></div>
           <div class="privacy-box">
             <b>隐私保障</b><br>
             · 数据经 <b>AES-GCM 端到端加密</b>后存于 GitHub Gist（私有），仅持有 Passcode 的你能解密<br>
@@ -943,8 +984,8 @@ summary::-webkit-details-marker{color:var(--text)}
       <div class="sec" data-module="about">
         <div class="page-title">关于</div>
         <div class="card">
-          <div class="row-between" style="margin-bottom:6px"><span class="lab">我的工作台</span><span class="val">v3.10-test</span></div>
-          <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br>v3.10-test · 学习模块强化：计划节点绑定/聚合/错题/自测/大纲/时间轴</p>
+          <div class="row-between" style="margin-bottom:6px"><span class="lab">我的工作台</span><span class="val">v3.10</span></div>
+          <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br>v3.10 · 学习模块强化：计划节点绑定/聚合/错题/自测/大纲/时间轴</p>
         </div>
       </div>
     </section>
@@ -991,9 +1032,12 @@ const money=n=>{const v=Math.round(n*100)/100;return '¥'+v.toLocaleString('zh-C
 const toast=(m)=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800)};
 const WEEK=['日','一','二','三','四','五','六'];
 const daysBetween=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
+const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n);return fmtDate(d)};
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.12',date:'2026-08-19',modules:['习惯打卡'],items:['习惯打卡支持「补卡」：可补打过去任意一天的习惯卡，计入连续天数与活跃热力；在热力页「打卡记录」点击某天也可补卡'],status:'已上线'},
+  {version:'v3.11',date:'2026-08-17',modules:['习惯打卡','打卡记录'],items:['模块显示/隐藏配置接入云同步：手机端开启或关闭模块会同步到其他设备（任一端显示即显示，避免跨设备丢失）','习惯打卡支持「修改」（改名/换图标/换颜色，保留已打卡历史）与「删除」（仅隐藏习惯，已记录的历史打卡归档保留，可在热力页「打卡记录」查看）','热力页新增「打卡记录」模块：以图标形式展示每日心情打卡与习惯打卡（含已删除习惯的归档历史）'],status:'已上线'},
   {version:'v3.10',date:'2026-08-12',modules:['学习'],items:['学习模块强化：内容/问题/复习可绑定到计划任务节点（双轨：也允许只挂方向）','新增计划节点聚合页：点任务小标题查看该节点下资料/问题/知识/复习','录入表单增加关联节点下拉；复习自动继承来源节点','新增tab：错题(难点归集)/资源(资料型)/大纲(树+计数)/时间轴/自测记录','知识库按节点聚合；问题可一键标记难点'],status:'已上线'},
   {version:'v3.9.1-test',date:'2026-08-12',modules:['云同步'],items:['同步防丢数据修复（与正式版 v3.8.1 同源）：改为按 id 合并同步，本地已有记录永不删除','推送失败指数退避自动重试（5s→10s→…上限60s）','页面切后台/关闭时强制 flush 本地未上云数据','「立即同步」改为先推本地再拉云合并的双向同步','注：本测试版同时含「学习」大模块（v3.9-test）'],status:'测试中'},
   {version:'v3.9-test',date:'2026-08-12',modules:['学习'],items:['新增「学习」大模块：自定义学习方向与内容（方向下挂「资料 / 子主题」二级）','UX 重构为「方向即主页」：取消顶部 6 Tab，改为方向卡片展开，一个卡片内直接切换计划/内容/问题/知识库/复习，减少来回切换','支持一键快速添加：方向内直接输入标题新建计划（带模板）/ 内容 / 问题，无需先切 Tab 再进弹窗','计划支持模板快速创建：21 天入门 / 读书笔记 / 项目实战，自动生成阶段与任务','问题状态支持点击徽章单键循环切换（未解决 → 解决中 → 已解决）','已解决问题可一键加入复习，按 1/3/7/16/30 天间隔递增提醒','手动制定学习计划：方向 → 阶段 → 任务 → 截止日，自动计算完成进度','已解决问题与答案自动沉淀为「知识库」，可搜索','学习数据随导出 / 导入 / 合并导入 / 云同步自动携带'],status:'测试中'},
@@ -1031,7 +1075,8 @@ const DEFAULT={
   moods:{}, notes:[], countdowns:[], worklog:[],
   customCats:{expense:[],income:[]},
   budgetCats:{},
-  learning:{directions:[],contents:[],plans:[],questions:[],reviews:[]}
+  learning:{directions:[],contents:[],plans:[],questions:[],reviews:[]},
+  habitArchive:{}
 };
 let S=load();
 function load(){
@@ -1047,6 +1092,7 @@ function load(){
     if(!d.ledger)d.ledger=[];
     if(!d.learning||typeof d.learning!=='object')d.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};
     ['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(d.learning[k]))d.learning[k]=[]});
+    if(!d.habitArchive||typeof d.habitArchive!=='object')d.habitArchive={};
     if(!d.customCats||typeof d.customCats!=='object')d.customCats={expense:[],income:[]};
     if(!Array.isArray(d.customCats.expense))d.customCats.expense=[];
     if(!Array.isArray(d.customCats.income))d.customCats.income=[];
@@ -1208,10 +1254,19 @@ function renderHabits(){
       <div class="h-ic" style="color:${h.color}">${catIcon(HABIT_ICONS[h.iconIdx]||'heart')}</div>
       <div class="h-name">${esc(h.name)}</div>
       <div class="h-streak">${streak?'连续 '+streak+' 天':'今日未打卡'}</div>
+      <div class="h-acts">
+        <button class="h-edit" data-act="edit" title="修改">✎</button>
+        <button class="h-del" data-act="del" title="删除（保留历史）">🗑</button>
+      </div>
     </div>`;
   }).join('')||'<div class="empty-mini" style="grid-column:1/-1">还没有习惯，点下方新建</div>';
   $$('#habitGrid .habit-card').forEach(el=>{
-    el.onclick=()=>{const h=S.habits.find(x=>x.id===el.dataset.id);if(h.history[t])delete h.history[t];else h.history[t]=1;persist();renderHabits();renderHeader()};
+    el.onclick=e=>{
+      if(e.target.closest('.h-acts'))return;
+      const h=S.habits.find(x=>x.id===el.dataset.id);if(h.history[t])delete h.history[t];else h.history[t]=1;persist();renderHabits();renderHeader();renderHeat();
+    };
+    const ed=el.querySelector('.h-edit');if(ed)ed.onclick=e=>{e.stopPropagation();editHabit(el.dataset.id)};
+    const dl=el.querySelector('.h-del');if(dl)dl.onclick=e=>{e.stopPropagation();deleteHabit(el.dataset.id)};
   });
 }
 function habitStreak(h,t){
@@ -1253,11 +1308,94 @@ $('#habitAddBtn').onclick=()=>{
 };
 $('#habitGrid').addEventListener('contextmenu',e=>{
   const el=e.target.closest('.habit-card');if(!el)return;e.preventDefault();
-  const h=S.habits.find(x=>x.id===el.dataset.id);
-  modal(`<h4>删除习惯<span class="modal-close" onclick="closeModal()">×</span></h4><p style="color:var(--text-2)">确定删除「${esc(h.name)}」及其打卡记录吗？</p>
-    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="hDel" style="background:var(--bad)">删除</button></div>`,{noMaskClose:true});
-  $('#hDel').onclick=()=>{S.habits=S.habits.filter(x=>x.id!==h.id);closeModal();persist();renderHabits();renderHeader()};
+  deleteHabit(el.dataset.id);
 });
+$('#habitMakeupBtn').onclick=()=>openMakeupModal();
+function editHabit(id){
+  const h=S.habits.find(x=>x.id===id);if(!h)return;
+  let pickI=h.iconIdx||0, pickC=HABIT_COLORS.indexOf(h.color);if(pickC<0)pickC=0;
+  modal(`<h4>修改习惯<span class="modal-close" onclick="closeModal()">×</span></h4>
+    <div class="field"><span class="lab" style="width:40px">名称</span><input id="hName" class="input-styled" value="${esc(h.name)}" maxlength="10"></div>
+    <div style="margin-bottom:12px"><div class="muted" style="margin-bottom:6px;font-size:12px">选个图标</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="hIcons"></div></div>
+    <div><div class="muted" style="margin-bottom:6px;font-size:12px">选个颜色</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="hColors"></div></div>
+    <p class="muted" style="margin:10px 0 0;font-size:12px">已打卡的历史记录会保留，改名/换图标不影响过往打卡。</p>
+    <div class="btns"><button class="cancel" onclick="closeModal()">关闭</button><button class="ok" id="hSave">保存</button></div>`,{noMaskClose:true});
+  const icBox=$('#hIcons'),cBox=$('#hColors');
+  HABIT_ICONS.forEach((n,i)=>{const b=document.createElement('div');b.className='cat-chip'+(i===pickI?' on':'');b.innerHTML=`<span style="color:${HABIT_COLORS[0]}">${catIcon(n)}</span>`;b.onclick=()=>{pickI=i;$$('.cat-chip',icBox).forEach(x=>x.classList.remove('on'));b.classList.add('on')};icBox.appendChild(b)});
+  HABIT_COLORS.forEach((c,i)=>{const b=document.createElement('div');b.className='cat-chip'+(i===pickC?' on':'');b.innerHTML=`<span class="d" style="background:${c}"></span>`;b.onclick=()=>{pickC=i;$$('.cat-chip',cBox).forEach(x=>x.classList.remove('on'));b.classList.add('on')};cBox.appendChild(b)});
+  $('#hSave').onclick=()=>{
+    const n=$('#hName').value.trim();if(!n){toast('请输入名称');return}
+    h.name=n;h.iconIdx=pickI;h.color=HABIT_COLORS[pickC];
+    closeModal();persist();renderHabits();renderHeat();toast('习惯已更新');
+  };
+}
+function deleteHabit(id){
+  const h=S.habits.find(x=>x.id===id);if(!h)return;
+  const cnt=Object.keys(h.history||{}).length;
+  modal(`<h4>删除习惯<span class="modal-close" onclick="closeModal()">×</span></h4>
+    <p style="color:var(--text-2)">确定删除「${esc(h.name)}」吗？<br>已打卡的 <b>${cnt}</b> 条历史会归档保留，仍可在热力页「打卡记录」中查看；本机不再显示该习惯。</p>
+    <div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="hDel" style="background:var(--bad)">删除并保留历史</button></div>`,{noMaskClose:true});
+  $('#hDel').onclick=()=>{
+    S.habitArchive=S.habitArchive||{};
+    S.habitArchive[id]={name:h.name,color:h.color,iconIdx:h.iconIdx,history:h.history||{},createdAt:h.createdAt,archivedAt:todayStr()};
+    S.habits=S.habits.filter(x=>x.id!==id);
+    closeModal();persist();renderHabits();renderHeader();renderHeat();toast('已删除，历史已保留');
+  };
+}
+/* ============ 习惯补卡 ============ */
+function openMakeupModal(preDate){
+  if(!S.habits.length){toast('还没有习惯，先新建一个吧');return}
+  const today=todayStr();
+  let sel=(preDate&&preDate<=today)?preDate:dateAdd(today,-1);
+  const floor=S.habits.reduce((m,h)=>{const c=h.createdAt||'';return(c&&c<m)?c:m;},'2000-01-01');
+  function paint(){
+    const t=sel;
+    const done=S.habits.filter(h=>h.history[t]).length;
+    const d=new Date(t+'T00:00:00');
+    const wk=isNaN(d)?'':'星期'+WEEK[d.getDay()];
+    const rows=S.habits.map(h=>{
+      const on=!!h.history[t];
+      return `<div class="mk-row ${on?'on':''}" data-id="${h.id}">
+        <span class="mk-ic" style="color:${h.color}">${catIcon(HABIT_ICONS[h.iconIdx]||'heart')}</span>
+        <span class="mk-name">${esc(h.name)}</span>
+        <span class="mk-state">${on?'已打卡':'未打卡'}</span>
+        <span class="mk-toggle">${on?'✓':''}</span>
+      </div>`;
+    }).join('');
+    modal(`<h4>补卡<span class="modal-close" onclick="closeModal()">×</span></h4>
+      <p class="muted" style="margin:-4px 0 12px;font-size:12px">为过去某天补打习惯卡，会计入连续天数与活跃热力。</p>
+      <div class="mk-datebar">
+        <button class="mk-nav" id="mkPrev">‹</button>
+        <div class="mk-date">
+          <div class="mk-d">${t} <span class="muted" style="font-size:12px">${wk}</span></div>
+          <input type="date" id="mkDate" value="${t}" max="${today}" min="${floor}">
+        </div>
+        <button class="mk-nav" id="mkNext">›</button>
+      </div>
+      <div class="mk-quick">
+        <button class="quick-chip" data-d="${dateAdd(today,-1)}">昨天</button>
+        <button class="quick-chip" data-d="${dateAdd(today,-2)}">前天</button>
+      </div>
+      <div class="mk-sum">${done}/${S.habits.length} 个习惯已打卡</div>
+      <div class="mk-list" id="mkList">${rows||'<div class="empty-mini">还没有习惯</div>'}</div>
+      <div class="btns"><button class="cancel" onclick="closeModal()">完成</button></div>
+    `,{noMaskClose:true});
+    $$('#mkList .mk-row').forEach(el=>{
+      el.onclick=()=>{
+        const h=S.habits.find(x=>x.id===el.dataset.id);if(!h)return;
+        if(h.history[t])delete h.history[t];else h.history[t]=1;
+        persist();renderHabits();renderHeader();renderHeat();paint();
+      };
+    });
+    $('#mkPrev').onclick=()=>{const nd=dateAdd(sel,-1);if(nd>=floor){sel=nd;paint()}else toast('已到最早可补卡日期')};
+    $('#mkNext').onclick=()=>{const nd=dateAdd(sel,1);if(nd<=today){sel=nd;paint()}else toast('不能给未来打卡哦')};
+    $('#mkDate').onchange=e=>{const v=e.target.value;if(v&&v<=today&&v>=floor){sel=v;paint()}else{e.target.value=sel;toast('日期无效')}};
+    $$('.mk-quick .quick-chip').forEach(b=>b.onclick=()=>{const v=b.dataset.d;if(v&&v<=today&&v>=floor){sel=v;paint()}});
+  }
+  paint();
+}
 $('#goMoney').onclick=()=>goTab('money');
 
 /* 今日账目快览 */
@@ -1596,7 +1734,26 @@ $('#mPrev').onclick=()=>{curMonth.setMonth(curMonth.getMonth()-1);syncFlowToMont
 $('#mNext').onclick=()=>{curMonth.setMonth(curMonth.getMonth()+1);syncFlowToMonth();renderMonthStat();renderFlow();renderCatChart()};
 
 /* ============ 热力图 / 心情 / 倒计日 ============ */
-function renderHeat(){renderMood();renderHeatmap();renderCountdown()}
+function renderHeat(){renderMood();renderHeatmap();renderCountdown();renderCheckins()}
+function renderCheckins(){
+  const feed=$('#checkinFeed');if(!feed)return;
+  const byDate={};
+  const add=(ds,item)=>{(byDate[ds]=byDate[ds]||[]).push(item)};
+  Object.keys(S.moods||{}).forEach(ds=>{ const m=MOODS.find(x=>x.k===S.moods[ds]); if(m) add(ds,{type:'mood',name:m.name,color:m.c,svg:m.svg}); });
+  S.habits.forEach(h=>{ Object.keys(h.history||{}).forEach(ds=>{ add(ds,{type:'habit',name:h.name,color:h.color,icon:HABIT_ICONS[h.iconIdx]||'heart',arch:false}); }); });
+  S.habitArchive&&Object.keys(S.habitArchive).forEach(id=>{ const a=S.habitArchive[id]; if(!a)return; Object.keys(a.history||{}).forEach(ds=>{ add(ds,{type:'habit',name:a.name,color:a.color,icon:HABIT_ICONS[a.iconIdx]||'heart',arch:true}); }); });
+  const dates=Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).slice(0,30);
+  if(!dates.length){ feed.innerHTML='<div class="empty-mini">还没有打卡记录，去「今日心情」和「习惯打卡」记一笔吧</div>'; return; }
+  const wk=['日','一','二','三','四','五','六'];
+  feed.innerHTML=dates.map(ds=>{
+    const d=new Date(ds+'T00:00:00');
+    const items=byDate[ds].map(it=>{
+      if(it.type==='mood') return `<span class="ci-chip mood" style="color:${it.color}" title="心情·${esc(it.name)}"><span class="ci-ic"><svg viewBox="0 0 24 24" fill="none" stroke="${it.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${it.svg}</svg></span><span class="ci-t">${esc(it.name)}</span></span>`;
+      return `<span class="ci-chip habit ${it.arch?'arch':''}" style="color:${it.color}" title="${esc(it.name)}${it.arch?'（已删除习惯）':''}"><span class="ci-ic">${catIcon(it.icon)}</span><span class="ci-t">${esc(it.name)}</span></span>`;
+    }).join('');
+    return `<div class="ci-day" data-ds="${ds}"><div class="ci-date">${ds.slice(5)} <span class="ci-wk">周${wk[d.getDay()]}</span></div><div class="ci-items">${items}</div></div>`;
+  }).join('');
+}
 const MOODS=[
   {k:1,name:'糟糕',c:'#b04a4a',svg:'<circle cx="12" cy="12" r="9"/><path d="M8 15h8M9 9l-1 1M15 9l1 1"/>'},
   {k:2,name:'一般',c:'#9a7a3a',svg:'<circle cx="12" cy="12" r="9"/><path d="M8 15h8"/><circle cx="9" cy="9.5" r="1"/><circle cx="15" cy="9.5" r="1"/>'},
@@ -1608,7 +1765,7 @@ function renderMood(){
   const t=todayStr();
   $('#moodRow').innerHTML=MOODS.map(m=>`<button class="mood-btn ${S.moods[t]===m.k?'on':''}" data-k="${m.k}"><span class="f"><svg viewBox="0 0 24 24" fill="none" stroke="${m.c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${m.svg}</svg></span>${m.name}</button>`).join('');
   $$('#moodRow .mood-btn').forEach(b=>b.onclick=()=>{
-    const k=+b.dataset.k;S.moods[t]===k?delete S.moods[t]:S.moods[t]=k;persist();renderMood();renderHeatmap();
+    const k=+b.dataset.k;S.moods[t]===k?delete S.moods[t]:S.moods[t]=k;persist();renderMood();renderHeatmap();renderCheckins();
   });
   let s=0;let d=new Date(t);while(S.moods[fmtDate(d)]){s++;d.setDate(d.getDate()-1);if(s>400)break}
   $('#moodStreak').textContent=s?`连续记录心情 ${s} 天`:'今天还没记心情哦';
@@ -2247,13 +2404,41 @@ function mergeState(remote){
     (rem||[]).forEach(x=>{if(x&&x.id&&!map.has(x.id)){map.set(x.id,x);changed=true}});
     return [...map.values()];
   };
-  ['todos','habits','ledger','notes','countdowns','worklog'].forEach(k=>{ S[k]=unionArr(S[k],remote[k]); });
+  /* 习惯合并时剔除本机已删除（归档）的习惯，避免另一端仍活跃的同名习惯把已删习惯“复活” */
+  const delIds=new Set(Object.keys(S.habitArchive||{}));
+  S.todos=unionArr(S.todos,remote.todos);
+  S.habits=unionArr(S.habits,remote.habits).filter(x=>!delIds.has(x.id));
+  S.ledger=unionArr(S.ledger,remote.ledger);
+  S.notes=unionArr(S.notes,remote.notes);
+  S.countdowns=unionArr(S.countdowns,remote.countdowns);
+  S.worklog=unionArr(S.worklog,remote.worklog);
   if(remote.learning&&S.learning){
     ['directions','contents','plans','questions','reviews'].forEach(k=>{ S.learning[k]=unionArr(S.learning[k],remote.learning[k]); });
   }
   if(remote.moods&&typeof remote.moods==='object'){
     S.moods=S.moods||{};
     Object.keys(remote.moods).forEach(d=>{ if(!(d in S.moods)){S.moods[d]=remote.moods[d];changed=true;} });
+  }
+  /* 模块显示/隐藏配置也要随云同步：以「任一端显示即显示」的并集合并，避免手机端开启模块后电脑端拉取时丢失 */
+  if(remote.modules&&Array.isArray(remote.modules)){
+    const rem=normalizeModules(remote.modules);
+    const remMap={};rem.forEach(c=>remMap[c.id]=c.visible);
+    const merged=moduleCfg.map(c=>({id:c.id,visible:c.visible||(c.id in remMap?remMap[c.id]:false)}));
+    rem.forEach(c=>{ if(!merged.some(x=>x.id===c.id)) merged.push({id:c.id,visible:c.visible}); });
+    const modChanged=merged.length!==moduleCfg.length||merged.some((c,i)=>moduleCfg[i]&&c.visible!==moduleCfg[i].visible);
+    if(modChanged){ moduleCfg=merged; S.modules=merged; try{localStorage.setItem(MODULE_KEY,JSON.stringify(merged))}catch(e){} changed=true; applyModuleLayout(); }
+  }
+  /* 已删除习惯的归档历史也要跨设备合并，确保任一端删除习惯后其历史记录仍保留 */
+  if(remote.habitArchive&&typeof remote.habitArchive==='object'){
+    S.habitArchive=S.habitArchive||{};
+    Object.keys(remote.habitArchive).forEach(id=>{
+      const r=remote.habitArchive[id];
+      if(!S.habitArchive[id]){ S.habitArchive[id]=r; changed=true; }
+      else{
+        const lh=S.habitArchive[id].history||{}, rh=(r&&r.history)||{};
+        Object.keys(rh).forEach(ds=>{ if(!(ds in lh)){ lh[ds]=rh[ds]; changed=true; } });
+      }
+    });
   }
   return changed;
 }
@@ -2275,7 +2460,7 @@ async function cloudPull(opts={}){
     const remote=await decryptState(blob);
     if(force){
       /* 历史版本恢复：用户主动操作的整覆盖，保留 force 语义 */
-      S=remote;if(!S.worklog)S.worklog=[];if(!S.notes)S.notes=[];if(!S.countdowns)S.countdowns=[];if(!S.moods)S.moods={};if(!S.habits)S.habits=[];if(!S.todos)S.todos=[];if(!S.ledger)S.ledger=[];if(!S.learning||typeof S.learning!=='object')S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});
+      S=remote;if(!S.worklog)S.worklog=[];if(!S.notes)S.notes=[];if(!S.countdowns)S.countdowns=[];if(!S.moods)S.moods={};if(!S.habits)S.habits=[];if(!S.todos)S.todos=[];if(!S.ledger)S.ledger=[];if(!S.habitArchive||typeof S.habitArchive!=='object')S.habitArchive={};if(!S.learning||typeof S.learning!=='object')S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});
       if(Array.isArray(remote.modules))restoreModules(remote.modules);
       save();renderAll();
       setSyncStatus('ok');toast('已从云端恢复');
@@ -2664,8 +2849,9 @@ function renderHistory(){
           </span>
         </div>`).join('')}</div>
     </div>`;
-  }).join('')+(dates.length>hisLimit?`<button class="hist-more" id="hisMore">继续加载（还有 ${dates.length-hisLimit} 天）</button>`:'')
+  }).join('')   +(dates.length>hisLimit?`<button class="hist-more" id="hisMore">继续加载（还有 ${dates.length-hisLimit} 天）</button>`:'')
    :'<div class="empty-mini">所选时间区间内没有记录，换个日期或类型试试</div>';
+  $$('#checkinFeed .ci-day').forEach(d=>d.onclick=()=>openMakeupModal(d.dataset.ds));
   $$('#hisList .hist-row').forEach(row=>{
     row.querySelector('.hr-edit').onclick=(e)=>{e.stopPropagation();editHistoryRow(row)};
     row.querySelector('.hr-del').onclick=(e)=>{e.stopPropagation();deleteHistoryRow(row)};
@@ -2835,6 +3021,7 @@ const MODULES=[
   {id:'mood',name:'今日心情',page:'heat'},
   {id:'heatmap',name:'年度活跃热力图',page:'heat'},
   {id:'countdown',name:'倒计日',page:'heat'},
+  {id:'checkins',name:'打卡记录',page:'heat'},
   {id:'history',name:'历史信息',page:'history'},
   {id:'notes',name:'备忘录',page:'notes'},
   {id:'learning',name:'学习',page:'learning'},
@@ -2899,7 +3086,7 @@ function openModuleManager(){
       +'</div>';
   }).join('');
   modal('<h4>编辑模块</h4>'
-    +'<p class="muted" style="margin:0 0 10px;font-size:12.5px">支持显示/隐藏与排序，设置只保存在本机浏览器。</p>'
+    +'<p class="muted" style="margin:0 0 10px;font-size:12.5px">支持显示/隐藏与排序，改动会通过云同步到其他设备（任一端显示即显示）。</p>'
     +'<div>'+rows+'</div>'
     +'<div class="btns" style="margin-top:12px"><button class="cancel" id="moduleResetBtn">恢复默认</button><button class="ok" id="moduleDoneBtn">完成</button></div>');
   $('#modalBox').classList.add('wide');
