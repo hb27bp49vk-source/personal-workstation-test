@@ -1277,9 +1277,18 @@ function renderHabits(){
 }
 function habitStreak(h,t){
   let s=0;let d=new Date(t);d.setHours(0,0,0,0);
-  const created=new Date(h.createdAt||t);created.setHours(0,0,0,0);
+  /* 起点：取 createdAt 与「最早打卡记录」中较早者。
+     避免两种情况把连续天数截断为 1：
+       - 旧数据缺少 createdAt 字段（原逻辑会 fallback 到今天）；
+       - 同步后本地 createdAt 比实际打卡历史更晚。 */
+  let start=null;
+  if(h.createdAt){ const c=new Date(h.createdAt); c.setHours(0,0,0,0); if(!start||c<start)start=c; }
+  let e=null;
+  for(const k of Object.keys(h.history||{})){ if(e===null||k<e)e=k; }
+  if(e){ const ed=new Date(e); ed.setHours(0,0,0,0); if(!start||ed<start)start=ed; }
+  if(!start)return 0;
   const restUsed={};let guard=0;
-  while(d>=created&&guard<800){
+  while(d>=start&&guard<800){
     guard++;
     const ds=fmtDate(d);
     if(h.history[ds]){s++}
@@ -1795,7 +1804,7 @@ function renderHeatmap(){
 function activityLevel(ds){
   let a=0;
   a+=S.todos.filter(x=>x.date===ds&&x.done).length;
-  a+=S.habits.filter(h=>h.history[ds]).length;
+  a+=S.habits.filter(h=>(h.history||{})[ds]).length;
   if(S.ledger.some(x=>x.date===ds))a+=1;
   if(S.moods[ds])a+=1;
   a+=S.worklog.filter(x=>x.date===ds).length;
@@ -2420,12 +2429,13 @@ function mergeState(remote){
     (remote.habits||[]).forEach(x=>{
       if(!x||!x.id||delIds.has(x.id))return;
       if(map.has(x.id)){
-        /* 同 id：保留本地属性，history 取并集 */
+        /* 同 id：保留本地属性，history 深度合并取并集；createdAt 取两端较早者（避免本地较新 createdAt 截断连续天数） */
         const loc=map.get(x.id);
         const lh=loc.history||{}, rh=x.history||{};
         let merged=false;
         Object.keys(rh).forEach(d=>{ if(!(d in lh)){ lh[d]=rh[d]; merged=true; } });
-        if(merged)changed=true;
+        if(merged){ loc.history=lh; changed=true; } /* 关键回写：修「本地 history 为 undefined 时引用丢失」导致历史被清空 */
+        if(x.createdAt && (!loc.createdAt || x.createdAt<loc.createdAt)){ loc.createdAt=x.createdAt; changed=true; }
       }else{
         map.set(x.id,x);changed=true;
       }
