@@ -618,6 +618,12 @@ summary::-webkit-details-marker{color:var(--text)}
   .ln-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);margin:8px 0}
   .ln-check input{width:16px;height:16px;flex:none}
   .ln-sec{margin-top:14px}
+.ln-ms-toggle{cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px}
+.ln-ms-toggle:hover{color:var(--text)}
+.ln-ms-caret{display:inline-block;font-size:10px;color:var(--text-3);width:12px;flex:none;text-align:center;transition:transform .15s}
+.ln-sec-collapsed>.ln-ms-caret{transform:rotate(-90deg)}
+.ln-sec-body{overflow:hidden;transition:max-height .2s ease}
+.ln-ms-corner{margin-left:auto;font-size:11px;color:var(--text-3);font-weight:400}
 .ln-home-card:active{transform:scale(.99)}
 .ln-detail-head{display:flex;align-items:center;gap:8px;padding:6px 2px 2px}
 .ln-detail-head .ln-dot{width:12px;height:12px;border-radius:50%;flex:none;margin-top:0}
@@ -3443,13 +3449,30 @@ function lnDelPlan(pid){lnConfirm('确定删除该计划？',()=>{const L0=lnDat
 function lnDescendantIds(L0,id){const res=[];const stack=[id];while(stack.length){const cur=stack.pop();L0.contents.forEach(c=>{if((c.parentId||null)===cur){res.push(c.id);stack.push(c.id);}});}return res;}
 var lnTopicCollapsed={};
 var lnNoteExpanded={};
+/* 学习模块分区折叠（资料/问题/复习/自测 等区段），跨页持久化 */
+var lnSecCollapsed=(()=>{try{return JSON.parse(localStorage.getItem('ln_sec_collapsed')||'{}')}catch(e){return {}}})();
+function saveLnSecCollapsed(){try{localStorage.setItem('ln_sec_collapsed',JSON.stringify(lnSecCollapsed))}catch(e){}}
+function toggleLnSec(key){ if(!key)return; lnSecCollapsed[key]=!lnSecCollapsed[key]; if(!lnSecCollapsed[key]) delete lnSecCollapsed[key]; saveLnSecCollapsed(); lnRefresh(); }
+function isLnSecOpen(key){ return !lnSecCollapsed[key]; }
+/* FIFO 排序：createdAt 升序，相同时按 id 升序兜底；无 createdAt 时按原顺序。FIFO 是默认行为，括号内可传主排序字段如 'due'/'date' */
+function lnFifo(arr,byKey){byKey=byKey||'createdAt';return arr.slice().sort((a,b)=>{const ak=(a[byKey]||''),bk=(b[byKey]||'');if(ak&&bk)return ak.localeCompare(bk)||String(a.id||'').localeCompare(String(b.id||''));if(ak&&!bk)return -1;if(!ak&&bk)return 1;return String((a.id||'')).localeCompare(String((b.id||'')))});}
+/* 渲染带"折叠标题 + 内容"的学习区段。key 唯一标识一个区段（建议 'dirId|tab|sec'），默认展开。 */
+function lnSecHtml(key,titleHtml,bodyHtml){
+  const open=isLnSecOpen(key);
+  return `<div class="ln-sec ${open?'':'ln-sec-collapsed'}" data-sec-key="${esc(key)}">
+    <div class="ln-ms ln-ms-toggle" onclick="toggleLnSec('${esc(key)}')" role="button" tabindex="0">
+      <span class="ln-ms-caret">${open?'▼':'▶'}</span><span class="ln-ms-text">${titleHtml}</span>
+    </div>
+    <div class="ln-sec-body" ${open?'':'style="display:none"'}>${bodyHtml}</div>
+  </div>`;
+}
 function lnToggleTopic(id){ if(lnTopicCollapsed[id]) delete lnTopicCollapsed[id]; else lnTopicCollapsed[id]=true; lnRefresh(); }
 function lnToggleNotes(id){ if(lnNoteExpanded[id]) delete lnNoteExpanded[id]; else lnNoteExpanded[id]=true; lnRefresh(); }
 function lnNotesHtml(c,mode){ return (c.notes&&c.notes.trim())?`<div class="ln-notes${lnNoteExpanded[c.id]?' ln-notes-open':''}" style="margin-top:6px;padding:10px 12px;background:var(--card-soft);border-radius:var(--r-sm);border:1px solid var(--line);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word">${esc(c.notes)}</div>${mode!=='compact'?`<button class="ln-notes-toggle" onclick="lnToggleNotes('${c.id}')">${lnNoteExpanded[c.id]?'收起心得':'展开心得'}</button>`:''}`:''; }
 function lnQuickAddChild(dirId,parentId){ const L0=lnData(); const p=L0.contents.find(c=>c.id===parentId); openLnContentModal(p?p.directionId:dirId,null,null,parentId); }
 function lnContentListHtml(L0,dirId,parentId,depth){
   depth=depth||0; if(depth>12) return '';
-  const kids=L0.contents.filter(c=>c.directionId===dirId&&(c.parentId||null)===parentId);
+  const kids=lnFifo(L0.contents.filter(c=>c.directionId===dirId&&(c.parentId||null)===parentId),'createdAt');
   if(!kids.length) return '';
   return kids.map(c=>{
     const isTopic=c.kind==='topic';
@@ -3483,7 +3506,7 @@ function lnNodeContentsHtml(L0,roots,hit,depth){
     const hasNotes=c.notes&&c.notes.trim();
     const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
     let h=`<div class="card" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span>${notesTag}</div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div>${lnNotesHtml(c)}</div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`;
-    const kids=L0.contents.filter(x=>(x.parentId||null)===c.id&&hit.has(x.id));
+    const kids=lnFifo(L0.contents.filter(x=>(x.parentId||null)===c.id&&hit.has(x.id)),'createdAt');
     if(kids.length) h+=lnNodeContentsHtml(L0,kids,hit,depth+1);
     return h;
   }).join('');
@@ -3548,7 +3571,7 @@ function openLnContentModal(dirId,id,nodeId,parentId){
 function lnDelContent(id){lnConfirm('确定删除该学习内容？',()=>{const L0=lnData();L0.questions.forEach(q=>{if(q.contentId===id)q.contentId=null});L0.contents.forEach(c=>{if(c.parentId===id)c.parentId=null});L0.contents=L0.contents.filter(x=>x.id!==id);persist();lnRefresh()})}
 /* —— 问题 —— */
 function renderLnDirQuestions(d,L0){
-  const questions=L0.questions.filter(q=>q.directionId===d.id);
+  const questions=lnFifo(L0.questions.filter(q=>q.directionId===d.id));
   const stName={open:'未解决',doing:'解决中',solved:'已解决'};
   const nodeOpts=lnNodeOptions(L0,d.id).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');
   let html=`<div class="ln-quick"><input type="text" id="lnQqTitle_${d.id}" placeholder="一句话记录问题，回车快速添加" onkeydown="if(event.key==='Enter')lnQuickAddQuestion('${d.id}')"><select id="lnQqNode_${d.id}" title="关联节点">${nodeOpts}</select><button onclick="lnQuickAddQuestion('${d.id}')">记录</button></div>`;
@@ -3612,7 +3635,7 @@ function lnCycleStatus(id){const L0=lnData();const q=L0.questions.find(x=>x.id==
 function lnDelQuestion(id){lnConfirm('确定删除该问题？',()=>{const L0=lnData();L0.questions=L0.questions.filter(x=>x.id!==id);persist();lnRefresh()})}
 /* —— 知识库 —— */
 function renderLnDirKb(d,L0){
-  let list=L0.questions.filter(q=>q.directionId===d.id&&q.status==='solved'&&q.answer&&q.answer.trim());
+  let list=lnFifo(L0.questions.filter(q=>q.directionId===d.id&&q.status==='solved'&&q.answer&&q.answer.trim()));
   if(lnKbKw)list=list.filter(q=>(q.title+' '+q.answer+' '+(q.tags||[]).join(' ')).toLowerCase().includes(lnKbKw.toLowerCase()));
   let html=`<div class="ln-quick"><input type="text" id="lnKbKw" placeholder="搜索知识库" value="${esc(lnKbKw)}" oninput="lnKbKw=this.value;renderLnDetail()"></div>`;
   if(!list.length){html+='<div class="ln-empty">还没有沉淀知识。<br>把问题标记为已解决并填写答案后会自动出现在这里。</div>';return html}
@@ -3677,14 +3700,20 @@ function renderLnNodeView(){
   const ni=lnItemsForNode(L0,lnNode);const col=d.color||'#888';
   const crumb=p.title+(m?(' / '+(m.title||'阶段')):'')+(t?(' / '+(t.title||'任务')):'');
   const curTitle=lnNode.taskId&&t?t.title:(lnNode.msId&&m?(m.title||'阶段'):p.title);
-  const _hit=new Set(ni.contents.map(c=>c.id));{let _a=true;while(_a){_a=false;for(const _c of L0.contents){if(!_hit.has(_c.id)&&_c.parentId&&_hit.has(_c.parentId)){_hit.add(_c.id);_a=true;}}}}
-  const _roots=L0.contents.filter(c=>_hit.has(c.id)&&(!c.parentId||!_hit.has(c.parentId)));
-  const statHtml=[['📄 资料',_hit.size],['💡 问题',ni.questions.length],['📚 知识',ni.questions.filter(q=>q.status==='solved'&&q.answer&&q.answer.trim()).length],['🔁 复习',ni.reviews.length],['🧪 自测',ni.selftests.length]].map(([s,n])=>`<div class="ln-ov-i"><b>${n}</b><span>${s}</span></div>`).join('');
-  const contentHtml=_hit.size?lnNodeContentsHtml(L0,_roots,_hit,0):'<div class="ln-empty">还没有资料，点下方「+ 资料/子主题」添加。</div>';
-  const qHtml=ni.questions.length?ni.questions.map(q=>{const stName={open:'未解决',doing:'解决中',solved:'已解决'};const tags=(q.tags||[]).map(x=>`<span class="ln-tag">${esc(x)}</span>`).join('');return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(q.title)} <span class="ln-badge ${q.status}">${stName[q.status]}</span>${q.hard?'<span class="ln-tag" style="color:var(--bad);border-color:var(--bad)">难点</span>':''}</div><div class="ln-sub">${tags?tags+' · ':''}${q.detail?esc(q.detail).slice(0,80):'暂无详情'}</div>${q.status==='solved'&&q.answer?`<div class="ln-kb-a"><b>答案：</b>${esc(q.answer)}</div>`:''}</div><div class="ln-acts">${q.status==='solved'?`<button onclick="addReview('question','${q.id}','${q.directionId}')">复习</button>`:''}<button onclick="openLnQuestionModal('${q.id}')">编辑</button><button onclick="lnToggleHard('${q.id}')">${q.hard?'取消难点':'标难点'}</button><button onclick="lnDelQuestion('${q.id}')" style="color:var(--bad)">删除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有问题，点下方「+ 问题」记录。</div>';
-  const rHtml=ni.reviews.length?ni.reviews.map(r=>{let title='',sub='';if(r.refType==='question'){const qq=L0.questions.find(x=>x.id===r.refId);if(qq)title=qq.title;sub='问题'}else{const cc=L0.contents.find(x=>x.id===r.refId);if(cc)title=cc.name;sub='内容'}const due=r.due<=todayStr();return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(title)}</div><div class="ln-sub">${sub} · 下次${due?'<b class="ln-due">今天</b>':r.due}</div></div><div class="ln-acts"><button onclick="lnMarkReviewed('${r.id}')">${due?'已复习':'推迟'}</button><button onclick="lnDelReview('${r.id}')" style="color:var(--bad)">移除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有复习安排。</div>';
-  const stHtml=ni.selftests.length?ni.selftests.map(s=>{const node=lnTaskTitleById(L0,s.nodeId);return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(s.title)} <span class="ln-tag">${s.score!=null?('得分 '+s.score):'未打分'}</span></div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${s.weak?('薄弱：'+esc(s.weak)+' · '):''}${s.date||''}</div>${s.note?`<div class="ln-kb-a">${esc(s.note)}</div>`:''}</div><div class="ln-acts"><button onclick="openLnSelftestModal('${d.id}','${s.id}')">编辑</button><button onclick="lnDelSelftest('${s.id}')" style="color:var(--bad)">删除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有自测记录。</div>';
+  /* FIFO：先按创建时间正序排序，再做父子聚合 */
+  const contentsAll=lnFifo(ni.contents,'createdAt');
+  const hit=new Set(contentsAll.map(c=>c.id));{let _a=true;while(_a){_a=false;for(const _c of L0.contents){if(!hit.has(_c.id)&&_c.parentId&&hit.has(_c.parentId)){hit.add(_c.id);_a=true;}}}}
+  const roots=lnFifo(L0.contents.filter(c=>hit.has(c.id)&&(!c.parentId||!hit.has(c.parentId))),'createdAt');
+  const questionsAll=lnFifo(ni.questions,'createdAt');
+  const reviewsAll=lnFifo(ni.reviews,'due');
+  const selftestsAll=lnFifo(ni.selftests,'date');
+  const statHtml=[['📄 资料',hit.size],['💡 问题',questionsAll.length],['📚 知识',questionsAll.filter(q=>q.status==='solved'&&q.answer&&q.answer.trim()).length],['🔁 复习',reviewsAll.length],['🧪 自测',selftestsAll.length]].map(([s,n])=>`<div class="ln-ov-i"><b>${n}</b><span>${s}</span></div>`).join('');
+  const contentHtml=hit.size?lnNodeContentsHtml(L0,roots,hit,0):'<div class="ln-empty">还没有资料，点下方「+ 资料/子主题」添加。</div>';
+  const qHtml=questionsAll.length?questionsAll.map(q=>{const stName={open:'未解决',doing:'解决中',solved:'已解决'};const tags=(q.tags||[]).map(x=>`<span class="ln-tag">${esc(x)}</span>`).join('');return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(q.title)} <span class="ln-badge ${q.status}">${stName[q.status]}</span>${q.hard?'<span class="ln-tag" style="color:var(--bad);border-color:var(--bad)">难点</span>':''}</div><div class="ln-sub">${tags?tags+' · ':''}${q.detail?esc(q.detail).slice(0,80):'暂无详情'}</div>${q.status==='solved'&&q.answer?`<div class="ln-kb-a"><b>答案：</b>${esc(q.answer)}</div>`:''}</div><div class="ln-acts">${q.status==='solved'?`<button onclick="addReview('question','${q.id}','${q.directionId}')">复习</button>`:''}<button onclick="openLnQuestionModal('${q.id}')">编辑</button><button onclick="lnToggleHard('${q.id}')">${q.hard?'取消难点':'标难点'}</button><button onclick="lnDelQuestion('${q.id}')" style="color:var(--bad)">删除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有问题，点下方「+ 问题」记录。</div>';
+  const rHtml=reviewsAll.length?reviewsAll.map(r=>{let title='',sub='';if(r.refType==='question'){const qq=L0.questions.find(x=>x.id===r.refId);if(qq)title=qq.title;sub='问题'}else{const cc=L0.contents.find(x=>x.id===r.refId);if(cc)title=cc.name;sub='内容'}const due=r.due<=todayStr();return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(title)}</div><div class="ln-sub">${sub} · 下次${due?'<b class="ln-due">今天</b>':r.due}</div></div><div class="ln-acts"><button onclick="lnMarkReviewed('${r.id}')">${due?'已复习':'推迟'}</button><button onclick="lnDelReview('${r.id}')" style="color:var(--bad)">移除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有复习安排。</div>';
+  const stHtml=selftestsAll.length?selftestsAll.map(s=>{const node=lnTaskTitleById(L0,s.nodeId);return `<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(s.title)} <span class="ln-tag">${s.score!=null?('得分 '+s.score):'未打分'}</span></div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${s.weak?('薄弱：'+esc(s.weak)+' · '):''}${s.date||''}</div>${s.note?`<div class="ln-kb-a">${esc(s.note)}</div>`:''}</div><div class="ln-acts"><button onclick="openLnSelftestModal('${d.id}','${s.id}')">编辑</button><button onclick="lnDelSelftest('${s.id}')" style="color:var(--bad)">删除</button></div></div></div>`}).join(''):'<div class="ln-empty">还没有自测记录。</div>';
   const quick=`<div class="ln-toolbar"><button onclick="openLnContentModal('${d.id}',null,'${curNode}')">+ 资料/子主题</button><button onclick="openLnQuestionModal(null,'${curNode}','${d.id}')">+ 问题</button><button onclick="openLnSelftestModal('${d.id}',null,'${curNode}')">+ 自测</button></div>`;
+  const secBase=`${d.id}|node|${curNode}`;
   $('#lnBody').innerHTML=`<div class="ln-detail-head" style="box-shadow:inset 4px 0 0 ${col}">
       <button class="ln-back" onclick="lnBackNode()">‹ 返回</button>
       <span class="ln-dot" style="background:${col}"></span>
@@ -3692,15 +3721,15 @@ function renderLnNodeView(){
     </div>
     <div class="ln-ov" style="margin:8px 0">${statHtml}</div>
     ${quick}
-    <div class="ln-sec"><div class="ln-ms">📄 资料（${ni.contents.length}）</div>${contentHtml}</div>
-    <div class="ln-sec"><div class="ln-ms">💡 问题（${ni.questions.length}）</div>${qHtml}</div>
-    <div class="ln-sec"><div class="ln-ms">🔁 复习（${ni.reviews.length}）</div>${rHtml}</div>
-    <div class="ln-sec"><div class="ln-ms">🧪 自测（${ni.selftests.length}）</div>${stHtml}</div>`;
+    ${lnSecHtml(secBase+'|contents',`<span>📄 资料（${hit.size}）</span>`,contentHtml)}
+    ${lnSecHtml(secBase+'|questions',`<span>💡 问题（${questionsAll.length}）</span>`,qHtml)}
+    ${lnSecHtml(secBase+'|reviews',`<span>🔁 复习（${reviewsAll.length}）</span>`,rHtml)}
+    ${lnSecHtml(secBase+'|selftests',`<span>🧪 自测（${selftestsAll.length}）</span>`,stHtml)}`;
 }
 function lnToggleHard(id){const L0=lnData();const q=L0.questions.find(x=>x.id===id);if(!q)return;q.hard=!q.hard;persist();lnRefresh()}
 /* —— 错题 —— */
 function renderLnDirMistakes(d,L0){
-  const list=L0.questions.filter(q=>q.directionId===d.id&&q.hard);
+  const list=lnFifo(L0.questions.filter(q=>q.directionId===d.id&&q.hard));
   let html='';
   if(!list.length){html='<div class="ln-empty">还没有难点/易错记录。<br>在「问题」里勾选「标记为难点」即可归集到这里。</div>';return html}
   html+='<div class="ln-ms">⚠️ 难点 / 易错（'+list.length+'）</div>';
@@ -3709,7 +3738,7 @@ function renderLnDirMistakes(d,L0){
 }
 /* —— 资源 —— */
 function renderLnDirResources(d,L0){
-  const list=L0.contents.filter(c=>c.directionId===d.id&&c.kind==='resource');
+  const list=lnFifo(L0.contents.filter(c=>c.directionId===d.id&&c.kind==='resource'));
   let html='';
   if(!list.length){html='<div class="ln-empty">还没有资源型资料。<br>在「内容」里添加时选择「资料（书/课/链接）」即可。</div>';return html}
   list.forEach(c=>{const node=lnTaskTitleById(L0,c.nodeId);const hasNotes=c.notes&&c.notes.trim();const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(c.name)}${notesTag}</div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div>${lnNotesHtml(c)}</div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`});
@@ -3742,7 +3771,7 @@ function renderLnDirTimeline(d,L0){
 }
 /* —— 自测 —— */
 function renderLnDirSelftests(d,L0){
-  const list=L0.selftests.filter(s=>s.directionId===d.id);
+  const list=lnFifo(L0.selftests.filter(s=>s.directionId===d.id),'date');
   const nodeOpts=lnNodeOptions(L0,d.id).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');
   let html=`<div class="ln-quick"><input type="text" id="lnStTitle_${d.id}" placeholder="自测名称，如 第1章小测" onkeydown="if(event.key==='Enter')lnQuickAddSelftest('${d.id}')"><select id="lnStNode_${d.id}" title="关联节点">${nodeOpts}</select><button onclick="lnQuickAddSelftest('${d.id}')">记录</button></div>`;
   if(!list.length){html+='<div class="ln-empty">还没有自测记录。<br>学完一个节点后做自测，记录得分与薄弱点，帮助安排复习。</div>';return html}
