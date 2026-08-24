@@ -1100,7 +1100,7 @@ const DEFAULT={
   moods:{}, notes:[], countdowns:[], worklog:[],
   customCats:{expense:[],income:[]},
   budgetCats:{},
-  learning:{directions:[],contents:[],plans:[],questions:[],reviews:[]},
+  learning:{directions:[],contents:[],plans:[],questions:[],reviews:[],mistakes:[],selftests:[]},
   habitArchive:{}
 };
 let S=load();
@@ -1115,8 +1115,8 @@ function load(){
     if(!d.habits)d.habits=[];
     if(!d.todos)d.todos=[];
     if(!d.ledger)d.ledger=[];
-    if(!d.learning||typeof d.learning!=='object')d.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};
-    ['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(d.learning[k]))d.learning[k]=[]});
+    if(!d.learning||typeof d.learning!=='object')d.learning={directions:[],contents:[],plans:[],questions:[],reviews:[],mistakes:[],selftests:[]};
+    ['directions','contents','plans','questions','reviews','mistakes','selftests'].forEach(k=>{if(!Array.isArray(d.learning[k]))d.learning[k]=[]});
     if(!d.habitArchive||typeof d.habitArchive!=='object')d.habitArchive={};
     if(!d.customCats||typeof d.customCats!=='object')d.customCats={expense:[],income:[]};
     if(!Array.isArray(d.customCats.expense))d.customCats.expense=[];
@@ -2302,7 +2302,7 @@ function mergeData(d){
   if(Array.isArray(d.countdowns))d.countdowns.forEach(t=>{if(t.id&&!S.countdowns.some(x=>x.id===t.id)){S.countdowns.push(t);add.countdowns++}});
   if(Array.isArray(d.worklog))d.worklog.forEach(t=>{if(t.id&&!S.worklog.some(x=>x.id===t.id)){S.worklog.push(t);add.worklog++}});
   if(d.learning&&typeof d.learning==='object'){
-    ['directions','contents','plans','questions','reviews'].forEach(k=>{
+    ['directions','contents','plans','questions','reviews','mistakes','selftests'].forEach(k=>{
       if(!Array.isArray(d.learning[k]))return;
       if(!S.learning[k])S.learning[k]=[];
       d.learning[k].forEach(x=>{if(x&&x.id&&!S.learning[k].some(y=>y.id===x.id)){S.learning[k].push(x);add.learning++}});
@@ -2561,6 +2561,26 @@ function mergeState(remote){
     (rem||[]).forEach(x=>{if(x&&x.id&&!map.has(x.id)){map.set(x.id,x);changed=true}});
     return [...map.values()];
   };
+  /* 字段级并集合并：同 id 时「远端非空字段」覆盖本地（避免 unionArr 整条不更新导致学习心得/答案等不同步）
+     —— 用法：先 unionArr 把 id 补齐，再按字段并集刷内容；createdAt 取两端较早者（防新建端截断） */
+  const mergeItemsFields=(locArr,remArr,fields)=>{
+    const rMap=new Map();
+    (remArr||[]).forEach(x=>{if(x&&x.id)rMap.set(x.id,x)});
+    locArr.forEach(item=>{
+      if(!item||!item.id)return;
+      const r=rMap.get(item.id);
+      if(!r)return;
+      let touched=false;
+      fields.forEach(f=>{
+        const rv=r[f];
+        const isArr=Array.isArray(rv);
+        const rvEmpty=rv==null||rv===''||(isArr&&rv.length===0);
+        if(!rvEmpty && JSON.stringify(rv)!==JSON.stringify(item[f])){ item[f]=rv; touched=true; }
+      });
+      if(r.createdAt && (!item.createdAt || r.createdAt<item.createdAt)){ item.createdAt=r.createdAt; touched=true; }
+      if(touched) changed=true;
+    });
+  };
   /* 习惯合并：同 id 习惯保留本地属性（名称/图标/颜色等可能刚改过），但 history 深度合并取并集
      ——避免「本地空 history 覆盖远端已打卡记录」导致打卡数据跨设备丢失 */
   const delIds=new Set(Object.keys(S.habitArchive||{}));
@@ -2589,7 +2609,17 @@ function mergeState(remote){
   S.countdowns=unionArr(S.countdowns,remote.countdowns);
   S.worklog=unionArr(S.worklog,remote.worklog);
   if(remote.learning&&S.learning){
-    ['directions','contents','plans','questions','reviews'].forEach(k=>{ S.learning[k]=unionArr(S.learning[k],remote.learning[k]); });
+    /* 7 个 key 全过（修复之前 unionArr 漏 selftests；mistakes 是派生暂留空不影响） */
+    ['directions','contents','plans','questions','reviews','mistakes','selftests'].forEach(k=>{
+      if(Array.isArray(remote.learning[k])) S.learning[k]=unionArr(S.learning[k],remote.learning[k]);
+    });
+    /* 字段级深度合并（同 id 时远端非空字段覆盖本地）—— 修复学习心得/答案/详情等不同步
+       plans 嵌套复杂（milestones>tasks），保留 unionArr 即可 */
+    mergeItemsFields(S.learning.contents,remote.learning.contents,['name','kind','note','notes','url','directionId','nodeId','parentId']);
+    mergeItemsFields(S.learning.questions,remote.learning.questions,['title','detail','status','answer','tags','hard','solvedAt','directionId','contentId','nodeId']);
+    mergeItemsFields(S.learning.directions,remote.learning.directions,['name','description','active','color']);
+    mergeItemsFields(S.learning.reviews,remote.learning.reviews,['refType','refId','directionId','nodeId','due','done','note']);
+    mergeItemsFields(S.learning.selftests,remote.learning.selftests,['title','score','weak','note','directionId','nodeId']);
   }
   if(remote.moods&&typeof remote.moods==='object'){
     S.moods=S.moods||{};
@@ -2636,7 +2666,7 @@ async function cloudPull(opts={}){
     const remote=await decryptState(blob);
     if(force){
       /* 历史版本恢复：用户主动操作的整覆盖，保留 force 语义 */
-      S=remote;if(!S.worklog)S.worklog=[];if(!S.notes)S.notes=[];if(!S.countdowns)S.countdowns=[];if(!S.moods)S.moods={};if(!S.habits)S.habits=[];if(!S.todos)S.todos=[];if(!S.ledger)S.ledger=[];if(!S.habitArchive||typeof S.habitArchive!=='object')S.habitArchive={};if(!S.learning||typeof S.learning!=='object')S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});
+      S=remote;if(!S.worklog)S.worklog=[];if(!S.notes)S.notes=[];if(!S.countdowns)S.countdowns=[];if(!S.moods)S.moods={};if(!S.habits)S.habits=[];if(!S.todos)S.todos=[];if(!S.ledger)S.ledger=[];if(!S.habitArchive||typeof S.habitArchive!=='object')S.habitArchive={};if(!S.learning||typeof S.learning!=='object')S.learning={directions:[],contents:[],plans:[],questions:[],reviews:[],mistakes:[],selftests:[]};['directions','contents','plans','questions','reviews','mistakes','selftests'].forEach(k=>{if(!Array.isArray(S.learning[k]))S.learning[k]=[]});
       if(Array.isArray(remote.modules))restoreModules(remote.modules);
       save();renderAll();
       setSyncStatus('ok');toast('已从云端恢复');
@@ -2779,7 +2809,7 @@ function syncFmtTime(iso){
   return d.toLocaleString('zh-CN',{hour12:false});
 }
 function normalizeState(d){
-  if(!d.worklog)d.worklog=[];if(!d.notes)d.notes=[];if(!d.countdowns)d.countdowns=[];if(!d.moods)d.moods={};if(!d.habits)d.habits=[];if(!d.todos)d.todos=[];if(!d.ledger)d.ledger=[];if(!d.learning||typeof d.learning!=='object')d.learning={directions:[],contents:[],plans:[],questions:[],reviews:[]};['directions','contents','plans','questions','reviews'].forEach(k=>{if(!Array.isArray(d.learning[k]))d.learning[k]=[]});
+  if(!d.worklog)d.worklog=[];if(!d.notes)d.notes=[];if(!d.countdowns)d.countdowns=[];if(!d.moods)d.moods={};if(!d.habits)d.habits=[];if(!d.todos)d.todos=[];if(!d.ledger)d.ledger=[];if(!d.learning||typeof d.learning!=='object')d.learning={directions:[],contents:[],plans:[],questions:[],reviews:[],mistakes:[],selftests:[]};['directions','contents','plans','questions','reviews','mistakes','selftests'].forEach(k=>{if(!Array.isArray(d.learning[k]))d.learning[k]=[]});
   return d;
 }
 function syncStateSummary(d){
@@ -3317,7 +3347,7 @@ if(!syncCfg&&S.todos.length===0&&S.habits.length===0&&S.ledger.length===0&&S.not
     {id:uid(),text:'和团队同步了接口设计变更',time:'14:20',date:t}
   ];
   const dDir={id:uid(),name:'示例学习方向',desc:'这是示例数据，可在「学习」页删除',color:'#5a7a8a',active:true,createdAt:t};
-  S.learning={directions:[dDir],contents:[],plans:[],questions:[{id:uid(),directionId:dDir.id,contentId:null,title:'示例问题：如何高效记忆学过的知识？',detail:'比如看完书后过几天就忘，有没有好的方法？',status:'open',tags:['方法'],answer:'',createdAt:t}],reviews:[]};
+  S.learning={directions:[dDir],contents:[],plans:[],questions:[{id:uid(),directionId:dDir.id,contentId:null,title:'示例问题：如何高效记忆学过的知识？',detail:'比如看完书后过几天就忘，有没有好的方法？',status:'open',tags:['方法'],answer:'',createdAt:t}],reviews:[],mistakes:[],selftests:[]};
   const ny=new Date();ny.setMonth(11);ny.setDate(31);
   S.countdowns=[{id:uid(),name:'今年还剩',date:fmtDate(ny),color:'#5a5a5a'}];
   persist();
