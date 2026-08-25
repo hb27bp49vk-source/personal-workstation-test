@@ -45,7 +45,7 @@ body{
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;transition:all .15s}
 input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
 ::placeholder{color:var(--text-3)}
-.scrollarea{overflow-y:auto}
+.scrollarea{overflow-y:auto;-webkit-overflow-scrolling:touch}
 
 /* ====== 头部 ====== */
 .app{max-width:var(--max);margin:0 auto;background:var(--bg);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
@@ -702,39 +702,6 @@ summary::-webkit-details-marker{color:var(--text)}
 .hist-more{width:100%;margin-top:12px;padding:9px;border:1px dashed var(--line);border-radius:var(--r-sm);background:transparent;color:var(--text-2);cursor:pointer;font-size:13px}
 .hist-more:hover{border-color:var(--text);color:var(--text)}
 
-/* —— v3.21 学习双视角首页 —— */
-.ln-seg{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.ln-seg-tabs{display:flex;flex:1;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-md);padding:3px}
-.ln-seg-btn{flex:1;border:none;background:transparent;font:inherit;font-size:13px;color:var(--text-2);padding:8px 4px;border-radius:var(--r-sm);cursor:pointer;transition:background .15s,color .15s}
-.ln-seg-btn.on{background:var(--card);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
-.ln-seg-all{flex:none;border:1px solid var(--line);background:var(--card);color:var(--text-2);font:inherit;font-size:12px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer}
-.ln-seg-all:active{background:var(--card-soft)}
-.ln-onboard{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;font-size:12.5px;color:var(--text-2);margin-bottom:12px}
-.ln-onboard button{flex:none;border:none;background:var(--text);color:#fff;font:inherit;font-size:12px;padding:5px 10px;border-radius:var(--r-xs);cursor:pointer}
-.ln-row{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:8px;background:var(--card);cursor:pointer;transition:background .12s}
-.ln-row:active{background:var(--card-soft)}
-.ln-row.over{background:#fdeaea;border-color:#f0b9b9}
-.ln-row .ln-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
-.ln-row-main{flex:1;min-width:0}
-.ln-row-t{font-size:13.5px;color:var(--text);font-weight:500;line-height:1.4;word-break:break-word}
-.ln-row-s{font-size:12px;color:var(--text-3);margin-top:2px;line-height:1.4}
-.ln-row-d{flex:none;font-size:12px;color:var(--text-3);margin-top:2px;white-space:nowrap}
-.ln-row.over .ln-row-d{color:var(--bad);font-weight:600}
-.ln-adv{margin-top:6px;border-top:1px dashed var(--line);padding-top:10px}
-.ln-adv>summary{font-size:13px;color:var(--text-2);cursor:pointer;padding:6px 0;user-select:none;list-style:none}
-.ln-adv>summary::-webkit-details-marker{display:none}
-.ln-adv>summary:before{content:'▾ ';color:var(--text-3)}
-.ln-adv[open]>summary:before{content:'▴ '}
-.ln-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
-.ln-mc{background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px}
-.ln-mc .lab{font-size:12px;color:var(--text-2)}
-.ln-mc .num{font-size:23px;font-weight:600;color:var(--text);margin-top:4px}
-.ln-sec{font-size:13.5px;color:var(--text);font-weight:600;margin:14px 0 8px}
-.ln-yr{font-size:13px;color:var(--text-2);line-height:2}
-.ln-yr b{color:var(--text);font-weight:600;font-size:14px}
-.ln-first{background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:16px 14px;text-align:center;font-size:13.5px;color:var(--text-2)}
-.ln-first a{color:var(--text);font-weight:600;cursor:pointer;border-bottom:1px solid var(--text)}
-
 </style>
 </head>
 <body>
@@ -833,7 +800,6 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="quick-chips note-quick-row" id="noteQuickRow"></div>
           <div class="field"><span class="lab">日期</span><input id="dateIn" type="date"></div>
           <button class="btn-main" id="amtSave">保存</button>
-          <div class="muted" id="smartHint" style="margin-top:9px;font-size:11.5px;line-height:1.5"></div>
         </div>
       </div>
 
@@ -1146,30 +1112,18 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
-  {version:'v3.21',date:'2026-08-25',modules:['学习'],items:[
-    '学习首页升级为「双视角」：顶部新增分段控件「这周要做什么 / 我走到哪了」，默认停在「这周要做什么」',
-    '这周视图聚合全部方向未来 7 天的待办任务 / 阶段截止 / 待复习，逾期项标红置顶，点击任一行的直达对应计划节点或复习 Tab',
-    '进度视图聚合总进度（方向数 / 进行中计划 / 任务完成率 / 未解决问题 / 待复习）+ 今年增长（今年已解决问题 / 今年新增内容 / 跨全部方向的问题解决率）',
-    '原方向列表收敛为「进阶 · 全部方向」可折叠区（默认折叠、状态持久化）；首次进入显示一次性引导提示；无任何方向时显示新建引导卡'
-  ],status:'测试中'},
-  {version:'v3.20',date:'2026-08-25',modules:['账本'],items:[
-    '账本「记一笔」智能默认：打开账本即自动带入上一次记账的「类型 / 分类 / 备注」，随手记一笔只需填金额 + 回车，不必重选分类',
-    '「记一笔」金额输入框支持回车直接保存（Enter = 点保存），手机端单手即可完成一笔',
-    '修复 CHANGELOG 顶部 v3.19 条目状态误标「测试中」（实际已升正式），改为「已上线」',
-    '清理已废弃的 CSS 属性 -webkit-overflow-scrolling（现代浏览器不再需要）'
-  ],status:'测试中'},
   {version:'v3.19.1',date:'2026-08-25',modules:['我的'],items:[
     '修复「我的 → 关于」页版本号长期停留在 v3.10：该处此前是手工写死的文本，每次升版都要记着改，实际已落后 9 个版本',
     '关于页的版本号与更新摘要改为自动读取更新日志最新条目（版本号 / 日期 / 涉及模块 / 首条更新要点），以后永不过期、无需手工维护'
   ],status:'已上线'},
   {version:'v3.19',date:'2026-08-25',modules:['账本'],items:[
-    '饼图新增「维度」切换：按分类（原行为）｜按备注 —— 切到按备注后，饼图直接按每条备注的金额出块，能一眼看出「午饭 / 打车 / 咖啡」各花了多少钱、各占多少比例',
+    '饼图新增「维度」切换：按分类（原行为��｜按备注 —— 切到按备注后，饼图直接按每条备注的金额出块，能一眼看出「午饭 / 打车 / 咖啡」各花了多少钱、各占多少比例',
     '新增「限定」分类行（备注与大模块绑定）：备注维度下可把统计范围收窄到某个分类，例如只选「餐饮」，饼图内就只展示餐饮，并按餐饮下各条备注拆分占比',
     '「按分类」维度时，图例右侧新增 ⤵ 下钻按钮：点一下即切到该分类的备注构成，省去手动切维度 + 选限定',
     '预算内支出构成饼图维度跟随上方设置，两图始终同一视角对比',
     '备注维度稳定着色：同一备注文本每次渲染都是同一颜色；「无备注」统一灰色单列',
     '焦点栏新增「筛选到明细」：备注维度下选中若干备注后，一键把选择同步到下方明细的备注筛选，直接看到具体每一笔',
-  ],status:'已上线'},
+  ],status:'测试中'},
   {version:'v3.18',date:'2026-08-25',modules:['账本'],items:[
     '「记一笔」备注支持快捷选择：内置 早饭 / 午饭 / 晚饭 一键填入，再点一次即清空；支持添加自定义快捷备注（如夜宵、打车、咖啡），可随时删除',
     '自定义快捷备注随云同步跨设备保留（任一端添加即合并）',
@@ -1865,29 +1819,12 @@ function deleteCustomCat(type,name){
   };
 }
 $('#dateIn').value=todayStr();
-/* v3.20 账本智能默认：记住上次记账的「类型 / 分类 / 备注」，下次自动带入 */
-function lastLedger(){
-  if(!S.ledger||!S.ledger.length)return null;
-  return S.ledger.reduce((m,e)=>(e.date>=m.date)?e:m,S.ledger[0]);
-}
-function seedFromLast(){
-  const e=lastLedger();if(!e)return;
-  curType=e.type||'expense';curCat=e.category||null;
-  const ni=$('#ledgerNoteIn');if(ni)ni.value=e.note||'';
-  const h=$('#smartHint');if(h)h.textContent='已为你预选上次的「'+(e.type==='income'?'收入':'支出')+' · '+(e.category||'')+(e.note?' · '+e.note:'')+'」，改完直接回车保存';
-}
-seedFromLast();
 $('#amtSave').onclick=()=>{
   const a=parseFloat($('#amtIn').value);if(!a||a<=0){toast('请输入金额');return}
-  const entry={id:uid(),type:curType,amount:a,category:curCat,note:$('#ledgerNoteIn').value.trim(),date:$('#dateIn').value};
-  S.ledger.push(entry);
-  $('#amtIn').value='';                   // 金额清空；类型/分类/备注保留为下次默认
-  $('#dateIn').value=todayStr();
-  const h=$('#smartHint');if(h)h.textContent='已记一笔 ✓ 下次默认沿用「'+(entry.type==='income'?'收入':'支出')+' · '+entry.category+(entry.note?' · '+entry.note:'')+'」';
+  S.ledger.push({id:uid(),type:curType,amount:a,category:curCat,note:$('#ledgerNoteIn').value.trim(),date:$('#dateIn').value});
+  $('#amtIn').value='';$('#ledgerNoteIn').value='';$('#dateIn').value=todayStr();
   persist();renderMoney();renderHeader();toast('已记一笔');
 };
-/* v3.20 回车即保存：随手记一笔不必再点「保存」 */
-$('#amtIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#amtSave').click();}});
 /* ---- 备注快捷选择（v3.18）：预设 早饭/午饭/晚饭 + 自定义，点击即填入/再点清空 ---- */
 const NOTE_PRESETS=['早饭','午饭','晚饭'];
 function quickNotesAll(){
@@ -3995,7 +3932,7 @@ function lnNodeOptions(L0,dirId){
     out.push({value:`plan:${p.id}`,label:`计划：${p.title}`});
     (p.milestones||[]).forEach(m=>{
       out.push({value:`ms:${m.id}`,label:`阶段：${p.title} / ${m.title||'未命名阶段'}`});
-      (m.tasks||[]).forEach(t=>{out.push({value:t.id,label:`任务：${p.title} / ${m.title||'阶段'} / ${t.title||'未命名任务'}`})});
+      (m.tasks||[]).forEach(t=>{out.push({value:t.id,label:`任务：${p.title} / ${m.title||'阶段'} / ${t.title||'未��名任务'}`})});
     });
   });
   return out;
@@ -4011,87 +3948,20 @@ let lnNodeTab='items';
 let lnDetailTab='plans';
 let lnKbKw='';
 let lnPlanDraft=null;
-let lnHomeView=(()=>{try{return localStorage.getItem('ln_home_view')||'week'}catch(e){return 'week'}})();
 function renderLearning(){lnData();if(lnNode)renderLnNodeView();else if(lnCurrentDir)renderLnDetail();else renderLnHome();}
 function lnRefresh(){if(lnNode)renderLnNodeView();else if(lnCurrentDir)renderLnDetail();else renderLnHome();}
 function lnBackNode(){lnNode=null;renderLearning();}
-/* —— 主页 v3.21：双视角首页 —— */
+/* —— 主页：方向列表 —— */
 function renderLnHome(){
-  var ov=$('#lnOverview'); if(ov)ov.style.display='none';
+  var ov=$('#lnOverview'); if(ov)ov.style.display='';
+  renderLnOverview();
   const L0=lnData();
   let html='';
-  html+=`<div class="ln-seg">
-    <div class="ln-seg-tabs">
-      <button class="ln-seg-btn ${lnHomeView==='week'?'on':''}" onclick="lnSetHomeView('week')">这周要做什么</button>
-      <button class="ln-seg-btn ${lnHomeView==='progress'?'on':''}" onclick="lnSetHomeView('progress')">我走到哪了</button>
-    </div>
-    <button class="ln-seg-all" onclick="lnToggleAdv()">全部方向 ›</button>
-  </div>`;
-  if(!L0.directions.length){
-    html+=`<div class="ln-first">还没有学习方向，<a onclick="openLnDirModal()">新建第一个 ›</a></div>`;
-    $('#lnBody').innerHTML=html; return;
-  }
-  if(!localStorage.getItem('ln_onboarded')){
-    html+=`<div class="ln-onboard" id="lnOnboard">左看这周要做什么，右看我走到哪了 👉 <button onclick="lnDismissOnboard()">知道了</button></div>`;
-  }
-  html+=`<div id="lnWeekView" ${lnHomeView==='week'?'':'hidden'}>${renderStudyWeek(L0)}</div>`;
-  html+=`<div id="lnProgView" ${lnHomeView==='progress'?'':'hidden'}>${renderStudyProgress(L0)}</div>`;
-  const advOpen=!!localStorage.getItem('ln_adv_open');
-  html+=`<details class="ln-adv" ${advOpen?'open':''} id="lnAdv" ontoggle="lnAdvToggled(this)">
-    <summary>进阶 · 全部方向</summary>
-    ${L0.directions.map(d=>renderLnHomeCard(d,L0)).join('')}
-    <button class="ln-add-btn" onclick="openLnDirModal()">+ 新建学习方向</button>
-  </details>`;
+  if(!L0.directions.length)html='<div class="ln-empty">还没有学习方向，点下方按钮新建。</div>';
+  L0.directions.forEach(d=>{html+=renderLnHomeCard(d,L0)});
+  html+='<button class="ln-add-btn" onclick="openLnDirModal()">+ 新建学习方向</button>';
   $('#lnBody').innerHTML=html;
 }
-function lnSetHomeView(v){lnHomeView=v;try{localStorage.setItem('ln_home_view',v)}catch(e){}renderLnHome();}
-function lnToggleAdv(){const el=$('#lnAdv');if(el)el.open=!el.open;}
-function lnAdvToggled(el){try{localStorage.setItem('ln_adv_open',el.open?'1':'')}catch(e){}}
-function lnDismissOnboard(){try{localStorage.setItem('ln_onboarded','1')}catch(e){}const el=$('#lnOnboard');if(el)el.remove();}
-function lnGotoReviews(dirId){if(dirId)lnCurrentDir=dirId;lnDetailTab='reviews';renderLearning();}
-function dirName(dir){return dir?dir.name:''}
-function reviewTitle(r,L0){if(r.refType==='question'){const q=L0.questions.find(x=>x.id===r.refId);return q?q.title:'(已删问题)';}if(r.refType==='content'){const c=L0.contents.find(x=>x.id===r.refId);return c?c.name:'(已删内容)';}return '复习项';}
-function renderStudyWeek(L0){
-  const today=todayStr();const wkEnd=addDays(today,7);const rows=[];
-  L0.plans.forEach(p=>{
-    const dir=L0.directions.find(x=>x.id===p.directionId);const col=(dir&&dir.color)||'#888';
-    (p.milestones||[]).forEach(m=>{
-      (m.tasks||[]).forEach(t=>{
-        if(t.done||!t.due)return;const overdue=t.due<today;const inWin=t.due>=today&&t.due<=wkEnd;
-        if(overdue||inWin)rows.push({due:t.due,overdue,type:'task',col,dir:dirName(dir),plan:p.title,title:t.title||'未命名任务',act:`lnOpenNode('${p.directionId||''}','${p.id}','${m.id}','${t.id}')`});
-      });
-      if(m.due){const overdue=m.due<today;const inWin=m.due>=today&&m.due<=wkEnd;if(overdue||inWin)rows.push({due:m.due,overdue,type:'ms',col,dir:dirName(dir),plan:p.title,title:m.title||'阶段',act:`lnOpenNode('${p.directionId||''}','${p.id}','${m.id}','')`});}
-    });
-  });
-  L0.reviews.forEach(r=>{if(r.due>today&&r.due>wkEnd)return;const overdue=r.due<today;rows.push({due:r.due,overdue,type:'review',col:'#5a9e6f',dir:dirName(L0.directions.find(x=>x.id===r.directionId)),plan:'',title:reviewTitle(r,L0),act:`lnGotoReviews('${r.directionId||''}')`});});
-  rows.sort((a,b)=>{if(a.overdue!==b.overdue)return a.overdue?-1:1;return a.due<b.due?-1:(a.due>b.due?1:0);});
-  if(!rows.length)return '<div class="ln-empty">未来 7 天没有待办 🎉 去计划里加一个带日期的任务吧。</div>';
-  return rows.map(r=>{
-    const badge=r.type==='review'?' <span class="ln-task-cnt">复习</span>':(r.type==='ms'?' <span class="ln-task-cnt">阶段</span>':'');
-    return `<div class="ln-row ${r.overdue?'over':''}" onclick="${r.act}">
-      <span class="ln-dot" style="background:${r.col}"></span>
-      <div class="ln-row-main"><div class="ln-row-t">${esc(r.title)}</div><div class="ln-row-s">${r.dir?esc(r.dir)+' · ':''}${r.plan?esc(r.plan):''}${badge}</div></div>
-      <span class="ln-row-d">${r.due}${r.overdue?' ⚠':''}</span>
-    </div>`;
-  }).join('');
-}
-function renderStudyProgress(L0){
-  const allTasks=L0.plans.flatMap(p=>(p.milestones||[]).flatMap(m=>(m.tasks||[])));
-  const done=allTasks.filter(t=>t.done).length;const total=allTasks.length;const pct=total?Math.round(done/total*100):0;
-  const activePlans=L0.plans.filter(p=>(p.milestones||[]).some(m=>(m.tasks||[]).some(t=>!t.done))).length;
-  const openQ=L0.questions.filter(q=>q.status!=='solved').length;
-  const dueR=L0.reviews.filter(r=>r.due<=todayStr()).length;
-  const YR=todayStr().slice(0,4);
-  const solvedYr=L0.questions.filter(q=>q.solvedAt&&q.solvedAt.slice(0,4)===YR).length;
-  const contentYr=L0.contents.filter(c=>c.createdAt&&c.createdAt.slice(0,4)===YR).length;
-  const solvedTotal=L0.questions.filter(q=>q.status==='solved').length;const qTotal=L0.questions.length;
-  const solveRate=qTotal?Math.round(solvedTotal/qTotal*100):0;
-  let h='<div class="ln-grid">'+mc('方向',L0.directions.length)+mc('进行中计划',activePlans)+mc('任务完成率',pct+'%')+mc('未解决问题',openQ)+'</div>';
-  h+='<div class="ln-sec">今年进度</div>';
-  h+=`<div class="ln-yr">今年已解决 <b>${solvedYr}</b> 个问题<br>今年新增内容 <b>${contentYr}</b> 篇<br>问题解决率 <b>${solveRate}%</b>（跨全部方向）</div>`;
-  return h;
-}
-function mc(lab,num){return `<div class="ln-mc"><div class="lab">${lab}</div><div class="num">${num}</div></div>`;}
 function renderLnHomeCard(d,L0){
   const st=lnDirStats(d,L0);const pct=st.total?Math.round(st.done/st.total*100):0;const col=d.color||'#888';
   return `<div class="card ln-home-card" style="box-shadow:inset 4px 0 0 ${col}" onclick="lnOpenDir('${d.id}')">
@@ -4256,7 +4126,7 @@ function renderLnPlanModal(){
     let tasksHtml=(m.tasks||[]).map((t,ti)=>`<div class="ln-task"><input type="checkbox" ${t.done?'checked':''} onchange="lnPlanTaskDone(${mi},${ti},this.checked)"><input class="ln-task-t" value="${esc(t.title)}" oninput="lnPlanTaskTitle(${mi},${ti},this.value)" placeholder="任务内容" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 8px;font:inherit;outline:none"><input type="date" value="${t.due||''}" onchange="lnPlanTaskDue(${mi},${ti},this.value)" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 8px;font:inherit"><button onclick="lnPlanDelTask(${mi},${ti})" style="border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;color:var(--bad)">×</button></div>`).join('')||'<div class="muted" style="font-size:12px">暂无任务</div>';
     return `<div class="ln-card"><div class="ln-ms-top"><input class="ln-task-t" value="${esc(m.title)}" oninput="lnPlanMsTitle(${mi},this.value)" placeholder="阶段名称" style="flex:1;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;font:inherit;font-weight:600;outline:none"><input type="date" value="${m.due||''}" onchange="lnPlanMsDue(${mi},this.value)" style="border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;font:inherit"><button onclick="lnPlanDelMs(${mi})" style="border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:6px 10px;color:var(--bad)">删除阶段</button></div>${tasksHtml}<button class="ln-add-btn" style="margin-top:4px" onclick="lnPlanAddTask(${mi})">+ 添加任务</button></div>`;
   }).join('');
-  modal(`<h4>${p.id&&L0.plans.find(x=>x.id===p.id)?'编辑计划':'新建计划'}<span class="modal-close" onclick="confirmClose(()=>{$('#lnPlanSave').click()})">×</span></h4>
+  modal(`<h4>${p.id&&L0.plans.find(x=>x.id===p.id)?'编辑���划':'新建计划'}<span class="modal-close" onclick="confirmClose(()=>{$('#lnPlanSave').click()})">×</span></h4>
     <div class="field"><span class="lab">方向</span><select id="lnPlanDir">${dirOpts}</select></div>
     <div class="field"><span class="lab">标题</span><input id="lnPlanTitle" value="${esc(p.title)}" placeholder="计划标题，如「Python 入门 30 天"></div>
     <div class="ln-ms">阶段与任务</div>
