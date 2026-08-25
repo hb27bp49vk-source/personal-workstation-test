@@ -1060,8 +1060,8 @@ summary::-webkit-details-marker{color:var(--text)}
       <div class="sec" data-module="about">
         <div class="page-title">关于</div>
         <div class="card">
-          <div class="row-between" style="margin-bottom:6px"><span class="lab"><span class="test-build-badge" style="margin-right:6px;vertical-align:middle">测试版</span>个人工作台</span><span class="val">v3.10</span></div>
-          <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br>v3.10 · 学习模块强化：计划节点绑定/聚合/错题/自测/大纲/时间轴</p>
+          <div class="row-between" style="margin-bottom:6px"><span class="lab"><span class="test-build-badge" style="margin-right:6px;vertical-align:middle">测试版</span>个人工作台</span><span class="val" id="aboutVer">—</span></div>
+          <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br><span id="aboutVerDesc">—</span></p>
         </div>
       </div>
     </section>
@@ -1112,6 +1112,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.19.1',date:'2026-08-25',modules:['我的'],items:[
+    '修复「我的 → 关于」页版本号长期停留在 v3.10：该处此前是手工写死的文本，每次升版都要记着改，实际已落后 9 个版本',
+    '关于页的版本号与更新摘要改为自动读取更新日志最新条目（版本号 / 日期 / 涉及模块 / 首条更新要点），以后永不过期、无需手工维护'
+  ],status:'已上线'},
   {version:'v3.19',date:'2026-08-25',modules:['账本'],items:[
     '饼图新增「维度」切换：按分类（原行为）｜按备注 —— 切到按备注后，饼图直接按每条备注的金额出块，能一眼看出「午饭 / 打车 / 咖啡」各花了多少钱、各占多少比例',
     '新增「限定」分类行（备注与大模块绑定）：备注维度下可把统计范围收窄到某个分类，例如只选「餐饮」，饼图内就只展示餐饮，并按餐饮下各条备注拆分占比',
@@ -3491,6 +3495,17 @@ function renderChangelog(limit=3){
   ${CHANGELOG.length>limit?'<button class="changelog-more" id="changelogMore">查看全部更新</button>':''}`;
   const more=$('#changelogMore');if(more)more.onclick=()=>renderChangelog(CHANGELOG.length);
 }
+/* v3.19.1：关于页版本号改为读 CHANGELOG[0]，避免手工维护漏改 */
+function renderAbout(){
+  const c=(typeof CHANGELOG!=='undefined'&&CHANGELOG.length)?CHANGELOG[0]:null;
+  if(!c)return;
+  const v=$('#aboutVer');if(v)v.textContent=c.version;
+  const d=$('#aboutVerDesc');
+  if(d){
+    const mods=Array.isArray(c.modules)?c.modules.join(' / '):'';
+    d.textContent=`${c.version} · ${c.date||''}${mods?' · '+mods:''}`;
+  }
+}
 
 /* ============ 历史信息 · 按时间筛选 ============ */
 let hisFilterKind='all';
@@ -3824,7 +3839,7 @@ function initFilters(){
   const[mf,mt]=rangeOf('thisMonth');setFlowRange(mf,mt,'thisMonth');
   const[hf,ht]=rangeOf('7');setHisRange(hf,ht,'7');
 }
-function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderChangelog();renderLearning();applyModuleLayout()}
+function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderChangelog();renderAbout();renderLearning();applyModuleLayout()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 /* 首次使用预置示例 */
