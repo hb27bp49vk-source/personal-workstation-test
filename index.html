@@ -206,11 +206,20 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .pie-legend .pl.on .pc{color:rgba(255,255,255,.82)}
 .pie-legend .pl.on .d{box-shadow:0 0 0 3px rgba(255,255,255,.35)}
 .pie-legend .pl:hover .d{box-shadow:0 0 0 3px var(--card-soft)}
+/* v3.19 图例下钻按钮：点它把饼图切到「该分类下的备注构成」 */
+.pie-legend .pl .pl-drill{flex:none;width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:12px;color:var(--text-3);border:1px solid var(--line);background:#fff;margin-left:2px;transition:all .15s}
+.pie-legend .pl .pl-drill:hover{background:var(--text);color:#fff;border-color:var(--text)}
+.pie-legend .pl.on .pl-drill{border-color:rgba(255,255,255,.45);background:transparent;color:#fff}
+/* v3.19 饼图维度/限定分类控制行 */
+.pie-ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.pie-ctl .pc-lab{font-size:12px;color:var(--text-3);flex:none}
 .pie-title-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
 .pie-title-row .pie-title{font-size:15px;font-weight:700;color:var(--text)}
 .pie-title-row .pie-sub{font-size:11.5px}
 .pie-focus{margin-top:10px;padding:7px 12px;border-radius:9px;background:var(--card-soft);font-size:13px;display:inline-flex;align-items:center;gap:8px}
 .pie-focus b{color:var(--text)}
+.pie-focus .pf-apply{cursor:pointer;font-size:11.5px;border:1px solid var(--line);border-radius:99px;padding:3px 10px;color:var(--text-2);background:#fff;transition:all .15s}
+.pie-focus .pf-apply:hover{background:var(--text);color:#fff;border-color:var(--text)}
 .pie-focus .x{cursor:pointer;font-size:16px;color:var(--text-2);padding:0 4px;line-height:1;border-radius:6px;transition:background .15s,color .15s}
 .pie-focus .x:hover{background:var(--line);color:var(--bad)}
 #pieStamp{font-variant-numeric:tabular-nums;color:var(--text-2)}
@@ -852,15 +861,24 @@ summary::-webkit-details-marker{color:var(--text)}
         </div>
         <div class="card">
           <div class="pie-title-row"><span class="pie-title">总支出构成</span><span class="muted pie-sub">点图例可多选高亮对比</span></div>
+          <div class="pie-ctl quick-chips" id="pieDimRow">
+            <span class="pc-lab">维度</span>
+            <button type="button" class="quick-chip on" data-d="cat">按分类</button>
+            <button type="button" class="quick-chip" data-d="note">按备注</button>
+          </div>
+          <div class="pie-ctl" id="pieCatRow" style="display:none">
+            <span class="pc-lab">限定</span>
+            <div class="quick-chips" id="pieCatChips" style="flex:1"></div>
+          </div>
           <div class="pie-wrap">
             <div id="flowPie" class="pie-svg"></div>
             <div id="flowPieLegend" class="pie-legend"></div>
           </div>
-          <div class="pie-focus" id="pieFocusBar" style="display:none">已选「<b id="pieFocusName"></b>」<span class="x" id="pieFocusClear">×</span></div>
-          <div class="muted" style="margin-top:10px" id="flowPieHint">饼图位于筛选区下方、随「日期 / 收支 / 关键词」实时变化；点击图例可多选高亮对比（再次点击该图例取消）；最近更新 <span id="pieStamp" class="muted">—</span></div>
+          <div class="pie-focus" id="pieFocusBar" style="display:none">已选「<b id="pieFocusName"></b>」<span class="pf-apply" id="pieApplyFilter" style="display:none">筛选到明细</span><span class="x" id="pieFocusClear">×</span></div>
+          <div class="muted" style="margin-top:10px" id="flowPieHint">饼图随「日期 / 收支 / 关键词」实时变化；切「按备注」可看每条备注花了多少钱，再用「限定」把范围收窄到某个分类；「按分类」时点图例右侧 ⤵ 可直接下钻该分类的备注构成；最近更新 <span id="pieStamp" class="muted">—</span></div>
         </div>
         <div class="card">
-          <div class="pie-title-row"><span class="pie-title">预算内支出构成</span><span class="muted pie-sub">仅含「计入月预算」的类型</span></div>
+          <div class="pie-title-row"><span class="pie-title">预算内支出构成</span><span class="muted pie-sub">仅含「计入月预算」的类型 · 维度跟随上方</span></div>
           <div class="pie-wrap">
             <div id="flowPieBudget" class="pie-svg"></div>
             <div id="flowPieBudgetLegend" class="pie-legend"></div>
@@ -1094,6 +1112,14 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.19',date:'2026-08-25',modules:['账本'],items:[
+    '饼图新增「维度」切换：按分类（原行为）｜按备注 —— 切到按备注后，饼图直接按每条备注的金额出块，能一眼看出「午饭 / 打车 / 咖啡」各花了多少钱、各占多少比例',
+    '新增「限定」分类行（备注与大模块绑定）：备注维度下可把统计范围收窄到某个分类，例如只选「餐饮」，饼图内就只展示餐饮，并按餐饮下各条备注拆分占比',
+    '「按分类」维度时，图例右侧新增 ⤵ 下钻按钮：点一下即切到该分类的备注构成，省去手动切维度 + 选限定',
+    '预算内支出构成饼图维度跟随上方设置，两图始终同一视角对比',
+    '备注维度稳定着色：同一备注文本每次渲染都是同一颜色；「无备注」统一灰色单列',
+    '焦点栏新增「筛选到明细」：备注维度下选中若干备注后，一键把选择同步到下方明细的备注筛选，直接看到具体每一笔',
+  ],status:'测试中'},
   {version:'v3.18',date:'2026-08-25',modules:['账本'],items:[
     '「记一笔」备注支持快捷选择：内置 早饭 / 午饭 / 晚饭 一键填入，再点一次即清空；支持添加自定义快捷备注（如夜宵、打车、咖啡），可随时删除',
     '自定义快捷备注随云同步跨设备保留（任一端添加即合并）',
@@ -1859,6 +1885,18 @@ let flowKind='all';
 let flowNoteSel=new Set();   /* 备注多选筛选（v3.18）；空 = 不过滤 */
 let pieFocus=new Set();        // 总饼图多选焦点（图例 selected 集合）；空=全量
 let pieBudgetFocus=new Set();  // 预算内饼图多选焦点；空=全量
+/* ---- 饼图统计维度（v3.19）---- */
+let pieDim='cat';        // 'cat'=按分类（默认）｜'note'=按备注
+let pieNoteCat='';       // 备注维度下限定的分类；''=全部分类（即「备注绑定大模块」）
+const NOTE_EMPTY_LABEL='无备注';
+function noteKeyOf(x){return ((x&&x.note)||'').trim()||NOTE_EMPTY_LABEL}
+/* 备注维度稳定着色：同一备注文本每次渲染取同色（hash → CAT_PALETTE，末位灰留给「无备注」） */
+function noteColor(name){
+  if(name===NOTE_EMPTY_LABEL)return '#9aa0a6';
+  let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;
+  return CAT_PALETTE[h%(CAT_PALETTE.length-1)];
+}
+function sliceColor(dim,type,name){return dim==='note'?noteColor(name):catMeta(type,name)[1]}
 function setFlowRange(from,to,activeKey){
   $('#flowFrom').value=from||'';$('#flowTo').value=to||'';
   $$('#flowQuick .quick-chip').forEach(b=>b.classList.toggle('on',b.dataset.r===activeKey));
@@ -1935,18 +1973,22 @@ function drawPie(o){
   el.style.opacity='.35';
   setTimeout(()=>{el.style.opacity='1'},20);
   const type=flowKind==='income'?'income':'expense';
+  const dim=o.dim||'cat';                    // v3.19：cat=按分类｜note=按备注
+  const noteCat=dim==='note'?(o.noteCat||''):'';  // 备注维度下把统计限定在该分类内
   const map={};
   o.list.filter(x=>{
     if(x.type!==type)return false;
     if(o.budgetOnly && !catInBudget('expense',x.category))return false;
+    if(noteCat && (x.category||'')!==noteCat)return false;
     return true;
-  }).forEach(x=>{map[x.category]=(map[x.category]||0)+x.amount});
+  }).forEach(x=>{const k=dim==='note'?noteKeyOf(x):x.category;map[k]=(map[k]||0)+x.amount});
   const arr=Object.entries(map).sort((a,b)=>b[1]-a[1]);
   const total=arr.reduce((s,[,v])=>s+v,0);
-  // 焦点校验：移除已不存在的分类
+  // 焦点校验：移除已不存在的分组（切维度/换限定分类后旧焦点自动失效）
   if(o.focusSet.size){[...o.focusSet].forEach(c=>{if(!arr.some(([x])=>x===c))o.focusSet.delete(c)})}
   if(!arr.length){
-    const tip=o.budgetOnly?'所选范围暂无「计入预算」的支出':'所选范围暂无'+(type==='income'?'收入':'支出');
+    const scope=noteCat?`「${noteCat}」`:'';
+    const tip=o.budgetOnly?`所选范围${scope}暂无「计入预算」的支出`:`所选范围${scope}暂无`+(type==='income'?'收入':'支出');
     el.innerHTML='<div class="empty-mini" style="width:168px;height:168px;display:flex;align-items:center;justify-content:center">'+tip+'</div>';
     leg.innerHTML='';
     if(o.barId){const b=$(o.barId);if(b)b.style.display='none';}
@@ -1960,16 +2002,16 @@ function drawPie(o){
     arr.forEach(([cat,v],i)=>{
       const a1=a0+angles[i];
       const isFaded=!o.focusSet.has(cat);  // 未选中=淡化；选中=满色不透明
-      paths+=pieSlice(cx,cy,rO,rI,a0,a1,catMeta(type,cat)[1],cat,isFaded);
+      paths+=pieSlice(cx,cy,rO,rI,a0,a1,sliceColor(dim,type,cat),cat,isFaded);
       a0=a1;
     });
   }else if(arr.length===1){
-    paths=`<circle cx="${cx}" cy="${cy}" r="${(rO+rI)/2}" fill="none" stroke="${catMeta(type,arr[0][0])[1]}" stroke-width="${rO-rI}"/>`;
+    paths=`<circle cx="${cx}" cy="${cy}" r="${(rO+rI)/2}" fill="none" stroke="${sliceColor(dim,type,arr[0][0])}" stroke-width="${rO-rI}"/>`;
   }else{
     const angles=arr.map(([,v])=>v/total*Math.PI*2);
     arr.forEach(([cat,v],i)=>{
       const a1=a0+angles[i];
-      paths+=pieSlice(cx,cy,rO,rI,a0,a1,catMeta(type,cat)[1],cat);
+      paths+=pieSlice(cx,cy,rO,rI,a0,a1,sliceColor(dim,type,cat),cat);
       a0=a1;
     });
   }
@@ -1980,38 +2022,87 @@ function drawPie(o){
       const c=[...o.focusSet][0],v=arr.find(([x])=>x===c)[1];
       centerLabel=c;centerVal=money(v);centerSub=`占整体 ${Math.round(v/total*100)}%`;
     }else{
-      centerLabel=`已选 ${o.focusSet.size} 类`;centerVal=money(useTotal);
+      centerLabel=`已选 ${o.focusSet.size} ${dim==='note'?'条备注':'类'}`;centerVal=money(useTotal);
       centerSub=`占整体 ${Math.round(useTotal/total*100)}%`;
     }
+  }else if(dim==='note'){
+    centerLabel=(noteCat||'全部分类')+' 备注合计';centerVal=money(total);
+    centerSub=`${arr.length} 条备注`;
   }else{
     centerLabel=(o.budgetOnly?'预算内支出':'支出')+'合计';centerVal=money(total);
   }
   el.innerHTML=`<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="max-width:100%">${paths}<text x="${cx}" y="${cy-12}" text-anchor="middle" style="font-size:12px;fill:var(--text-3)">${esc(centerLabel)}</text><text x="${cx}" y="${cy+10}" text-anchor="middle" style="font-size:16px;font-weight:700;fill:var(--text)">${esc(centerVal)}</text>${centerSub?`<text x="${cx}" y="${cy+28}" text-anchor="middle" style="font-size:11px;fill:var(--text-2)">${esc(centerSub)}</text>`:''}</svg>`;
   leg.innerHTML=arr.map(([cat,v])=>{
-    const meta=catMeta(type,cat);
+    const color=sliceColor(dim,type,cat);
     const pct=Math.round(v/total*100);
     const on=o.focusSet.has(cat);
-    const dim=(focusOn&&!on)?' dim':'';
-    return `<div class="pl${dim}${on?' on':''}" data-cat="${esc(cat)}"><span class="d" style="background:${meta[1]}"></span><span class="nm">${esc(cat)}</span><span class="pc">${money(v)} · ${pct}%</span></div>`;
+    const dimCls=(focusOn&&!on)?' dim':'';
+    /* 按分类维度时，图例右侧给一个 ⤵ 下钻按钮：一键切到「该分类下各备注占比」 */
+    const drill=(dim==='cat'&&!o.budgetOnly)?`<span class="pl-drill" data-drill="${esc(cat)}" title="查看「${esc(cat)}」下各备注占比">⤵</span>`:'';
+    return `<div class="pl${dimCls}${on?' on':''}" data-cat="${esc(cat)}"><span class="d" style="background:${color}"></span><span class="nm">${esc(cat)}</span><span class="pc">${money(v)} · ${pct}%</span>${drill}</div>`;
   }).join('');
   $$(leg.id?('#'+leg.id+' .pl'):'.pl',leg).forEach(p=>p.onclick=()=>{
     const c=p.dataset.cat;
     if(o.focusSet.has(c))o.focusSet.delete(c);else o.focusSet.add(c);
     renderPies(flowFiltered());
   });
+  if(leg.id)$$('#'+leg.id+' .pl-drill').forEach(d=>d.onclick=ev=>{
+    ev.stopPropagation();
+    const c=d.dataset.drill;
+    pieDim='note';pieNoteCat=c;pieFocus.clear();pieBudgetFocus.clear();
+    renderPies(flowFiltered());
+    toast(`已切到「${c}」的备注构成`);
+  });
   if(o.barId){
     const bar=$(o.barId),nameEl=$(o.nameId);
     if(focusOn){
-      if(nameEl)nameEl.textContent=o.focusSet.size===1?[...o.focusSet][0]:`已选 ${o.focusSet.size} 类`;
+      if(nameEl)nameEl.textContent=o.focusSet.size===1?[...o.focusSet][0]:`已选 ${o.focusSet.size} ${dim==='note'?'条备注':'类'}`;
       bar.style.display='';
     }else bar.style.display='none';
   }
 }
+/* v3.19 维度控制行：维度 chips 状态 + 「限定分类」chips（仅备注维度出现） */
+function renderPieCtl(list){
+  if($('#pieDimRow'))$$('#pieDimRow .quick-chip').forEach(b=>b.classList.toggle('on',b.dataset.d===pieDim));
+  const catRow=$('#pieCatRow'),box=$('#pieCatChips');
+  if(!catRow||!box)return;
+  if(pieDim!=='note'){catRow.style.display='none';return}
+  catRow.style.display='';
+  const type=flowKind==='income'?'income':'expense';
+  const sum={};
+  list.filter(x=>x&&x.type===type).forEach(x=>{sum[x.category]=(sum[x.category]||0)+x.amount});
+  const cats=Object.keys(sum).sort((a,b)=>sum[b]-sum[a]);
+  if(pieNoteCat&&!cats.includes(pieNoteCat))pieNoteCat='';   // 限定分类在当前范围内已无数据 → 自动回到全部
+  box.innerHTML=`<button type="button" class="quick-chip${pieNoteCat?'':' on'}" data-c="__all">全部分类</button>`
+    +cats.map(c=>`<button type="button" class="quick-chip${pieNoteCat===c?' on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+  $$('#pieCatChips .quick-chip').forEach(b=>b.onclick=()=>{
+    pieNoteCat=b.dataset.c==='__all'?'':b.dataset.c;
+    pieFocus.clear();pieBudgetFocus.clear();
+    renderPies(flowFiltered());
+  });
+}
 function renderPies(list){
-  drawPie({elId:'#flowPie',legId:'#flowPieLegend',focusSet:pieFocus,list,budgetOnly:false,barId:'#pieFocusBar',nameId:'#pieFocusName'});
-  drawPie({elId:'#flowPieBudget',legId:'#flowPieBudgetLegend',focusSet:pieBudgetFocus,list,budgetOnly:true,barId:'#pieBudgetFocusBar',nameId:'#pieBudgetFocusName'});
+  renderPieCtl(list);
+  drawPie({elId:'#flowPie',legId:'#flowPieLegend',focusSet:pieFocus,list,budgetOnly:false,barId:'#pieFocusBar',nameId:'#pieFocusName',dim:pieDim,noteCat:pieNoteCat});
+  drawPie({elId:'#flowPieBudget',legId:'#flowPieBudgetLegend',focusSet:pieBudgetFocus,list,budgetOnly:true,barId:'#pieBudgetFocusBar',nameId:'#pieBudgetFocusName',dim:pieDim,noteCat:pieNoteCat});
+  /* 备注维度下选中了具体备注 → 允许一键同步到下方明细筛选 */
+  const ap=$('#pieApplyFilter');
+  if(ap)ap.style.display=(pieDim==='note'&&[...pieFocus].some(n=>n!==NOTE_EMPTY_LABEL))?'':'none';
   const s=$('#pieStamp');if(s){const d=new Date();const pad=n=>String(n).padStart(2,'0');s.textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
 }
+$$('#pieDimRow .quick-chip').forEach(b=>b.onclick=()=>{
+  pieDim=b.dataset.d==='note'?'note':'cat';
+  if(pieDim==='cat')pieNoteCat='';
+  pieFocus.clear();pieBudgetFocus.clear();
+  renderPies(flowFiltered());
+});
+$('#pieApplyFilter')&&($('#pieApplyFilter').onclick=()=>{
+  const notes=[...pieFocus].filter(n=>n!==NOTE_EMPTY_LABEL);
+  if(!notes.length){toast('「无备注」无法筛选到明细');return}
+  flowNoteSel=new Set(notes);
+  renderFlow();
+  toast(`明细已筛选：${notes.join('、')}`);
+});
 $('#pieFocusClear')&&($('#pieFocusClear').onclick=()=>{pieFocus.clear();renderPies(flowFiltered())});
 $('#pieBudgetFocusClear')&&($('#pieBudgetFocusClear').onclick=()=>{pieBudgetFocus.clear();renderPies(flowFiltered())});
 $('#flowFrom').onchange=()=>{$$('#flowQuick .quick-chip').forEach(b=>b.classList.remove('on'));renderFlow()};
