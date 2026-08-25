@@ -1131,6 +1131,9 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.7',date:'2026-08-25',modules:['学习'],items:[
+    '修复：知识库 Tab 仍乱序（v3.20.6 只对了计划/内容 tab，知识库的 contents 排序仍按 createdAt，多批次导入同日期内容导致渲染顺序错乱）。把知识库 roots/kids + 内容树 roots/kids + 资源列表共 5 处 lnFifo(contents) 排序键从 createdAt 改为 order，与 plan/milestone/task 一致',
+  ],status:'测试中'},
   {version:'v3.20.6',date:'2026-08-25',modules:['学习'],items:[
     '修复：v3.20.5 的 av-bv 升序方向正确，但导入代码用 `order:orderBase-idx`（idx 0=最大）使第 1 章排最后 → 仍是倒序。这是 v3.20.5 没修干净的根因。',
     '修复：导入路径改 `order:idx`（idx 0=最小=升序排最前），废弃 `orderBase-idx` 反向编码',
@@ -4309,7 +4312,7 @@ function lnNodeContentsHtml(L0,roots,hit,depth){
     const hasNotes=c.notes&&c.notes.trim();
     const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
     let h=`<div class="card" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span>${notesTag}</div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
-    const kids=lnFifo(L0.contents.filter(x=>(x.parentId||null)===c.id&&hit.has(x.id)),'createdAt');
+    const kids=lnFifo(L0.contents.filter(x=>(x.parentId||null)===c.id&&hit.has(x.id)),'order');
     if(kids.length) h+=lnNodeContentsHtml(L0,kids,hit,depth+1);
     return h;
   }).join('');
@@ -4448,7 +4451,7 @@ function renderLnDirKb(d,L0){
   let html=`<div class="ln-quick"><input type="text" id="lnKbKw" placeholder="搜索知识点 / 笔记 / 已解决问题" value="${esc(lnKbKw)}" oninput="lnKbKw=this.value;renderLnDetail()"><button onclick="lnKbKw='';lnKbTag='';renderLnDetail()">重置</button></div>`;
   if(tags.length) html+=`<div class="ln-kb-filters"><button class="ln-kb-chip ${!lnKbTag?'on':''}" onclick="lnKbTag='';renderLnDetail()">全部标签</button>${tags.map(t=>`<button class="ln-kb-chip ${lnKbTag===t?'on':''}" onclick="lnKbTag='${esc(t)}';renderLnDetail()">#${esc(t)}</button>`).join('')}</div>`;
   const hit=lnKbHitSet(L0,d.id,lnKbKw,lnKbTag);
-  const roots=lnFifo(L0.contents.filter(c=>c.directionId===d.id&&hit.has(c.id)&&(!c.parentId||!hit.has(c.parentId))),'createdAt');
+  const roots=lnFifo(L0.contents.filter(c=>c.directionId===d.id&&hit.has(c.id)&&(!c.parentId||!hit.has(c.parentId))),'order');
   if(roots.length){
     html+=`<div class="ln-ms">主题树 / 知识点</div>`+lnKbTreeHtml(L0,d.id,roots,hit,0);
   }
@@ -4477,7 +4480,7 @@ function lnKbHitSet(L0,dirId,kw,tag){
 function lnKbTreeHtml(L0,dirId,roots,hit,depth){
   depth=depth||0;if(depth>12)return '';
   return roots.map(c=>{
-    const kids=lnFifo(L0.contents.filter(x=>x.directionId===dirId&&(x.parentId||null)===c.id&&hit.has(x.id)),'createdAt');
+    const kids=lnFifo(L0.contents.filter(x=>x.directionId===dirId&&(x.parentId||null)===c.id&&hit.has(x.id)),'order');
     const isKp=c.kind==='kp';const isTopic=c.kind==='topic';const indent=10*depth;
     const tags=(c.tags||[]).map(t=>`<span class="ln-tag">#${esc(t)}</span>`).join('');
     const kind=isTopic?'主题':(isKp?'知识点':'资料');
@@ -4745,7 +4748,7 @@ function renderLnNodeView(){
   /* FIFO：先按创建时间正序排序，再做父子聚合 */
   const contentsAll=lnFifo(ni.contents,'createdAt');
   const hit=new Set(contentsAll.map(c=>c.id));{let _a=true;while(_a){_a=false;for(const _c of L0.contents){if(!hit.has(_c.id)&&_c.parentId&&hit.has(_c.parentId)){hit.add(_c.id);_a=true;}}}}
-  const roots=lnFifo(L0.contents.filter(c=>hit.has(c.id)&&(!c.parentId||!hit.has(c.parentId))),'createdAt');
+  const roots=lnFifo(L0.contents.filter(c=>hit.has(c.id)&&(!c.parentId||!hit.has(c.parentId))),'order');
   const questionsAll=lnFifo(ni.questions,'createdAt');
   const reviewsAll=lnFifo(ni.reviews,'due');
   const selftestsAll=lnFifo(ni.selftests,'date');
@@ -4780,7 +4783,7 @@ function renderLnDirMistakes(d,L0){
 }
 /* —— 资源 —— */
 function renderLnDirResources(d,L0){
-  const list=lnFifo(L0.contents.filter(c=>c.directionId===d.id&&c.kind==='resource'));
+  const list=lnFifo(L0.contents.filter(c=>c.directionId===d.id&&c.kind==='resource'),'order');
   let html='';
   if(!list.length){html='<div class="ln-empty">还没有资源型资料。<br>在「内容」里添加时选择「资料（书/课/链接）」即可。</div>';return html}
   list.forEach(c=>{const node=lnTaskTitleById(L0,c.nodeId);const hasNotes=c.notes&&c.notes.trim();const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';html+=`<div class="card" style="margin-top:8px"><div class="ln-item" style="border:none;padding:0"><div class="ln-main"><div class="ln-title">${esc(c.name)}${notesTag}</div><div class="ln-sub">${node?('节点：'+esc(node)+' · '):''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`});
