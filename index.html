@@ -1131,6 +1131,11 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.5',date:'2026-08-25',modules:['学习'],items:[
+    '修复：v3.20.4 类型修补仍按字符串字典序，`String(10000).localeCompare(String(9999))` → "10000" < "9999"，阶段倒序（9 章在最上、1 章在最下）',
+    '修复：lnFifo 改为「数字字段走数值比较、非数字字段走字符串比较」—— order 等数值字段用 an-bv，不再走 localeCompare',
+    '影响：lnFifo 全部 order 排序调用（4 处：内容主题、阶段、任务、计划），粘贴大纲导入第 1 章 → 第 9 章按用户预期顺序展示',
+  ],status:'测试中'},
   {version:'v3.20.4',date:'2026-08-25',modules:['学习'],items:[
     '修复：v3.20.2 排序迁移 lnFifo 时埋的类型 bug —— 直接 `a[byKey]||""` 在字段为数字（如 order=0/5）时返回 number，`localeCompare` 不存在则抛 `Uncaught TypeError: ak.localeCompare is not a function`，导致点方向卡进入详情直接白屏',
     '修复：统一改 `String(a[byKey] ?? "")`（`??` 让 0 也保留为字符串 `"0"`），所有 lnFifo 调用（order/createdAt/due/date/time）都安全',
@@ -4215,7 +4220,22 @@ function saveLnSecCollapsed(){try{localStorage.setItem('ln_sec_collapsed',JSON.s
 function toggleLnSec(key){ if(!key)return; lnSecCollapsed[key]=!lnSecCollapsed[key]; if(!lnSecCollapsed[key]) delete lnSecCollapsed[key]; saveLnSecCollapsed(); lnRefresh(); }
 function isLnSecOpen(key){ return !lnSecCollapsed[key]; }
 /* FIFO 排序：createdAt 升序，相同时按 id 升序兜底；无 createdAt 时按原顺序。FIFO 是默认行为，括号内可传主排序字段如 'due'/'date' */
-function lnFifo(arr,byKey){byKey=byKey||'createdAt';return arr.slice().sort((a,b)=>{const ak=String(a[byKey]??''),bk=String(b[byKey]??'');if(ak&&bk)return ak.localeCompare(bk)||String(a.id||'').localeCompare(String(b.id||''));if(ak&&!bk)return -1;if(!ak&&bk)return 1;return String((a.id||'')).localeCompare(String((b.id||'')))});}
+// v3.20.5: 数字字段必须走数值比较（order 等），否则 '10000' < '9999' 字典序会让倒序乱排
+function lnFifo(arr,byKey){
+  byKey=byKey||'createdAt';
+  return arr.slice().sort((a,b)=>{
+    const av=a[byKey],bv=b[byKey];
+    // 数字字段（如 order）走数值比较；失效再退回字符串
+    if(typeof av==='number' && typeof bv==='number' && !isNaN(av) && !isNaN(bv)){
+      return av-bv || String(a.id||'').localeCompare(String(b.id||''));
+    }
+    const ak=String(av??''),bk=String(bv??'');
+    if(ak&&bk)return ak.localeCompare(bk)||String(a.id||'').localeCompare(String(b.id||''));
+    if(ak&&!bk)return -1;
+    if(!ak&&bk)return 1;
+    return String(a.id||'').localeCompare(String(b.id||''));
+  });
+}
 /* 渲染带"折叠标题 + 内容"的学习区段。key 唯一标识一个区段（建议 'dirId|tab|sec'），默认展开。 */
 function lnSecHtml(key,titleHtml,bodyHtml){
   const open=isLnSecOpen(key);
