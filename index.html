@@ -4856,7 +4856,7 @@ function lnExportOutline(dirId){
       <button id="lnExpDl" style="flex:1;border:1px solid var(--line);background:#fff;border-radius:var(--r-sm);padding:9px 14px;font-weight:600;cursor:pointer">下载 .txt</button>
       <button class="cancel" onclick="closeModal()" style="flex:none;border:1px solid var(--line);background:#fff;border-radius:var(--r-sm);padding:9px 14px;color:var(--text-2);cursor:pointer">关闭</button>
     </div>
-  </div>`);
+  </div>`,{noMaskClose:true});
   // 绑定按钮（用 onload=0 / setTimeout 防止 DOM 未注入完成）
   setTimeout(()=>{
     const ta=document.getElementById('lnExpText');
