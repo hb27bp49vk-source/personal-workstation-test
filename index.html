@@ -1132,7 +1132,7 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
   {version:'v3.20.7',date:'2026-08-25',modules:['学习'],items:[
-    '修复：知识库 Tab 仍乱序（v3.20.6 只对了计划/内容 tab，知识库的 contents 排序仍按 createdAt，多批次导入同日期内容导致渲染顺序错乱）。把知识库 roots/kids + 内容树 roots/kids + 资源列表共 5 处 lnFifo(contents) 排序键从 createdAt 改为 order，与 plan/milestone/task 一致',
+    'v3.20.7 修复：知识库/内容仍乱序根因是迁移按 contents 数组物理顺序写 order (0/3/6/9/...)，但跨多次导入时第 6 章排在第 0 位。改为先按「第 N 章」解析章号升序、再按章号 * 1000 + 局部 idx 给 kp 写 order，老数据刷新即按用户期望的章号排列。同时把 5 处 L0.contents 排序（知识库 roots/kids、内容树 roots/kids、资源列表）从 createdAt 改为 order',
   ],status:'测试中'},
   {version:'v3.20.6',date:'2026-08-25',modules:['学习'],items:[
     '修复：v3.20.5 的 av-bv 升序方向正确，但导入代码用 `order:orderBase-idx`（idx 0=最大）使第 1 章排最后 → 仍是倒序。这是 v3.20.5 没修干净的根因。',
@@ -4654,40 +4654,57 @@ function lnCommitOutlineImport(){
   renderLearning();
   toast('导入 '+addDir+' 方向 '+addPlan+' 计划 '+addMs+' 阶段 '+addTask+' 任务 · '+addContent+' 学习结构');
 }
-/* v3.20.6: 老数据 order 迁移 —— 检测并修正所有 plan.milestones/tasks 与各 direction.contents 的 order 字段
-   判定老数据：① order 不是 number；② 看起来是 v3.20.2 旧编码（>2^40 巨数 = Date.now() 量级）。silent=true 时不弹提示。
-   修正策略：按当前数组顺序重新 idx 编号 (0,1,2...)，并把 plan 自身的 order=0。*/
+/* v3.20.7: 老数据 order 迁移——按章号解析重排 contents/plans，task 跟 milestone 走。
+   判定老数据：① order 不是 number；② 看起来是 v3.20.2 旧编码（>2^40 巨数 = Date.now() 量级）。
+   修正策略：topic/plan 按"第 N 章/章 N"解析章号升序，再按原顺序编号；未匹配章号兜底排最后。silent=true 时不弹提示。*/
 function migrateLearningOrdering(L0,silent){
   if(!L0||!L0.directions)return 0;
   let fixed=0;
-  const _looksLegacy=v=>typeof v==='number'&&v>4e12; // > 4e12 ≈ 2009-09-09 之后一年内的 ms 时间戳——比正常 idx 大很多就是 v3.20.2 反向编码
+  const _looksLegacy=v=>typeof v==='number'&&v>4e12;
   const _looksLegacyOrMissing=v=>typeof v!=='number'||_looksLegacy(v);
-  // 1) plans 自身：order 若缺失或老编码重置为 0
+  // 章号解析：从「第 N 章」/「章 N」/「N.」/仅"第N章"等取数字
+  const _chapNum=s=>{const m=String(s||'').match(/第?\s*([一二三四五六七八九十百\d]+)\s*[章节回]/);if(!m)return null;const cn={'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'百':100};const raw=m[1].trim();if(/^\d+$/.test(raw))return parseInt(raw,10);let n=0;for(const ch of raw){n+=cn[ch]||0;}return n||null;};
+  // 按章号升序排：解析得到章号按数值排，解析不到排最后
+  const _sortByChap=(a,b)=>{const na=_chapNum(a.title||a.name||'');const nb=_chapNum(b.title||b.name||'');if(na!=null&&nb!=null)return na-nb;if(na!=null)return -1;if(nb!=null)return 1;return 0;};
+  // 1) plans 自身：按当前顺序 0..N-1（plans 通常只有一个，无需按章号排）
   (L0.plans||[]).forEach(p=>{
     if(_looksLegacyOrMissing(p.order)){p.order=0;fixed++;}
   });
-  // 2) 每个 plan.milestones 按当前顺序重排 order=0..N-1
+  // 2) 每个 plan.milestones 按章号升序重排
   (L0.plans||[]).forEach(p=>{
     const ms=p.milestones||[];
     if(!ms.length)return;
-    const need=ms.some((m,i)=>_looksLegacyOrMissing(m.order)||(typeof m.order==='number'&&m.order!==i));
-    if(need){ms.forEach((m,i)=>{m.order=i;});fixed++;}
-    // 3) 每个 milestone.tasks 按当前顺序重排 order=0..N-1
-    ms.forEach(m=>{
+    const sorted=[...ms].sort(_sortByChap);
+    const need=ms.some((m,i)=>_looksLegacyOrMissing(m.order)||(typeof m.order==='number'&&m.order!==i)) || sorted.some((m,i)=>m!==ms[i]);
+    if(need){sorted.forEach((m,i)=>{m.order=i;});fixed++;}
+    // 3) 每个 milestone.tasks 按当前顺序重排 0..N-1
+    sorted.forEach(m=>{
       const ts=m.tasks||[];
       if(!ts.length)return;
       const needT=ts.some((t,i)=>_looksLegacyOrMissing(t.order)||(typeof t.order==='number'&&t.order!==i));
       if(needT){ts.forEach((t,i)=>{t.order=i;});fixed++;}
     });
   });
-  // 4) 每个方向的 contents（topic + kp）按 push/原顺序重排 order=0..N-1
+  // 4) 每个方向的 contents 按 [topic 章号, topic-内 idx] 排序后重排 order
   (L0.directions||[]).forEach(d=>{
-    const cs=(L0.contents||[]).filter(c=>c.directionId===d.id);
-    if(!cs.length)return;
-    const needC=cs.some((c,i)=>_looksLegacyOrMissing(c.order)||(typeof c.order==='number'&&c.order!==i));
-    if(needC){cs.forEach((c,i)=>{c.order=i;});fixed++;}
+    const allCs=(L0.contents||[]).filter(c=>c.directionId===d.id);
+    if(!allCs.length)return;
+    const topics=allCs.filter(c=>c.kind==='topic'||c.kind===undefined);
+    const others=allCs.filter(c=>c.kind!=='topic'&&c.kind!==undefined);
+    // topic 按章号升序排
+    const sortedTopics=[...topics].sort(_sortByChap);
+    // 每个 topic 的子内容保持原本"父下顺序"，按 topic 索引 * 1000 + 局部 idx 写 order
+    const topicOrderIdx=new Map();sortedTopics.forEach((t,i)=>topicOrderIdx.set(t.id,i));
+    const _parentOrder=c=>{const tIdx=c.parentId?topicOrderIdx.get(c.parentId):-1;if(tIdx<0)return Number.MAX_SAFE_INTEGER;const sibs=allCs.filter(x=>x.parentId===c.parentId);return tIdx*1000+sibs.indexOf(c);};
+    const allSorted=[...topics,...others].sort((a,b)=>{
+      const oa=isNaN(a.order)?_parentOrder(a):a.order;
+      const ob=isNaN(b.order)?_parentOrder(b):b.order;
+      return oa-ob;
+    });
+    const needC=allCs.some((c,i)=>_looksLegacyOrMissing(c.order)||typeof c.order!=='number'||allSorted[i]!==c) || (()=>{let r=false;allSorted.forEach((c,i)=>{if(c.order!==i)r=true;});return r;})();
+    if(needC){allSorted.forEach((c,i)=>{c.order=i;});fixed++;}
   });
-  if(fixed>0 && !silent){toast('已自动修正 '+fixed+' 处顺序字段（v3.20.6 数据迁移）');}
+  if(fixed>0 && !silent){toast('已自动修正 '+fixed+' 处顺序字段（v3.20.7 数据迁移）');}
   return fixed;
 }
 /* —— 复习 —— */
