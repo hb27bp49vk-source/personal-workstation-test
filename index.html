@@ -423,6 +423,8 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
 .row-between{display:flex;align-items:center;justify-content:space-between}
 .muted{color:var(--text-3);font-size:12px}
 .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;background:var(--card-soft);color:var(--text-2);border:1px solid var(--line)}
+.test-build-badge{display:inline-flex;align-items:center;background:var(--warn);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:0.6px;padding:3px 9px;border-radius:99px;line-height:1.4;flex:none;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.test-build-badge::before{content:"";width:5px;height:5px;border-radius:50%;background:#fff;margin-right:5px;opacity:.85}
 .empty-mini{text-align:center;color:var(--text-3);font-size:13px;padding:18px 0}
 .toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + 30px);transform:translateX(-50%) translateY(20px);background:rgba(26,26,26,.9);color:#fff;padding:9px 16px;border-radius:99px;font-size:13px;opacity:0;transition:.25s;z-index:80;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -705,9 +707,12 @@ summary::-webkit-details-marker{color:var(--text)}
         <div class="sub" id="hSub"></div>
         
       </div>
-      <button class="refresh-btn" id="refreshBtn" title="刷新页面">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      </button>
+      <div style="display:flex;align-items:center;gap:10px;flex:none;padding-top:2px">
+        <span class="test-build-badge" title="测试版：独立库 · 不连接云同步 · 不与正式库数据互通">测试版</span>
+        <button class="refresh-btn" id="refreshBtn" title="刷新页面">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -1037,7 +1042,7 @@ summary::-webkit-details-marker{color:var(--text)}
       <div class="sec" data-module="about">
         <div class="page-title">关于</div>
         <div class="card">
-          <div class="row-between" style="margin-bottom:6px"><span class="lab">我的工作台</span><span class="val">v3.10</span></div>
+          <div class="row-between" style="margin-bottom:6px"><span class="lab"><span class="test-build-badge" style="margin-right:6px;vertical-align:middle">测试版</span>个人工作台</span><span class="val">v3.10</span></div>
           <p class="muted" style="margin:0">墨白极简 · 单文件 HTML · 本地存储 · 断网可用 · 由 WorkBuddy 搭建<br>v3.10 · 学习模块强化：计划节点绑定/聚合/错题/自测/大纲/时间轴</p>
         </div>
       </div>
