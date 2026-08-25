@@ -711,7 +711,16 @@ summary::-webkit-details-marker{color:var(--text)}
 .sync-prev-more{font-size:11.5px;color:var(--text-3);padding:2px 0}
 .hist-more{width:100%;margin-top:12px;padding:9px;border:1px dashed var(--line);border-radius:var(--r-sm);background:transparent;color:var(--text-2);cursor:pointer;font-size:13px}
 .hist-more:hover{border-color:var(--text);color:var(--text)}
-
+.ln-import-row{display:flex;align-items:center;gap:6px;margin:6px 0;background:var(--card-soft);border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;transition:background .15s}
+.ln-import-row:hover{background:#fff}
+.ln-import-row .li-level{flex:0 0 28px;height:30px;background:#fff;border:1px solid var(--line);border-radius:var(--r-xs);font-weight:700;color:var(--text);font-size:12px;cursor:pointer}
+.ln-import-row .li-name{flex:1 1 auto;min-width:120px;background:#fff;border:1px solid var(--line);border-radius:var(--r-xs);padding:6px 8px;font:inherit;outline:none;font-size:13px;color:var(--text)}
+.ln-import-row .li-name:focus{border-color:var(--text)}
+.ln-import-row .li-tags{flex:0 0 150px;background:#fff;border:1px solid var(--line);border-radius:var(--r-xs);padding:6px 8px;font:inherit;outline:none;font-size:12px;color:var(--text-2)}
+.ln-import-row .li-tags:focus{border-color:var(--text)}
+.ln-import-row .li-up,.ln-import-row .li-down{flex:0 0 30px;height:30px;background:#fff;border:1px solid var(--line);border-radius:var(--r-xs);font-size:13px;cursor:pointer;color:var(--text-2)}
+.ln-import-row .li-up:hover,.ln-import-row .li-down:hover{color:var(--text);border-color:var(--text)}
+.ln-import-row .li-del{flex:0 0 30px;height:30px;background:#fff;border:1px solid var(--line);border-radius:var(--r-xs);font-size:12px;cursor:pointer;color:var(--bad);border-color:var(--bad)}
 </style>
 </head>
 <body>
@@ -1122,6 +1131,11 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.1',date:'2026-08-25',modules:['学习'],items:[
+    '修复：粘贴大纲导入后主题顺序错乱（同一天 createdAt 排序不稳定导致，改为按 order 字段稳定排序）',
+    '修复：大纲导入后没有自动建计划 Tab，现在导入会同步建立 方向-计划-阶段-任务，并把每个知识点关联到对应任务',
+    '改进：大纲预览改为可编辑列表（上下移调整顺序、点层级标签循环切换 方/主/知、✕ 删除、标签可填），可按调整后的最终结果导入',
+  ],status:'测试中'},
   {version:'v3.20',date:'2026-08-25',modules:['学习'],items:[
     '学习模块重做为「知识点库」：支持把课程/考试大纲直接粘贴导入，自动拆成 学习方向 → 主题 → 知识点 三层，降低从零录入成本',
     '知识点新增「掌握/未掌握」状态，可在内容树和知识库里一键切换，并在方向卡/方向顶部显示掌握覆盖率',
@@ -4430,35 +4444,139 @@ function parseLnOutline(text){
   });
   if(!rows.length)return [];
   const leads=[...new Set(rows.map(r=>r.lead))].sort((a,b)=>a-b);
-  return rows.map((r,i)=>({name:r.body,tags:r.tags,level:Math.min(leads.indexOf(r.lead),2),idx:i}));
+  return rows.map((r,i)=>({name:r.body,tags:r.tags,level:Math.min(leads.indexOf(r.lead),2),idx:i,tempId:'imp_'+i+'_'+Math.random().toString(36).slice(2,6)}));
 }
 function lnImportPreviewHtml(items){
   if(!items.length)return '<div class="ln-empty">未识别到有效大纲行。</div>';
-  return '<div class="ln-import-preview">'+items.map(x=>`<div class="ln-import-row" style="padding-left:${x.level*18}px"><b>${x.level===0?'方向':(x.level===1?'主题':'知识点')}</b> · ${esc(x.name)} ${(x.tags||[]).map(t=>'#'+esc(t)).join(' ')}</div>`).join('')+'</div>';
+  const labelOf=l=>l===0?'方':(l===1?'主':'知');
+  const rows=items.map(x=>`<div class="ln-import-row" data-tempid="${x.tempId}" data-level="${x.level}" style="padding-left:${8+x.level*18}px">
+    <button type="button" class="li-level" data-act="level" title="点击循环切换层级（主→知→方）">${labelOf(x.level)}</button>
+    <input class="li-name" value="${esc(x.name)}" placeholder="${x.level===0?'方向名':(x.level===1?'主题名':'知识点')}">
+    <input class="li-tags" value="${(x.tags||[]).map(t=>'#'+esc(t)).join(' ')}" placeholder="#标签（空格分隔）">
+    <button type="button" class="li-up" data-act="up" title="上移">↑</button>
+    <button type="button" class="li-down" data-act="down" title="下移">↓</button>
+    <button type="button" class="li-del" data-act="del" title="删除该行">✕</button>
+  </div>`).join('');
+  return '<div class="ln-import-preview" id="lnImportPreviewList">'+rows+'</div><p class="muted" style="margin:8px 0 0;font-size:11.5px;color:var(--text-3)">操作：上下移调整顺序；点层级标签循环切换 方/主/知；✕ 删除整行；以预览里的最终状态导入。</p>';
 }
 let lnImportCache=[];
 function openLnOutlineImport(){
   modal(`<h4>粘贴大纲自动导入<span class="modal-close" onclick="closeModal()">×</span></h4>
-    <p style="color:var(--text-2);font-size:13px;line-height:1.7;margin:0 0 8px">支持缩进、编号、项目符号与 #标签。第 1 层会变成学习方向，第 2 层变主题，第 3 层及以后变知识点。</p>
-    <textarea id="lnImportText" style="width:100%;min-height:180px;border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;font:inherit;outline:none" placeholder="示例：\nSPD 项目能力 #SPD\n  物资主数据 #档案\n    物资编码规则\n    证照效期管理\n  供应商协同\n    A/B表核对流程"></textarea>
-    <div id="lnImportPreview" class="ln-import-preview"><div class="ln-empty">粘贴后点「预览拆分」。</div></div>
-    <div class="btns"><button class="cancel" onclick="lnPreviewOutlineImport()">预览拆分</button><button class="ok" onclick="lnCommitOutlineImport()">确认导入</button></div>`,{noMaskClose:true});
+    <p style="color:var(--text-2);font-size:13px;line-height:1.7;margin:0 0 8px">支持缩进、编号、项目符号与 #标签。第 1 层会变成学习方向+计划，第 2 层变主题+阶段，第 3 层及以后变知识点+任务，会自动建出计划 Tab 可见内容。</p>
+    <textarea id="lnImportText" style="width:100%;min-height:160px;border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;font:inherit;outline:none" placeholder="示例：\nSPD 项目能力 #SPD\n  物资主数据 #档案\n    物资编码规则\n    证照效期管理\n  供应商协同\n    A/B表核对流程"></textarea>
+    <div class="btns" style="margin-top:8px"><button class="cancel" id="lnImportPreviewBtn">预览拆分（可编辑）</button></div>
+    <div id="lnImportPreviewArea"></div>
+    <div class="btns" id="lnImportCommitBar" style="display:none"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" onclick="lnCommitOutlineImport()">以预览状态导入</button></div>`,{noMaskClose:true});
   $('#modalBox').classList.add('wide');
+  $('#lnImportPreviewBtn').onclick=()=>{
+    const items=parseLnOutline($('#lnImportText').value);
+    if(!items.length){$('#lnImportPreviewArea').innerHTML='<div class="ln-empty">未识别到有效大纲行（至少写一行非空文本）。</div>';$('#lnImportCommitBar').style.display='none';return}
+    $('#lnImportPreviewArea').innerHTML=lnImportPreviewHtml(items);
+    $('#lnImportCommitBar').style.display='';
+    $$('#lnImportPreviewList .ln-import-row button').forEach(b=>b.onclick=(e)=>{
+      const r=b.closest('.ln-import-row');if(!r)return;
+      const id=r.dataset.tempid;const act=b.dataset.act;
+      if(act==='up')lnImportMoveItem(id,-1);
+      if(act==='down')lnImportMoveItem(id,1);
+      if(act==='level')lnImportSetLevel(id);
+      if(act==='del')lnImportDelItem(id);
+    });
+  };
 }
 function lnPreviewOutlineImport(){lnImportCache=parseLnOutline($('#lnImportText').value);$('#lnImportPreview').outerHTML=lnImportPreviewHtml(lnImportCache)}
+function lnCollectOutlineFromDom(){
+  return $$('#lnImportPreviewList .ln-import-row').map(r=>({
+    tempId:r.dataset.tempid,
+    level:Math.max(0,Math.min(2,parseInt(r.dataset.level,10)||0)),
+    name:(r.querySelector('.li-name')?.value||'').trim(),
+    tags:splitTags(r.querySelector('.li-tags')?.value||'')
+  })).filter(x=>x.name);
+}
+function lnImportMoveItem(tempId,delta){
+  const list=$$('#lnImportPreviewList .ln-import-row');
+  const i=list.findIndex(r=>r.dataset.tempid===tempId);if(i<0)return;
+  const j=i+delta;if(j<0||j>=list.length)return;
+  const a=list[i],b=list[j];
+  if(delta>0){b.parentNode.insertBefore(a,b.nextSibling)}else{a.parentNode.insertBefore(a,b)}
+}
+function lnImportSetLevel(tempId){
+  const list=$$('#lnImportPreviewList .ln-import-row');
+  const r=list.find(x=>x.dataset.tempid===tempId);if(!r)return;
+  const next={0:1,1:2,2:0}[r.dataset.level]??0;
+  r.dataset.level=next;
+  const label=next===0?'方':(next===1?'主':'知');
+  r.querySelector('.li-level').textContent=label;
+  r.style.paddingLeft=(8+next*18)+'px';
+  r.querySelector('.li-name').placeholder=next===0?'方向名':(next===1?'主题名':'知识点');
+}
+function lnImportDelItem(tempId){
+  const r=$$('#lnImportPreviewList .ln-import-row').find(x=>x.dataset.tempid===tempId);if(r)r.remove();
+}
 function lnCommitOutlineImport(){
-  if(!lnImportCache.length)lnPreviewOutlineImport();
-  if(!lnImportCache.length){toast('没有可导入的大纲');return}
-  const L0=lnData();let curDir=null,curTopic=null,add=0;
-  lnImportCache.forEach(it=>{
-    if(it.level===0){curDir={id:uid(),name:it.name,desc:'由大纲导入',color:LN_COLORS[L0.directions.length%LN_COLORS.length],active:true,createdAt:todayStr()};L0.directions.unshift(curDir);curTopic=null;add++;}
-    else{
-      if(!curDir){curDir={id:uid(),name:'导入学习方向',desc:'由大纲导入',color:LN_COLORS[L0.directions.length%LN_COLORS.length],active:true,createdAt:todayStr()};L0.directions.unshift(curDir);add++;}
-      if(it.level===1){curTopic={id:uid(),name:it.name,directionId:curDir.id,kind:'topic',tags:it.tags||[],url:'',note:'',notes:'',createdAt:todayStr()};L0.contents.unshift(curTopic);add++;}
-      else{const obj={id:uid(),name:it.name,directionId:curDir.id,kind:'kp',parentId:curTopic?curTopic.id:null,tags:it.tags||[],mastered:false,url:'',note:'',notes:'',createdAt:todayStr()};L0.contents.unshift(obj);add++;}
+  const items=lnCollectOutlineFromDom();
+  if(!items.length){toast('请先在预览里填好内容');return}
+  if(!items.some(i=>i.level===0)){toast('至少一行「方向」才能导入');return}
+  const L0=lnData();const T=todayStr();
+  const orderBase=Date.now();
+  let curDir=null,curPlan=null,curMs=null;
+  let addDir=0,addPlan=0,addMs=0,addTask=0,addContent=0;
+  items.forEach((it,idx)=>{
+    if(it.level===0){
+      const dirId=uid();
+      curDir={id:dirId,name:it.name,desc:'由大纲导入',color:LN_COLORS[L0.directions.length%LN_COLORS.length],active:true,createdAt:T};
+      L0.directions.unshift(curDir);addDir++;
+      const planId=uid();
+      L0.plans.unshift({id:planId,directionId:dirId,title:it.name+' 计划',active:true,order:orderBase-idx,createdAt:T,milestones:[]});
+      curPlan=L0.plans[0];addPlan++;
+      curMs=null;
+    }else{
+      if(!curDir){
+        const dirId=uid();
+        curDir={id:dirId,name:'导入学习方向',desc:'由大纲导入',color:LN_COLORS[L0.directions.length%LN_COLORS.length],active:true,createdAt:T};
+        L0.directions.unshift(curDir);addDir++;
+        const planId=uid();
+        L0.plans.unshift({id:planId,directionId:dirId,title:'导入计划',active:true,order:orderBase-idx,createdAt:T,milestones:[]});
+        curPlan=L0.plans[0];addPlan++;
+      }
+      if(it.level===1){
+        const msId=uid();
+        if(!curPlan)curPlan={id:uid(),directionId:curDir.id,title:curDir.name+' 计划',active:true,order:orderBase,createdAt:T,milestones:[]};
+        if(L0.plans.findIndex(x=>x.id===curPlan.id)<0)L0.plans.unshift(curPlan);
+        curPlan.milestones.unshift({id:msId,title:it.name,due:'',tasks:[]});
+        curMs=curPlan.milestones[0];addMs++;
+        L0.contents.unshift({id:uid(),name:it.name,directionId:curDir.id,kind:'topic',tags:it.tags||[],url:'',note:'由大纲导入',notes:'',order:orderBase-idx,createdAt:T});
+        addContent++;
+      }else{
+        if(!curPlan)curPlan={id:uid(),directionId:curDir.id,title:curDir.name+' 计划',active:true,order:orderBase,createdAt:T,milestones:[]};
+        if(L0.plans.findIndex(x=>x.id===curPlan.id)<0)L0.plans.unshift(curPlan);
+        if(!curMs){
+          const msId=uid();
+          curPlan.milestones.unshift({id:msId,title:curDir.name+' 阶段',due:'',tasks:[]});
+          curMs=curPlan.milestones[0];addMs++;
+        }
+        const taskId=uid();
+        curMs.tasks.unshift({id:taskId,title:it.name,done:false,note:''});addTask++;
+        L0.contents.unshift({id:uid(),name:it.name,directionId:curDir.id,kind:'kp',parentId:null,nodeId:taskId,tags:it.tags||[],mastered:false,url:'',note:'由大纲导入',notes:'',order:orderBase-idx,createdAt:T});
+        addContent++;
+      }
     }
   });
-  persist();closeModal();lnCurrentDir=curDir?curDir.id:null;lnDetailTab='kb';renderLearning();toast('已导入 '+add+' 条学习结构');
+  // 把主题 content 的 nodeId 指到同方向 plan 里第一个任务的 id（如果存在）
+  L0.contents.filter(c=>c.kind==='topic').forEach(t=>{
+    for(const pl of L0.plans){
+      if(pl.directionId!==t.directionId)continue;
+      for(const ms of (pl.milestones||[])){
+        if(ms.tasks&&ms.tasks.length){t.nodeId=ms.tasks[0].id;break}
+        t.nodeId=`ms:${ms.id}`;break;
+      }
+      break;
+    }
+  });
+  persist();closeModal();
+  lnCurrentDir=curDir?curDir.id:null;
+  lnDetailTab='plans';
+  renderLearning();
+  toast('导入 '+addDir+' 方向 '+addPlan+' 计划 '+addMs+' 阶段 '+addTask+' 任务 · '+addContent+' 学习结构');
 }
 /* —— 复习 —— */
 function addReview(refType,refId,dirId){
