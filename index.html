@@ -4693,15 +4693,21 @@ function migrateLearningOrdering(L0,silent){
     const others=allCs.filter(c=>c.kind!=='topic'&&c.kind!==undefined);
     // topic 按章号升序排
     const sortedTopics=[...topics].sort(_sortByChap);
-    // 每个 topic 的子内容保持原本"父下顺序"，按 topic 索引 * 1000 + 局部 idx 写 order
-    const topicOrderIdx=new Map();sortedTopics.forEach((t,i)=>topicOrderIdx.set(t.id,i));
-    const _parentOrder=c=>{const tIdx=c.parentId?topicOrderIdx.get(c.parentId):-1;if(tIdx<0)return Number.MAX_SAFE_INTEGER;const sibs=allCs.filter(x=>x.parentId===c.parentId);return tIdx*1000+sibs.indexOf(c);};
-    const allSorted=[...topics,...others].sort((a,b)=>{
-      const oa=isNaN(a.order)?_parentOrder(a):a.order;
-      const ob=isNaN(b.order)?_parentOrder(b):b.order;
-      return oa-ob;
-    });
-    const needC=allCs.some((c,i)=>_looksLegacyOrMissing(c.order)||typeof c.order!=='number'||allSorted[i]!==c) || (()=>{let r=false;allSorted.forEach((c,i)=>{if(c.order!==i)r=true;});return r;})();
+    // 给每个 topic 编新的 idx（按章号升序）；其他内容按"其 topic 的新 idx * 1000 + 局部 idx" 排
+    const topicNewIdx=new Map();sortedTopics.forEach((t,i)=>topicNewIdx.set(t.id,i));
+    // 所有内容按虚拟 key 排序
+    const contentKey=c=>{
+      const topicId=(c.kind==='topic'||c.kind===undefined)?c.id:c.parentId;
+      const tIdx=topicId?topicNewIdx.get(topicId):null;
+      if(tIdx!=null){
+        const sibs=(c.kind==='topic'||c.kind===undefined)?sortedTopics:allCs.filter(x=>x.parentId===topicId);
+        const localIdx=sibs.indexOf(c);
+        return tIdx*10000+(localIdx<0?9999:localIdx);
+      }
+      return Number.MAX_SAFE_INTEGER;
+    };
+    const allSorted=[...allCs].sort((a,b)=>contentKey(a)-contentKey(b));
+    const needC=allCs.some((c,i)=>_looksLegacyOrMissing(c.order)) || allSorted.some((c,i)=>allCs[i]!==c);
     if(needC){allSorted.forEach((c,i)=>{c.order=i;});fixed++;}
   });
   if(fixed>0 && !silent){toast('已自动修正 '+fixed+' 处顺序字段（v3.20.7 数据迁移）');}
