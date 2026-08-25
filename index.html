@@ -1131,6 +1131,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.2',date:'2026-08-25',modules:['学习'],items:[
+    '修复：粘贴大纲导入后阶段、主题、任务顺序倒序/乱序（unshift + 同 createdAt 排序不稳定导致，改为 push + order 字段 + 渲染端按 order 排序）',
+    '修复：内容 Tab 主题显示顺序与大纲不一致（按 order 字段排序，fallback 到原顺序）',
+  ],status:'测试中'},
   {version:'v3.20.1',date:'2026-08-25',modules:['学习'],items:[
     '修复：粘贴大纲导入后主题顺序错乱（同一天 createdAt 排序不稳定导致，改为按 order 字段稳定排序）',
     '修复：大纲导入后没有自动建计划 Tab，现在导入会同步建立 方向-计划-阶段-任务，并把每个知识点关联到对应任务',
@@ -4116,8 +4120,15 @@ function renderLnDirPlans(d,L0){
 }
 function renderLnPlanMilestones(p,L0){
   if(!(p.milestones||[]).length)return '<div class="muted" style="font-size:12px">暂无阶段，点击编辑添加。</div>';
-  return (p.milestones||[]).map(m=>{
-    const tasks=(m.tasks||[]).map(t=>{
+  // v3.20.2: 优先按 order 排序（新数据有 order=大纲顺序），fallback 到原数组顺序（旧数据）
+  const _msAll=p.milestones||[];
+  const _msHasOrder=_msAll.length&&_msAll.every(m=>typeof m.order==='number');
+  const _msSorted=_msHasOrder?lnFifo(_msAll,'order'):_msAll;
+  return _msSorted.map(m=>{
+    const _tAll=m.tasks||[];
+    const _tHasOrder=_tAll.length&&_tAll.every(t=>typeof t.order==='number');
+    const _tSorted=_tHasOrder?lnFifo(_tAll,'order'):_tAll;
+    const tasks=_tSorted.map(t=>{
       const ni=lnNodeItems(L0,t.id);const cnts=[];
       if(ni.contents.length)cnts.push('📄'+ni.contents.length);
       if(ni.questions.length)cnts.push('💡'+ni.questions.length);
@@ -4218,7 +4229,10 @@ function lnNotesHtml(c,mode){
 function lnQuickAddChild(dirId,parentId){ const L0=lnData(); const p=L0.contents.find(c=>c.id===parentId); openLnContentModal(p?p.directionId:dirId,null,null,parentId); }
 function lnContentListHtml(L0,dirId,parentId,depth){
   depth=depth||0; if(depth>12) return '';
-  const kids=lnFifo(L0.contents.filter(c=>c.directionId===dirId&&(c.parentId||null)===parentId),'createdAt');
+  // v3.20.2: 优先按 order 排序（新导入数据有 order=大纲绝对顺序），fallback 到 createdAt（旧数据）
+  const _all=L0.contents.filter(c=>c.directionId===dirId&&(c.parentId||null)===parentId);
+  const _hasOrder=_all.length&&_all.every(c=>typeof c.order==='number');
+  const kids=_hasOrder?lnFifo(_all,'order'):lnFifo(_all,'createdAt');
   if(!kids.length) return '';
   return kids.map(c=>{
     const isTopic=c.kind==='topic';
@@ -4526,8 +4540,8 @@ function lnCommitOutlineImport(){
       curDir={id:dirId,name:it.name,desc:'由大纲导入',color:LN_COLORS[L0.directions.length%LN_COLORS.length],active:true,createdAt:T};
       L0.directions.unshift(curDir);addDir++;
       const planId=uid();
-      L0.plans.unshift({id:planId,directionId:dirId,title:it.name+' 计划',active:true,order:orderBase-idx,createdAt:T,milestones:[]});
-      curPlan=L0.plans[0];addPlan++;
+      L0.plans.push({id:planId,directionId:dirId,title:it.name+' 计划',active:true,order:orderBase-idx,createdAt:T,milestones:[]});
+      curPlan=L0.plans[L0.plans.length-1];addPlan++;
       curMs=null;
     }else{
       if(!curDir){
@@ -4535,28 +4549,29 @@ function lnCommitOutlineImport(){
         curDir={id:dirId,name:'导入学习方向',desc:'由大纲导入',color:LN_COLORS[L0.directions.length%LN_COLORS.length],active:true,createdAt:T};
         L0.directions.unshift(curDir);addDir++;
         const planId=uid();
-        L0.plans.unshift({id:planId,directionId:dirId,title:'导入计划',active:true,order:orderBase-idx,createdAt:T,milestones:[]});
-        curPlan=L0.plans[0];addPlan++;
+        L0.plans.push({id:planId,directionId:dirId,title:'导入计划',active:true,order:orderBase-idx,createdAt:T,milestones:[]});
+        curPlan=L0.plans[L0.plans.length-1];addPlan++;
       }
       if(it.level===1){
         const msId=uid();
         if(!curPlan)curPlan={id:uid(),directionId:curDir.id,title:curDir.name+' 计划',active:true,order:orderBase,createdAt:T,milestones:[]};
-        if(L0.plans.findIndex(x=>x.id===curPlan.id)<0)L0.plans.unshift(curPlan);
-        curPlan.milestones.unshift({id:msId,title:it.name,due:'',tasks:[]});
-        curMs=curPlan.milestones[0];addMs++;
-        L0.contents.unshift({id:uid(),name:it.name,directionId:curDir.id,kind:'topic',tags:it.tags||[],url:'',note:'由大纲导入',notes:'',order:orderBase-idx,createdAt:T});
+        if(L0.plans.findIndex(x=>x.id===curPlan.id)<0)L0.plans.push(curPlan);
+        // v3.20.2: push + order 字段，保证按用户大纲顺序稳定排序
+        curPlan.milestones.push({id:msId,title:it.name,due:'',order:orderBase-idx,tasks:[]});
+        curMs=curPlan.milestones[curPlan.milestones.length-1];addMs++;
+        L0.contents.push({id:uid(),name:it.name,directionId:curDir.id,kind:'topic',tags:it.tags||[],url:'',note:'由大纲导入',notes:'',order:orderBase-idx,createdAt:T});
         addContent++;
       }else{
         if(!curPlan)curPlan={id:uid(),directionId:curDir.id,title:curDir.name+' 计划',active:true,order:orderBase,createdAt:T,milestones:[]};
-        if(L0.plans.findIndex(x=>x.id===curPlan.id)<0)L0.plans.unshift(curPlan);
+        if(L0.plans.findIndex(x=>x.id===curPlan.id)<0)L0.plans.push(curPlan);
         if(!curMs){
           const msId=uid();
-          curPlan.milestones.unshift({id:msId,title:curDir.name+' 阶段',due:'',tasks:[]});
-          curMs=curPlan.milestones[0];addMs++;
+          curPlan.milestones.push({id:msId,title:curDir.name+' 阶段',due:'',order:orderBase-idx,tasks:[]});
+          curMs=curPlan.milestones[curPlan.milestones.length-1];addMs++;
         }
         const taskId=uid();
-        curMs.tasks.unshift({id:taskId,title:it.name,done:false,note:''});addTask++;
-        L0.contents.unshift({id:uid(),name:it.name,directionId:curDir.id,kind:'kp',parentId:null,nodeId:taskId,tags:it.tags||[],mastered:false,url:'',note:'由大纲导入',notes:'',order:orderBase-idx,createdAt:T});
+        curMs.tasks.push({id:taskId,title:it.name,done:false,note:'',order:orderBase-idx});addTask++;
+        L0.contents.push({id:uid(),name:it.name,directionId:curDir.id,kind:'kp',parentId:null,nodeId:taskId,tags:it.tags||[],mastered:false,url:'',note:'由大纲导入',notes:'',order:orderBase-idx,createdAt:T});
         addContent++;
       }
     }
