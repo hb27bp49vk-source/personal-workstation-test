@@ -4847,7 +4847,7 @@ function lnExportOutline(dirId){
   }
   const text=lines.join('\n');
   const fileName=(d.name||'大纲').replace(/[\\/:*?"<>|]/g,'_')+'.txt';
-  openModal(`<div class="modal" style="max-width:520px"><div class="ttl">📤 导出大纲</div>
+  modal(`<div class="modal" style="max-width:520px"><div class="ttl">📤 导出大纲</div>
     <div class="muted" style="font-size:12px;margin-bottom:6px">来自【${esc(d.name)}】，复制后到正式库的「学习→导入大纲」粘贴即可。</div>
     <textarea id="lnExpText" readonly style="width:100%;min-height:240px;max-height:50vh;border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.6;outline:none;resize:vertical;background:#fff">${esc(text)}</textarea>
     <div class="ln-kb-a" style="margin:8px 0 4px;font-size:12px">主题 ${addedTopic} · 知识点 ${addedTask}</div>
@@ -4857,7 +4857,6 @@ function lnExportOutline(dirId){
       <button class="cancel" onclick="closeModal()" style="flex:none;border:1px solid var(--line);background:#fff;border-radius:var(--r-sm);padding:9px 14px;color:var(--text-2);cursor:pointer">关闭</button>
     </div>
   </div>`,{noMaskClose:true});
-  // 绑定按钮（用 onload=0 / setTimeout 防止 DOM 未注入完成）
   setTimeout(()=>{
     const ta=document.getElementById('lnExpText');
     const cp=document.getElementById('lnExpCopy');
