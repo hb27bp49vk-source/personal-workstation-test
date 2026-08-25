@@ -1131,6 +1131,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.3',date:'2026-08-25',modules:['学习'],items:[
+    '修复：iOS PWA 强缓存下点击「学习方向」卡无反馈（改用 addEventListener 事件委托替代 inline onclick，绕开 iOS WebView 偶发断链）',
+    '改进：方向卡加 tabindex/role/aria-label，键盘可达 + 屏幕阅读器友好',
+  ],status:'测试中'},
   {version:'v3.20.2',date:'2026-08-25',modules:['学习'],items:[
     '修复：粘贴大纲导入后阶段、主题、任务顺序倒序/乱序（unshift + 同 createdAt 排序不稳定导致，改为 push + order 字段 + 渲染端按 order 排序）',
     '修复：内容 Tab 主题显示顺序与大纲不一致（按 order 字段排序，fallback 到原顺序）',
@@ -4000,7 +4004,8 @@ function renderLnHome(){
 }
 function renderLnHomeCard(d,L0){
   const st=lnDirStats(d,L0);const pct=st.total?Math.round(st.done/st.total*100):0;const col=d.color||'#888';
-  return `<div class="card ln-home-card" style="box-shadow:inset 4px 0 0 ${col}" onclick="lnOpenDir('${d.id}')">
+  // v3.20.3: 用 data-dir-id + addEventListener 事件委托替代 inline onclick（防 iOS PWA 缓存断链）
+  return `<div class="card ln-home-card" data-dir-id="${d.id}" tabindex="0" role="button" aria-label="进入方向 ${esc(d.name)}" style="box-shadow:inset 4px 0 0 ${col}">
     <div class="ln-dir-head" style="background:${hexA(col,.06)};border-radius:var(--r-sm)">
       <span class="ln-dot" style="background:${col};margin-top:4px"></span>
       <div class="ln-main">
@@ -4751,6 +4756,30 @@ function openLnSelftestModal(dirId,id,nodeId){
 
 initFilters();
 renderAll();
+
+/* v3.20.3: 学习方向卡全局 click 事件委托（替代 inline onclick，绕开 iOS PWA 缓存断链） */
+(function bindLnHomeCardClick(){
+  const body = document.getElementById('lnBody');
+  if (!body || body._lnHomeClickBound) return;
+  body.addEventListener('click', function(e){
+    const card = e.target && e.target.closest && e.target.closest('[data-dir-id]');
+    if (card && body.contains(card)) {
+      const id = card.getAttribute('data-dir-id');
+      if (id && typeof lnOpenDir === 'function') lnOpenDir(id);
+    }
+  });
+  // 键盘可达：回车键也触发
+  body.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target && e.target.closest && e.target.closest('[data-dir-id]');
+    if (card && body.contains(card)) {
+      e.preventDefault();
+      const id = card.getAttribute('data-dir-id');
+      if (id && typeof lnOpenDir === 'function') lnOpenDir(id);
+    }
+  });
+  body._lnHomeClickBound = true;
+})();
 
 /* 云同步初始化 */
 renderSyncBtn();
