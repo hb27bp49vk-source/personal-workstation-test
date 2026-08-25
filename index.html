@@ -493,6 +493,7 @@ summary::-webkit-details-marker{color:var(--text)}
 .quick-chip{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:5px 11px;background:#fff;color:var(--text-2);transition:all .15s}
 .quick-chip:active{transform:scale(.95)}
 .quick-chip.on{background:var(--text);color:#fff;border-color:var(--text)}
+.note-quick-row{margin:-4px 0 2px;padding-left:0}
 .filter-sum{font-size:12px;color:var(--text-2);margin-top:9px;line-height:1.7;border-top:1px dashed var(--line);padding-top:8px}
 .filter-sum b{color:var(--text)}
 
@@ -757,6 +758,7 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="amt-input"><span class="y">¥</span><input id="amtIn" type="number" inputmode="decimal" placeholder="0.00"></div>
           <div class="cat-row" id="catRow"></div>
           <div class="field"><span class="lab">备注</span><input id="ledgerNoteIn" placeholder="选填" maxlength="40"></div>
+          <div class="quick-chips note-quick-row" id="noteQuickRow"></div>
           <div class="field"><span class="lab">日期</span><input id="dateIn" type="date"></div>
           <button class="btn-main" id="amtSave">保存</button>
         </div>
@@ -810,6 +812,10 @@ summary::-webkit-details-marker{color:var(--text)}
               <button class="quick-chip" data-t="expense">仅支出</button>
               <button class="quick-chip" data-t="income">仅收入</button>
               <input class="fb-kw" id="flowKw" placeholder="搜索分类 / 备注">
+            </div>
+            <div class="fb-row" id="flowNoteRow">
+              <span class="fb-lab">备注</span>
+              <div class="quick-chips" id="flowNoteChips" style="flex:1"></div>
             </div>
             <div class="filter-sum" id="flowSum"></div>
           </div>
@@ -1033,7 +1039,7 @@ summary::-webkit-details-marker{color:var(--text)}
 <script>
 /* ====== 测试版存储隔离：正式版与测试版同属 github.io 域名，localStorage 按 origin 共享，故给测试版加命名空间前缀，避免互相读写同一份本地数据 ====== */
 const _realLS = window.localStorage;
-const _LS_NS = '';
+const _LS_NS = 'wbtest_';
 const localStorage = {
   getItem(k){ return _realLS.getItem(_LS_NS + k); },
   setItem(k, v){ return _realLS.setItem(_LS_NS + k, String(v)); },
@@ -1058,6 +1064,11 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.18',date:'2026-08-25',modules:['账本'],items:[
+    '「记一笔」备注支持快捷选择：内置 早饭 / 午饭 / 晚饭 一键填入，再点一次即清空；支持添加自定义快捷备注（如夜宵、打车、咖啡），可随时删除',
+    '自定义快捷备注随云同步跨设备保留（任一端添加即合并）',
+    '流水记录筛选区新增「备注」多选行：按使用频次列出账单里出现过的备注 + 快捷备注，可多选组合查询，实时联动汇总行、总支出构成饼图、预算内构成饼图与明细列表',
+  ],status:'测试中'},
   {version:'v3.15',date:'2026-08-21',modules:['学习'],items:['学习心得支持多行录入：单一文本框改为多行编辑器，每条心得独立成行，左侧自动 ① ② ③… 编号（最多 20 条，超出显示 [21]），下方 + 新增心得、× 删除单条；存储改为 \u0001 分隔，老数据按 \n 拆分并自动剥离 ① / 1. / · / • 等旧前缀做迁移','学习心得在节点详情/资源列表的展示同步改为每条一行 + · 前缀，与录入对齐','内容/资源弹窗加宽：.modal.wide 从 460px → 640px，更适合多行编辑器','弹窗新增可拖拽调整大小：右下角 ↘ 把手拖动改宽高（最小 360×240，最大 95vw×95vh），尺寸按 wide/xl 分类持久化到 localStorage，刷新保留'],status:'测试中'},
   {version:'v3.14',date:'2026-08-21',modules:['学习'],items:['学习模块区段支持点击折叠/展开：节点详情页「资料/问题/复习/自测」4 块标题可点击折叠，折叠状态 localStorage 持久化（刷新保留）','内容列表改为先入先出（FIFO）自然正序：资料/问题按创建时间升序，复习按下次复习日、自测按记录日期升序，树形父子层级同步正序；方向 tab 内问题/知识库/错题/资源/自测列表也统一 FIFO','自检：工作日志/待办/习惯已为正序；备忘「未完成优先 + 更新时间倒序」、账本/历史「按日期倒序」为有意的浏览设计，保持原样'],status:'测试中'},
   {version:'v3.13',date:'2026-08-21',modules:['习惯打卡'],items:['习惯连续天数统计起点改为 min(createdAt, 最早打卡记录)，修复旧数据缺 createdAt 时被截断为 1 天的 bug','云同步习惯合并：loc.history=undefined 时引用丢失导致历史被清空，已加回写；createdAt 取两端较早者，避免同步后截断','activityLevel 改用 (h.history||{})[ds] 兜底，防止旧数据 history 为 undefined 时热力图崩溃'],status:'已回补到测试版（与正式版 v3.13 一致）'},
@@ -1100,6 +1111,7 @@ const DEFAULT={
   moods:{}, notes:[], countdowns:[], worklog:[],
   customCats:{expense:[],income:[]},
   budgetCats:{},
+  quickNotes:[],
   learning:{directions:[],contents:[],plans:[],questions:[],reviews:[],mistakes:[],selftests:[]},
   habitArchive:{}
 };
@@ -1122,6 +1134,7 @@ function load(){
     if(!Array.isArray(d.customCats.expense))d.customCats.expense=[];
     if(!Array.isArray(d.customCats.income))d.customCats.income=[];
     if(!d.budgetCats||typeof d.budgetCats!=='object')d.budgetCats={};
+    if(!Array.isArray(d.quickNotes))d.quickNotes=[];
     if(!d.updatedAt)d.updatedAt=Date.now();
     return d;
   }catch(e){return structuredClone(DEFAULT)}
@@ -1569,7 +1582,7 @@ function renderTodayStat(){
 /* ============ 账本 ============ */
 let curType='expense',curCat=null,curMonth=new Date();
 function renderMoney(){
-  renderCats();renderFlow();renderMonthStat();renderCatChart();renderTodayStat();
+  renderCats();renderFlow();renderMonthStat();renderCatChart();renderTodayStat();renderNoteQuickRow();
 }
 function hexA(hex,a){
   if(!hex)return'rgba(0,0,0,'+a+')';
@@ -1680,6 +1693,46 @@ $('#amtSave').onclick=()=>{
   $('#amtIn').value='';$('#ledgerNoteIn').value='';$('#dateIn').value=todayStr();
   persist();renderMoney();renderHeader();toast('已记一笔');
 };
+/* ---- 备注快捷选择（v3.18）：预设 早饭/午饭/晚饭 + 自定义，点击即填入/再点清空 ---- */
+const NOTE_PRESETS=['早饭','午饭','晚饭'];
+function quickNotesAll(){
+  const customs=Array.isArray(S.quickNotes)?S.quickNotes:[];
+  return [...new Set([...NOTE_PRESETS,...customs])];
+}
+function renderNoteQuickRow(){
+  const row=$('#noteQuickRow');if(!row)return;
+  const cur=$('#ledgerNoteIn').value.trim();
+  row.innerHTML=quickNotesAll().map(n=>`<button type="button" class="quick-chip${cur===n?' on':''}" data-n="${esc(n)}">${esc(n)}</button>`).join('')
+    +'<button type="button" class="quick-chip" id="noteQuickAdd">＋ 自定义</button>';
+  $$('#noteQuickRow .quick-chip[data-n]').forEach(b=>b.onclick=()=>{
+    const n=b.dataset.n,inp=$('#ledgerNoteIn');
+    inp.value=(inp.value.trim()===n)?'':n;
+    renderNoteQuickRow();
+  });
+  const add=$('#noteQuickAdd');if(add)add.onclick=openQuickNoteManager;
+}
+function openQuickNoteManager(){
+  const customs=Array.isArray(S.quickNotes)?S.quickNotes:[];
+  modal(`<h4>自定义快捷备注</h4>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">添加后出现在「记一笔」备注下方，点一下即填入，也出现在流水筛选里。内置：早饭 / 午饭 / 晚饭。</p>
+    <div class="field"><span class="lab">名称</span><input id="qnNameIn" placeholder="如：夜宵 / 打车 / 咖啡" maxlength="10"></div>
+    <div class="btns" style="margin-top:12px"><button class="cancel" onclick="closeModal()">关闭</button><button class="ok" id="qnAddBtn">添加</button></div>
+    ${customs.length?'<div class="muted" style="margin:14px 0 7px">已有自定义备注（点 × 删除）</div><div id="qnList" style="display:flex;gap:8px;flex-wrap:wrap">'+customs.map(n=>'<span class="cc-chip">'+esc(n)+'<span class="x" data-del="'+esc(n)+'">×</span></span>').join('')+'</div>':''}`);
+  $('#qnAddBtn').onclick=()=>{
+    const n=$('#qnNameIn').value.trim();
+    if(!n){toast('请输入备注名称');return}
+    if(quickNotesAll().includes(n)){toast('该备注已存在');return}
+    if(!Array.isArray(S.quickNotes))S.quickNotes=[];
+    S.quickNotes.push(n);persist();
+    closeModal();renderNoteQuickRow();renderFlow();toast('已添加快捷备注「'+n+'」');
+  };
+  $$('#qnList .x').forEach(x=>x.onclick=()=>{
+    S.quickNotes=(S.quickNotes||[]).filter(n=>n!==x.dataset.del);
+    if(typeof flowNoteSel!=='undefined'&&flowNoteSel&&flowNoteSel.has(x.dataset.del))flowNoteSel.delete(x.dataset.del);
+    persist();openQuickNoteManager();renderNoteQuickRow();renderFlow();toast('已删除');
+  });
+}
+$('#ledgerNoteIn').addEventListener('input',renderNoteQuickRow);
 /* ---- 日期区间工具 ---- */
 function shiftDays(n){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+n);return fmtDate(d)}
 function monthBounds(y,m){return[fmtDate(new Date(y,m,1)),fmtDate(new Date(y,m+1,0))]}
@@ -1701,6 +1754,7 @@ function rangeLabel(from,to){
 
 /* ---- 账单明细 ---- */
 let flowKind='all';
+let flowNoteSel=new Set();   /* 备注多选筛选（v3.18）；空 = 不过滤 */
 let pieFocus=new Set();        // 总饼图多选焦点（图例 selected 集合）；空=全量
 let pieBudgetFocus=new Set();  // 预算内饼图多选焦点；空=全量
 function setFlowRange(from,to,activeKey){
@@ -1716,14 +1770,41 @@ function flowFiltered(){
     if(to&&x.date>to)return false;
     if(flowKind!=='all'&&x.type!==flowKind)return false;
     if(kw&&!((x.category||'')+' '+(x.note||'')).toLowerCase().includes(kw))return false;
+    if(flowNoteSel.size&&!flowNoteSel.has((x.note||'').trim()))return false;
     return true;
   }).sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));
 }
+/* 备注筛选 chips：账单里实际出现过的备注（按使用次数排序）+ 快捷备注，多选联动饼图与明细 */
+function noteFilterOptions(){
+  const cnt={};
+  S.ledger.forEach(x=>{const n=((x&&x.note)||'').trim();if(n)cnt[n]=(cnt[n]||0)+1;});
+  const used=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]);
+  return [...new Set([...used,...quickNotesAll()])];
+}
+function renderFlowNoteChips(){
+  const wrap=$('#flowNoteChips');if(!wrap)return;
+  const opts=noteFilterOptions();
+  const sel=flowNoteSel;
+  /* 焦点校验：已删除的备注选项自动移出选中集 */
+  if(sel.size)[...sel].forEach(n=>{if(!opts.includes(n))sel.delete(n)});
+  wrap.innerHTML=(sel.size
+      ?'<button type="button" class="quick-chip" data-n="__clear">✕ 清除</button>'
+      :'<button type="button" class="quick-chip on" data-n="__all">全部</button>')
+    +opts.map(n=>`<button type="button" class="quick-chip${sel.has(n)?' on':''}" data-n="${esc(n)}">${esc(n)}</button>`).join('');
+  $$('#flowNoteChips .quick-chip').forEach(b=>b.onclick=()=>{
+    const n=b.dataset.n;
+    if(n==='__all'||n==='__clear')flowNoteSel.clear();
+    else if(flowNoteSel.has(n))flowNoteSel.delete(n);
+    else flowNoteSel.add(n);
+    renderFlow();
+  });
+}
 function renderFlow(){
   const from=$('#flowFrom').value,to=$('#flowTo').value;
+  renderFlowNoteChips();
   const list=flowFiltered();
   let inc=0,exp=0;list.forEach(x=>{if(x.type==='income')inc+=x.amount;else exp+=x.amount});
-  $('#flowSum').innerHTML=`${rangeLabel(from,to)} · 共 <b>${list.length}</b> 笔 · 收入 <b style="color:var(--income)">${money(inc)}</b> · 支出 <b style="color:var(--expense)">${money(exp)}</b> · 结余 <b>${money(inc-exp)}</b>`;
+  $('#flowSum').innerHTML=`${rangeLabel(from,to)} · 共 <b>${list.length}</b> 笔 · 收入 <b style="color:var(--income)">${money(inc)}</b> · 支出 <b style="color:var(--expense)">${money(exp)}</b> · 结余 <b>${money(inc-exp)}</b>${flowNoteSel.size?` · <span style="color:var(--text-2)">备注筛选：${[...flowNoteSel].map(esc).join('、')}</span>`:''}`;
   $('#flowList').innerHTML=list.length?list.map(x=>{
     const meta=catMeta(x.type,x.category);
     return `<div class="flow-item" data-id="${x.id}" style="border-left-color:${meta[1]}">
@@ -2605,6 +2686,12 @@ function mergeState(remote){
     S.habits=[...map.values()];
   }());
   S.ledger=unionArr(S.ledger,remote.ledger);
+  /* 自定义快捷备注（v3.18）：按名称并集合并，任一端添加即同步 */
+  if(Array.isArray(remote.quickNotes)){
+    const qnSet=new Set(S.quickNotes||[]);
+    remote.quickNotes.forEach(n=>{if(n&&!qnSet.has(n)){qnSet.add(n);changed=true;}});
+    S.quickNotes=[...qnSet];
+  }
   S.notes=unionArr(S.notes,remote.notes);
   S.countdowns=unionArr(S.countdowns,remote.countdowns);
   S.worklog=unionArr(S.worklog,remote.worklog);
@@ -2810,6 +2897,7 @@ function syncFmtTime(iso){
 }
 function normalizeState(d){
   if(!d.worklog)d.worklog=[];if(!d.notes)d.notes=[];if(!d.countdowns)d.countdowns=[];if(!d.moods)d.moods={};if(!d.habits)d.habits=[];if(!d.todos)d.todos=[];if(!d.ledger)d.ledger=[];if(!d.learning||typeof d.learning!=='object')d.learning={directions:[],contents:[],plans:[],questions:[],reviews:[],mistakes:[],selftests:[]};['directions','contents','plans','questions','reviews','mistakes','selftests'].forEach(k=>{if(!Array.isArray(d.learning[k]))d.learning[k]=[]});
+  if(!Array.isArray(d.quickNotes))d.quickNotes=[];
   return d;
 }
 function syncStateSummary(d){
