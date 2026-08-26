@@ -16,15 +16,16 @@
 /* ====== 设计令牌 · 墨白极简 ====== */
 :root{
   /* 背景 / 卡片：墨白极简，中性黑白灰，不偏暖 */
-  --bg:#ffffff; --bg2:#f7f7f5;
-  --card:#ffffff; --card-soft:#f9f9f8; --card-hover:#f4f4f2; --card-tint:#f9f9f8;
+  --bg:#f5f5f3; --bg2:#efefec;
+  --card:#ffffff; --card-soft:#faf9f7; --card-hover:#f3f2ef; --card-tint:#f9f9f8;
   --text:#1a1a1a; --text-2:#6b6b6b; --text-3:#a0a0a0;
-  --line:#e5e5e3; --line-soft:#efefed;
+  --line:#e8e8e5; --line-soft:#f1f1ee;
   --pri:#1a1a1a; --pri-light:#4a4a4a; --pri-soft:rgba(26,26,26,.04); --pri-grad:#1a1a1a;
   --ok:#5a7a4e; --warn:#9a7a3a; --bad:#b04a4a;
   --income:#5a7a4e; --expense:#b04a4a;
-  --shadow:none; --shadow-sm:none;
-  --r:10px; --r-sm:7px; --r-xs:5px;
+  --shadow:0 1px 2px rgba(20,20,20,.04),0 2px 10px rgba(20,20,20,.05); --shadow-sm:0 1px 2px rgba(20,20,20,.05);
+  --r:14px; --r-sm:10px; --r-xs:7px;
+  --tab-on:#1a1a1a;
   --tab-h:56px; --max:560px;
   /* 模块柔和强调色（莫兰迪低饱和，做明显区分，无大色块） */
   --m-worklog:#c4a062; --m-todos:#6a8db5; --m-habits:#6ab58a; --m-todayMoney:#c4756b;
@@ -32,6 +33,21 @@
   --m-mood:#c47a9e; --m-heatmap:#5fa0b0; --m-countdown:#6a8db5; --m-history:#8a7fb0;
   --m-notes:#9a86b8; --m-dataManage:#5a7a8a; --m-cloudSync:#5fa0b0; --m-homeScreen:#8aa0b0;
   --m-changelog:#b0894e; --m-about:#9a9a92; --m-learning:#5a7a8a;
+}
+[data-theme="dark"]{
+  --bg:#161616; --bg2:#1d1d1d;
+  --card:#212121; --card-soft:#272727; --card-hover:#2e2e2e; --card-tint:#212121;
+  --text:#ededed; --text-2:#a6a6a6; --text-3:#6f6f6f;
+  --line:#333; --line-soft:#2a2a2a;
+  --pri:#ededed; --pri-light:#cfcfcf; --pri-soft:rgba(255,255,255,.05); --pri-grad:#ededed;
+  --shadow:none; --shadow-sm:none;
+  --tab-on:#ededed;
+  --m-worklog:#d4b074; --m-todos:#86a8cf; --m-habits:#82c9a3; --m-todayMoney:#d68f86;
+  --m-moneyForm:#c89c66; --m-monthOverview:#d99f74; --m-catExpense:#cba968; --m-flowList:#969ecf;
+  --m-mood:#d68fb0; --m-heatmap:#7bb6c4; --m-countdown:#86a8cf; --m-history:#a89ccb;
+  --m-notes:#b29bd0; --m-dataManage:#7a9cab; --m-cloudSync:#7bb6c4; --m-homeScreen:#a6bccb;
+  --m-changelog:#c8a066; --m-about:#b3b3aa; --m-learning:#7a9cab;
+  --income:#7fae6e; --expense:#d68f86;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -68,6 +84,19 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .page-title{font-size:11px;color:var(--text-3);font-weight:600;margin:2px 2px 10px;letter-spacing:.5px;text-transform:uppercase}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;transition:background .15s}
 .card:hover{background:var(--card-soft)}
+/* ====== 视觉精修：顶部焦点卡 + 暗色切换按钮 ====== */
+.focus{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.focus .f-item{display:flex;flex-direction:column;gap:4px}
+.focus .f-lab{font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:6px}
+.focus .f-lab .dot{width:8px;height:8px;border-radius:3px;flex:none}
+.focus .f-num{font-size:26px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.focus .f-num.ex{color:var(--expense)}
+.focus .f-num.ok{color:var(--income)}
+.focus .f-sub{font-size:12px;color:var(--text-3)}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.theme-toggle{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;background:var(--card);color:var(--text-2);flex:none;transition:all .15s}
+.theme-toggle:active{transform:scale(.94)}
+.topbar-row > div:first-child{flex:1}
 .card h3{margin:0 0 12px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
 .card h3 .ic{width:18px;height:18px;color:var(--text);flex:none}
 .sec{margin-bottom:20px}
@@ -93,7 +122,7 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .sec[data-module="changelog"]{--mac:var(--m-changelog)}
 .sec[data-module="about"]{--mac:var(--m-about)}
 .sec[data-module] > .page-title{border-left:3px solid var(--mac);padding-left:9px;color:var(--mac)}
-.sec[data-module] > .card{box-shadow:inset 3px 0 0 var(--mac);border-color:var(--line)}
+.sec[data-module] > .card{box-shadow:var(--shadow),inset 3px 0 0 var(--mac);border-color:var(--line)}
 .sec[data-module] .card h3 .ic{color:var(--mac)}
 .sec[data-module="todos"] .todo-prog i{background:var(--m-todos)}
 .sec[data-module="habits"] .habit-card.done{background:rgba(106,181,138,.10);border-color:rgba(106,181,138,.42)}
@@ -424,8 +453,8 @@ nav.tabbar{
 }
 nav.tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text-3);font-size:10.5px;text-decoration:none;transition:.15s}
 nav.tabbar a .ic{width:22px;height:22px;transition:.15s}
-nav.tabbar a.on{color:#3f5d68}
-nav.tabbar a.on .ic{color:#3f5d68}
+nav.tabbar a.on{color:var(--tab-on)}
+nav.tabbar a.on .ic{color:var(--tab-on)}
 nav.tabbar a.on .ic{transform:scale(1.05)}
 
 /* ====== 通用 ====== */
@@ -782,7 +811,6 @@ summary::-webkit-details-marker{color:var(--text)}
         <div class="date" id="hDate"></div>
         <div class="greet"><span class="dot"></span><span id="hGreet">你好</span></div>
         <div class="sub" id="hSub"></div>
-        
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex:none;padding-top:2px">
         <span class="test-build-badge" title="测试版：独立库 · 不连接云同步 · 不与正式库数据互通">测试版</span>
@@ -790,6 +818,9 @@ summary::-webkit-details-marker{color:var(--text)}
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
       </div>
+      <button class="theme-toggle" id="themeBtn" title="切换亮/暗色">
+        <svg id="themeIc" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -799,6 +830,18 @@ summary::-webkit-details-marker{color:var(--text)}
     <input type="file" id="mergeFile" accept="application/json" hidden>
     <!-- 今日 -->
     <section class="page active" id="page-today">
+      <div class="focus">
+        <div class="f-item">
+          <div class="f-lab"><span class="dot" style="background:var(--expense)"></span>今日支出</div>
+          <div class="f-num ex">¥186</div>
+          <div class="f-sub">较昨日 ↓ 12%</div>
+        </div>
+        <div class="f-item">
+          <div class="f-lab"><span class="dot" style="background:var(--income)"></span>待办完成</div>
+          <div class="f-num ok">3/5</div>
+          <div class="f-sub">剩余 2 项</div>
+        </div>
+      </div>
       <button class="qn-entry" id="qnEntry">
         <svg class="qn-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <div class="qn-tx"><div class="t">速记录入</div><div class="s">粘贴手机记录，自动拆分到各模块（记为今天）</div></div>
@@ -5598,6 +5641,25 @@ renderSyncBtn();
       promptLogin(p);
     })();
   }
+})();
+/* ====== 视觉精修：暗色模式（独立于业务数据，跟随系统 + 手动切换） ====== */
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn'), ic=document.getElementById('themeIc');
+  var sun='<path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>';
+  var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+  function paint(){ var d=root.getAttribute('data-theme')==='dark'; if(ic) ic.innerHTML=d?sun:moon; }
+  try{
+    var s=localStorage.getItem('wb_theme');
+    if(s) root.setAttribute('data-theme',s);
+    else if(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) root.setAttribute('data-theme','dark');
+  }catch(e){}
+  paint();
+  if(btn) btn.addEventListener('click',function(){
+    var n=root.getAttribute('data-theme')==='dark'?'light':'dark';
+    root.setAttribute('data-theme',n);
+    try{ localStorage.setItem('wb_theme',n); }catch(e){}
+    paint();
+  });
 })();
 </script>
 </body>
