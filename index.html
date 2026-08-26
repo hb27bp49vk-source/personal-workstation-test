@@ -5220,7 +5220,7 @@ function renderLnDirTimeline(d,L0){
         const cs=items.contents||[]; const qs=items.questions||[]; const revs=items.reviews||[];
         const done=t.done?'✅':'▫️';
         const hasKids=cs.length+qs.length+revs.length>0;
-        html+=`<div class="ln-tt-task"><span class="ln-caret" data-tt-key="${tKey}" onclick="lnToggleTimeline(this)">${hasKids?'▼':'▶'}</span><div class="ln-main"><div class="ln-title">${done} ${esc(t.title||'未命名任务')} <span class="ln-tag" style="font-weight:500">📄${cs.length} 💡${qs.length} 🔁${revs.length}</span></div></div><div data-tt-body="${tKey}" ${hasKids?'':'style="display:none"'}>`;
+        html+=`<div class="ln-tt-task"><span class="ln-caret" data-tt-key="${tKey}" onclick="lnToggleTimeline(this)">${hasKids?'▼':'▶'}</span><div class="ln-main"><div class="ln-title">${done} ${esc(t.title||'未命名任务')} <span class="ln-tag" style="font-weight:500">📄${cs.length} 💡${qs.length} 🔁${revs.length}</span></div></div></div><div data-tt-body="${tKey}" ${hasKids?'':'style="display:none"'}>`;
         if(cs.length){
           html+=`<div class="ln-tt-section">资料 / 子内容</div>`;
           cs.forEach(c=>{
