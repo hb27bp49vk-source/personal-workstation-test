@@ -676,12 +676,12 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-tt-stage .ln-main{flex:1;min-width:0}
 .ln-tt-stage .ln-title{font-size:13px !important;font-weight:600 !important;line-height:1.4}
 .ln-tt-stage .ln-sub{font-size:11.5px !important;color:var(--text-3);margin-top:2px;line-height:1.4}
-.ln-tt-task{padding:4px 16px 4px 24px;border-left:2px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-right:-16px;margin-top:6px}
+.ln-tt-task{padding:4px 16px 4px 40px;border-left:2px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-right:-16px;margin-top:6px}
 .ln-tt-task .ln-caret{margin-top:2px;font-size:11px;flex:none}
 .ln-tt-task .ln-main{flex:1;min-width:0}
 .ln-tt-task .ln-title{font-size:13px !important;font-weight:500 !important;line-height:1.4}
-.ln-tt-section{padding:0 16px 0 28px;font-size:11px;color:var(--text-3);font-weight:600;letter-spacing:.5px;box-sizing:border-box;width:100%;margin-right:-16px;margin-top:8px}
-.ln-tt-row{padding:5px 16px 5px 28px;border-left:2px solid var(--line-soft);background:rgba(0,0,0,.018);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-right:-16px;margin-top:3px}
+.ln-tt-section{padding:0 16px 0 56px;font-size:11px;color:var(--text-3);font-weight:600;letter-spacing:.5px;box-sizing:border-box;width:100%;margin-right:-16px;margin-top:8px}
+.ln-tt-row{padding:5px 16px 5px 56px;border-left:2px solid var(--line-soft);background:rgba(0,0,0,.018);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-right:-16px;margin-top:3px}
 .ln-tt-row .ln-tt-kind{flex:1;min-width:0;font-weight:600;color:var(--text-2)}
 .ln-tt-row .ln-tt-meta{flex:0 0 auto;color:var(--text-3);font-size:11px;line-height:1.4;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .ln-tt-row .ln-tt-meta a{color:var(--text-2)}
@@ -1163,6 +1163,13 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.17',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
+    '用户截图反馈时间轴子级缩进不够——任务（24px）和资料行（28px）累积差仅 28px，视觉层级一眼分不出',
+    '加大 3 级缩进（阶段保持 24px 不变）：.ln-tt-task 24→40px / .ln-tt-section 28→56px / .ln-tt-row 28→56px',
+    '累积效果（从 #lnBody 左缘起算）：阶段 24px → 任务 64px（+40）→ 资料/问题/复习 120px（+56）',
+    '每级递增 16-56px，肉眼一眼看出「计划→阶段→任务→资料」4 级关系',
+    '铁律沉淀：4 级及以上嵌套展示，**每级左缩进差 ≥ 16px**，否则视觉层级糊在一起'
+  ]},
   {version:'v3.20.16',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     '用户截图反馈 v3.20.14b「前端展示一模一样」铁律——v3.20.14b 已修嵌套子级「右边齐平」，但「左边缩进」还有 16px 偏差',
     '根因：知识库/资源 tab 第二段「资源按父节点聚合」子级嵌在 group .card（padding 16px）内 + 基类 .ln-res-child 自身 margin-left 32px = 净 48px，比内容 tab 的兄弟子级（净 32px）多缩 16px',
