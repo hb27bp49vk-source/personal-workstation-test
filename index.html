@@ -653,20 +653,20 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-kp.done{border-left-color:var(--good);background:linear-gradient(90deg,rgba(120,150,110,.08),transparent)}
 .ln-kp-state{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 8px;color:var(--text-2);background:var(--card-soft)}
 .ln-kp.done .ln-kp-state{border-color:rgba(120,150,110,.35);color:var(--good)}
-/* v3.20.10: 上下级视觉差——子级卡片比父级窄一点、短一点，让人一眼看出层级（内容/知识库 树节点用） */
-.ln-tree-child{margin-left:20px;max-width:94%}
+/* v3.20.11: 上下级视觉差——子级卡片比父级更窄、靠左；左边留白多、几乎贴右边，父-子一眼分清 */
+.ln-tree-child{margin-left:32px;max-width:80%}
 .ln-tree-child .ln-item{padding:7px 8px}
 .ln-tree-child .ln-title{font-size:13px;font-weight:500}
 .ln-tree-child .ln-sub{font-size:11.5px}
 .ln-tree-child .ln-acts button{padding:3px 7px;font-size:11px}
-/* v3.20.10: 知识库资源组子项 / 资源 tab 子项——已在父组内，再紧凑 + 微妙左边框标识从属 */
-.ln-res-child{margin-left:20px;max-width:94%;border-left:2px solid var(--line-soft)}
+/* v3.20.11: 知识库资源组子项 / 资源 tab 子项——比父组更扁、靠左 + 左边框标识从属 */
+.ln-res-child{margin-left:38px;max-width:72%;border-left:2px solid var(--line-soft)}
 .ln-res-child .ln-item{padding:6px 8px}
 .ln-res-child .ln-title{font-size:13px;font-weight:500}
 .ln-res-child .ln-sub{font-size:11.5px}
 .ln-res-child .ln-acts button{padding:3px 7px;font-size:11px}
-/* v3.20.10: 大纲 tab 任务行（子级）紧凑 + 左边框 */
-.ln-task-child{padding:2px 0 2px 14px;font-size:12.5px;border-left:2px solid var(--line-soft);margin-left:8px}
+/* v3.20.11: 大纲 tab 任务行（子级）紧凑 + 左边框 + 靠左 */
+.ln-task-child{padding:2px 0 2px 14px;font-size:12.5px;border-left:2px solid var(--line-soft);margin-left:14px}
 .ln-task-child .ln-task-t{font-size:12.5px}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
@@ -1146,6 +1146,9 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.11',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
+    'UI 优化（依用户截图反馈）：子级卡片比父级更扁更靠左——.ln-tree-child 改 margin-left 32px + max-width 80%；.ln-res-child 改 margin-left 38px + max-width 72%；.ln-task-child margin-left 8→14px。整体效果：左边留白多、右边几乎不缩进，资料子项明显比「认识数据表」父主题窄、父子对比一眼分清'
+  ]},
   {version:'v3.20.10',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     '子级卡片视觉分级：内容/知识库/资源 tab 的子级统一加 .ln-tree-child / .ln-res-child——margin-left 20px、max-width 94%、padding 7px 8px、font 13px/11.5px，让人一眼看出父-子层级差',
     '大纲 tab 阶段加折叠（复用 lnToggleTopic + lnTopicCollapsed，key 命名空间 ms:msId 避免与内容 ID 冲突），任务行用 .ln-task-child 紧凑化（padding 2px 0 2px 14px、font 12.5px、微妙左边框）',
