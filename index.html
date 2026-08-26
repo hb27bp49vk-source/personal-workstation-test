@@ -666,6 +666,9 @@ summary::-webkit-details-marker{color:var(--text)}
 /* v3.20.14: 大纲 tab 任务行（子级）紧凑 + 左边框 + padding-right 12 让文本行尾与父容器右内边对齐 */
 .ln-task-child{padding:1px 12px 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:12px;line-height:1.4;background:var(--card-soft)}
 .ln-task-child .ln-task-t{font-size:12px !important}
+/* v3.20.14: 嵌套场景修复——kb/resources tab 第二段资源分组是 <div class="card"> 包 <div data-res-grp-body/data-kb-grp-body>{子级卡片}</div> 嵌套结构。子级卡片原本被外层 .card padding-right:16px 限制，右边比主级卡片缩 16px。用 -16px 负 margin-right + border-box 穿出 16px，让子级右内边沿与外层 #lnBody 右内边沿对齐。仅 .card 内的子级生效（直接挂 #lnBody 下的主级不会被推 16px） */
+.card .ln-res-child,
+.card .ln-tree-child{margin-right:-16px;box-sizing:border-box}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
 .ln-kb-chip.on{background:var(--text);border-color:var(--text);color:#fff}
