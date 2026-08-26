@@ -653,20 +653,18 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-kp.done{border-left-color:var(--good);background:linear-gradient(90deg,rgba(120,150,110,.08),transparent)}
 .ln-kp-state{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 8px;color:var(--text-2);background:var(--card-soft)}
 .ln-kp.done .ln-kp-state{border-color:rgba(120,150,110,.35);color:var(--good)}
-/* v3.20.12: 上下级视觉差——子级卡片整体高度压缩（padding/font/line-height 都小）；明显的"个子更小、更靠左、贴右边" */
-.ln-tree-child{margin-left:48px;max-width:78%}
-.ln-tree-child .ln-item{padding:4px 7px}
+/* v3.20.12: 上下级视觉差——子级卡片自身 padding 压缩（覆盖 .card 默认 16px）+ 紧凑字号行高，整体明显比父级更扁更矮 */
+.ln-tree-child{margin-left:48px;max-width:78%;padding:6px 8px}
 .ln-tree-child .ln-title{font-size:12.5px;font-weight:500;line-height:1.3}
 .ln-tree-child .ln-sub{font-size:11px;line-height:1.35;margin-top:1px}
 .ln-tree-child .ln-acts button{padding:2px 6px;font-size:10.5px}
-/* v3.20.12: 知识库资源组子项 / 资源 tab / 章下资料子项——靠右对齐（左边大幅缩进、几乎贴右边）+ 紧凑更低的高度 + 左边框 */
-.ln-res-child{margin-left:56px;max-width:calc(100% - 60px);border-left:2px solid var(--line-soft)}
-.ln-res-child .ln-item{padding:4px 7px}
+/* v3.20.12: 资料子项——靠右对齐（左边大幅缩进、卡几乎贴右边）+ 自压缩 padding + 左边框标识从属 */
+.ln-res-child{margin-left:56px;max-width:calc(100% - 60px);padding:5px 8px;border-left:2px solid var(--line-soft)}
 .ln-res-child .ln-title{font-size:12.5px;font-weight:500;line-height:1.3}
 .ln-res-child .ln-sub{font-size:11px;line-height:1.35;margin-top:1px}
 .ln-res-child .ln-acts button{padding:2px 6px;font-size:10.5px}
 /* v3.20.12: 大纲 tab 任务行（子级）紧凑 + 左边框 + 靠左 + 行间距压缩 */
-.ln-task-child{padding:2px 0 2px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:14px;line-height:1.4}
+.ln-task-child{padding:1px 0 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:14px;line-height:1.4}
 .ln-task-child .ln-task-t{font-size:12px}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
