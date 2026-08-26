@@ -1163,12 +1163,11 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
-  {version:'v3.20.18',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
-    '用户截图反馈知识库 tab 与内容 tab「格式不一样」——知识库操作按钮缺',
-    '主题树 lnKbTreeHtml（第 4736 行）：原只有「KP 标掌握 + 编辑」，加 +子内容/复习/删除 → 现在 KP 5 按钮 / 非 KP 4 按钮',
-    '资源分组 lnResChild 渲染（第 4677 行）：原只有「编辑 + 删除」，加 +子内容/复习 → 现在 4 按钮',
-    '与内容 tab「编辑 +子内容 (KP 标掌握) 复习 删除」视觉一模一样',
-    '铁律沉淀：tab 间同类型卡片，操作按钮集必须 100% 复用——不允许「这个 tab 少按钮」'
+  {version:'v3.20.19',date:'2026-08-26',modules:['学习'],status:'开发中',items:[
+    '用户再次截图：内容模块父/子主题前端格式、颜色渲染与知识库明显不同',
+    '根因：知识库主题树 lnKbTreeHtml 子级只加 ln-tree-child（灰边线 rgb(239,239,237)+灰背景），内容模块 resource 子级是 ln-tree-child ln-res-child（棕边线 rgb(185,168,140)+莫兰迪浅背景）',
+    '修复：lnKbTreeHtml 子级 className 区分 resource（加 ln-res-child）；title 加「心得」标签；心得区从 .ln-main 内移到 .ln-item 之后并总渲染（含"展开心得"按钮）；ln-sub 补 url 链接',
+    '现在知识库主题树子级与内容模块 lnContentListHtml 100% 一致（边线颜色/背景/心得区/按钮集）'
   ]},
   {version:'v3.20.17',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     '用户截图反馈时间轴子级缩进不够——任务（24px）和资料行（28px）累积差仅 28px，视觉层级一眼分不出',
@@ -4743,9 +4742,12 @@ function lnKbTreeHtml(L0,dirId,roots,hit,depth){
     const open=!lnTopicCollapsed[c.id];
     const tags=(c.tags||[]).map(t=>`<span class="ln-tag">#${esc(t)}</span>`).join('');
     const kind=isTopic?'主题':(isKp?'知识点':'资料');
+    const hasNotes=c.notes&&c.notes.trim();
+    const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
     // v3.20.10: 知识库主题树加真折叠按钮（之前是 ln-caret-ph 占位符，所有节点都不可折叠——用户反馈的 bug）
     const caret=hasKids?`<span class="ln-caret" onclick="lnToggleTopic('${c.id}')" title="点击折叠/展开子节点">${open?'▼':'▶'}</span>`:`<span class="ln-caret-ph"></span>`;
-    let h=`<div class="card ${isKp?'ln-kp':''} ${isKp&&c.mastered?'done':''} ${isChild?'ln-tree-child':''}" style="margin-top:${isChild?6:8}px"><div class="ln-item" style="border:none;padding:0">${caret}<div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${kind}</span>${isKp?`<span class="ln-kp-state">${c.mastered?'已掌握':'未掌握'}</span>`:''}</div><div class="ln-sub">${tags?tags+' · ':''}${c.note?esc(c.note):'无备注'}</div>${c.notes?lnNotesHtml(c,'compact'):''}</div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button>${!isKp?`<button onclick="lnQuickAddChild('${c.directionId}','${c.id}')">+ 子内容</button>`:''}${isKp?`<button onclick="lnToggleMastered('${c.id}')">${c.mastered?'标未掌握':'标掌握'}</button>`:''}<button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div></div>`;
+    // v3.20.19: 知识库主题树子级渲染与内容模块 lnContentListHtml 100% 对齐——resource 子级加 ln-res-child（棕边线+莫兰迪浅背景）；title 加"心得"标签；心得区移到 .ln-item 之后并总渲染（含"展开心得"按钮）；ln-sub 补 url 链接
+    let h=`<div class="card ${isKp?'ln-kp':''} ${isKp&&c.mastered?'done':''} ${isChild?(c.kind==='resource'?'ln-tree-child ln-res-child':'ln-tree-child'):''}" style="margin-top:${isChild?6:8}px"><div class="ln-item" style="border:none;padding:0">${caret}<div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${kind}</span>${isKp?`<span class="ln-kp-state">${c.mastered?'已掌握':'未掌握'}</span>`:''}${notesTag}</div><div class="ln-sub">${tags?tags+' · ':''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button>${!isKp?`<button onclick="lnQuickAddChild('${c.directionId}','${c.id}')">+ 子内容</button>`:''}${isKp?`<button onclick="lnToggleMastered('${c.id}')">${c.mastered?'标未掌握':'标掌握'}</button>`:''}<button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
     if(hasKids&&open)h+=lnKbTreeHtml(L0,dirId,kids,hit,depth+1);
     return h;
   }).join('');
