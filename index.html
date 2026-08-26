@@ -653,18 +653,18 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-kp.done{border-left-color:var(--good);background:linear-gradient(90deg,rgba(120,150,110,.08),transparent)}
 .ln-kp-state{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 8px;color:var(--text-2);background:var(--card-soft)}
 .ln-kp.done .ln-kp-state{border-color:rgba(120,150,110,.35);color:var(--good)}
-/* v3.20.13: 上下级视觉差——子级卡片比父级更扁更靠左；左边少留白 */
-.ln-tree-child{margin-left:32px;max-width:78%;padding:6px 8px}
+/* v3.20.14: 上下级视觉差——子级卡片「左边缩进 + 右边与主级卡片对齐」（用户新反馈：删除按钮右边必须齐）。整张卡片自然宽到父容器右内边，沿用左边框 + 小字号 + 浅背景做出层级感，不再用 max-width 让右边短一截 */
+.ln-tree-child{margin-left:32px;padding:6px 10px;border-left:3px solid var(--line-soft);background:var(--card-soft)}
 .ln-tree-child .ln-title{font-size:12.5px !important;font-weight:500;line-height:1.3}
 .ln-tree-child .ln-sub{font-size:11px !important;line-height:1.35;margin-top:1px}
 .ln-tree-child .ln-acts button{padding:2px 6px;font-size:10.5px}
-/* v3.20.13: 资料子项——左边少留白（ml 32）+ 负 margin-right 穿出 .card 的 padding-right 让卡片视觉贴齐右内边（max-width calc 无法吃掉父 .card padding，负 margin 是正解）；max-width none 覆盖 .ln-tree-child 78% 限制，让资料比通用子更宽贴右 */
-.ln-res-child{margin-left:32px;margin-right:-16px;max-width:none !important;padding:5px 8px;border-left:2px solid var(--line-soft);box-sizing:border-box}
+/* v3.20.14: 资料子项——与普通子级一致右边对齐父容器；左边框加深为 3px，与资料型主题色对齐，让「资料」子类一眼可辨 */
+.ln-res-child{margin-left:32px;padding:5px 10px;border-left:3px solid #b9a88c;background:rgba(185,168,140,.05)}
 .ln-res-child .ln-title{font-size:12.5px !important;font-weight:500;line-height:1.3}
 .ln-res-child .ln-sub{font-size:11px !important;line-height:1.35;margin-top:1px}
 .ln-res-child .ln-acts button{padding:2px 6px;font-size:10.5px}
-/* v3.20.13: 大纲 tab 任务行（子级）紧凑 + 左边框 + 靠左 + 行间距压缩 */
-.ln-task-child{padding:1px 0 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:12px;line-height:1.4}
+/* v3.20.14: 大纲 tab 任务行（子级）紧凑 + 左边框 + 右边对齐父容器；不再用 max-width 限宽 */
+.ln-task-child{padding:1px 10px 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:12px;line-height:1.4;background:var(--card-soft)}
 .ln-task-child .ln-task-t{font-size:12px !important}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
@@ -1144,6 +1144,15 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.14',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
+    'UI 优化 v4（按用户反馈删按钮右边参差）：所有学习子卡片「右边与主级卡片完全对齐」',
+    '.ln-tree-child / .ln-res-child / .ln-task-child 全部去掉 max-width 和负 margin-right——子级卡片只在左边缩进（margin-left），自然伸展到父容器右内边，与主级 .card 右边删除按钮完全对齐',
+    '.ln-tree-child 改为边框左边 3px var(--line-soft) + 浅灰背景 --card-soft，视觉层级靠左边框/字号/行高/背景四重保持，不再依赖卡片宽度',
+    '.ln-res-child 边框左边从 2px 改为 3px #b9a88c（莫兰迪柔色）+ 极淡背景色 rgba(185,168,140,.05)，与「资料」kind 标签色一致',
+    '.ln-task-child 任务行加极浅灰背景，与大纲整体协调',
+    'CHANGELOG[0] 现在读 v3.20.14，关于页版本号自动更新',
+    '教训（用户 v3.20.10~13 三轮纠偏沉淀）：用户最终诉求是「对齐」>「窄扁」——子级视觉层级靠左边缩进 + 字号 + 背景，不要在右边做缩进，否则所有右侧动作按钮（删/编辑/复习）都会错位'
+  ]},
   {version:'v3.20.13',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     'UI 优化 v3（按用户截图反馈）：资料子卡片「左边少留白 + 跨 tab 右方贴齐」',
     '.ln-res-child margin-left 56→32px（减少左边留白，与知识库图2 视觉一致）',
