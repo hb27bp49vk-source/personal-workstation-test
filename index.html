@@ -1170,7 +1170,9 @@ const CHANGELOG=[
     '右边仍由 -16px 负 margin-right 拉齐（保持 v3.20.14b 行为）',
     '直接挂 #lnBody 下的主级 .card 不匹配本规则，保持原 32px 缩进不变',
     'E2E 验证：知识库 tab 子级 + 资源 tab 子级 left/right 边沿均与内容 tab 子级完全一致（±2px）',
-    '铁律强化（写入 MEMORY.md）：v3.20.14b 的「嵌套子级右对齐 -16px」+ v3.20.16 的「嵌套子级左缩进校正 margin-left:16px」= 嵌套子级 = 兄弟子级 视觉一模一样'
+    '铁律强化（写入 MEMORY.md）：v3.20.14b 的「嵌套子级右对齐 -16px」+ v3.20.16 的「嵌套子级左缩进校正 margin-left:16px」+ v3.20.16 的「资源/知识库分组外层 .card 必须正确闭合」= 嵌套子级 = 兄弟子级 视觉一模一样',
+    '结构 bug：renderLnDirResources 和 知识库资源分组的 sortedKeys.forEach 循环中，外层分组 <div class="card"> 缺少闭合 </div>，导致第 2 个及之后的分组被错误嵌进前一个分组内（双层 .card 嵌套 → 子级左边多缩 16px）。修：html+="</div>" 改为 html+="</div></div>"',
+    'E2E 验证（.workbuddy/cache/e2e_v3216.js）：内容/知识库/资源 3 tab 子级 left/right 偏差均 ≤ 1px（跨 tab spread=0px），视觉一模一样'
   ]},
   {version:'v3.20.15',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     '用户截图反馈 v3.20.14b「右边对齐」样式铁律——所有其他学习对应模块只要涉及上下级展示，全部按 v3.20.14b 视觉规范统一',
@@ -4672,7 +4674,7 @@ function renderLnDirKb(d,L0){
         const tags=(c.tags||[]).map(t=>`<span class="ln-tag">#${esc(t)}</span>`).join('');
         html+=`<div class="card ln-res-child" style="margin-top:6px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag" style="font-weight:500">资料</span>${notesTag}</div><div class="ln-sub">${tags?tags+' · ':''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'} · ${c.createdAt||''}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
       });
-      html+=`</div>`;
+      html+=`</div></div>`;
     });
   }
   let qs=lnFifo(L0.questions.filter(q=>q.directionId===d.id&&q.status==='solved'&&q.answer&&q.answer.trim()));
@@ -5083,7 +5085,7 @@ function renderLnDirResources(d,L0){
       const link=c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> ·`:'';
       html+=`<div class="card ln-res-child" style="margin-top:6px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)}${notesTag}</div><div class="ln-sub">${tags?tags+' · ':''}${link}${c.note?esc(c.note):'无备注'} · ${c.createdAt||''}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
     });
-    html+=`</div>`;
+    html+=`</div></div>`;
   });
   return html;
 }
