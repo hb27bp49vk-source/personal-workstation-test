@@ -727,6 +727,15 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-detail-acts button{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 9px;font-size:12px;color:var(--text-2)}
 .ln-back{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 11px;font-size:13px;color:var(--text-2);flex:none}
 .ln-dir-section{padding-top:8px}
+/* v3.20.21: 内容 tab 按阶段分组的区块与头部——沿用 renderLnNodeView 的强关联视觉（色左边框 + 圆点 + 面包屑） */
+.ln-ms-group{margin-top:14px}
+.ln-ms-head{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r-sm);margin-bottom:5px}
+.ln-ms-head .ln-dot{width:11px;height:11px;border-radius:50%;flex:none}
+.ln-ms-head-t{flex:1;min-width:0;font-size:14px;color:var(--text);line-height:1.25}
+.ln-ms-head .ln-sub{font-size:11.5px;color:var(--text-2);margin-top:1px}
+.ln-ms-go{border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:5px 10px;font-size:12px;color:var(--text-2);flex:none;cursor:pointer}
+.ln-ms-go:hover{color:var(--text);border-color:var(--text-2)}
+.ln-ms-body{padding-left:14px}
 
 .hist-row .hr-actions{display:flex;gap:6px;flex:none;opacity:0;transition:opacity .12s}
 .hist-row:hover .hr-actions{opacity:1}
@@ -1171,6 +1180,13 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.21',date:'2026-08-26',modules:['学习'],status:'开发中',items:[
+    '用户截图：内容 tab 的资料/子主题是平铺列表，与「计划中的阶段」没有强关联，看不出某条内容归属哪个阶段',
+    '修复：内容 tab 改为按「计划 → 阶段(里程碑)」分组，每个阶段一个带色左边框区块（沿用 renderLnNodeView 的强关联视觉：box-shadow inset 4px + 圆点 + 面包屑「计划名 · N 项」+「进入阶段 ›」入口）',
+    '新增 helper lnContentMilestoneId：沿 parentId 向上找到带 nodeId 的内容，ms:<id> / 任务 id 映射到所属里程碑 id，plan:<id> 或空归「未关联阶段」',
+    '无法映射到阶段的归到「未关联阶段」组并提示去编辑「关联节点」绑定具体阶段；新增 CSS .ln-ms-group/.ln-ms-head/.ln-ms-go/.ln-ms-body',
+    '每个阶段区块内的内容仍是完整主题→知识点→资料树（lnContentListHtml 按子集中渲染），父子层级与之前一致'
+  ]},
   {version:'v3.20.20',date:'2026-08-26',modules:['学习','数据安全'],status:'开发中',items:[
     '新增「学习资料整理」工具（我的 → 数据管理下方）：一键按创建时间重建每个父子层级的顺序，修复倒序/乱序',
     '同时修复悬空（parentId 指向已删除内容）、跨方向（parentId 指向其它方向）、成环的父子关系',
@@ -4492,26 +4508,53 @@ function lnNodeContentsHtml(L0,roots,hit,depth){
   }).join('');
 }
 /* —— 内容 —— */
+/* v3.20.21: 内容 tab 改为「按 计划 → 阶段(里程碑)」分组，
+   每个阶段一个带色左边框区块（沿用 renderLnNodeView 的强关联视觉：box-shadow inset 4px + 圆点 + 面包屑 + 「进入阶段」入口），
+   让"内容与阶段的归属"一眼可见；无法映射到阶段的归到「未关联阶段」组提示去绑定。 */
 function renderLnDirContents(d,L0){
   const nodeOpts=lnNodeOptions(L0,d.id).map(o=>`<option value="${o.value}">${esc(o.label)}</option>`).join('');
   let html=`<div class="ln-quick">
     <input type="text" id="lnQcName_${d.id}" placeholder="资料/子主题名称，回车快速添加" onkeydown="if(event.key==='Enter')lnQuickAddContent('${d.id}')">
     <select id="lnQcKind_${d.id}"><option value="kp">知识点</option><option value="topic">主题</option><option value="resource">资料</option></select>
-    <select id="lnQcNode_${d.id}" title="关联节点">${nodeOpts}</select>
+    <select id="lnQcNode_${d.id}" title="关联节点（绑定到计划阶段）">${nodeOpts}</select>
     <button onclick="lnQuickAddContent('${d.id}')">添加</button>
   </div>`;
-  // v3.20.8: 兜底——没有 parentId 的内容（多为用户手动加的 resource/sub-topic）归到 plan 第一个 topic，避免孤岛
-  // v3.20.20: 该重挂载仅用于本次渲染（用副本覆盖 parentId），**不改写持久数据**——否则渲染后若触发 persist 会把孤儿错误塞进第一个主题、污染正式库
-  const firstTopic=L0.contents.filter(c=>c.directionId===d.id&&c.kind==='topic'&&(c.parentId||null)===null).sort((a,b)=>(a.order||0)-(b.order||0))[0];
-  let _renderContents=L0.contents;
-  if(firstTopic){
-    _renderContents=L0.contents.map(c=>(c.directionId===d.id&&(c.parentId||null)===null&&c.id!==firstTopic.id&&c.kind!=='topic')?Object.assign({},c,{parentId:firstTopic.id}):c);
+  const dirContents=L0.contents.filter(c=>c.directionId===d.id);
+  if(!dirContents.length){html+='<div class="ln-empty">还没有内容，上方快速添加，并在「关联节点」里选一个计划阶段做绑定。</div>';return html}
+  const col=d.color||'#888';
+  const plans=lnFifo(L0.plans.filter(p=>p.directionId===d.id),'order');
+  let anyGrouped=false;
+  plans.forEach(p=>{
+    const msList=lnFifo(p.milestones||[],'order');
+    msList.forEach(m=>{
+      const grp=dirContents.filter(c=>lnContentMilestoneId(L0,c)===m.id);
+      if(!grp.length)return;
+      anyGrouped=true;
+      const subL0=Object.assign({},L0,{contents:grp});
+      const tree=lnContentListHtml(subL0,d.id,null,0);
+      html+=`<div class="ln-ms-group">
+        <div class="ln-ms-head" style="box-shadow:inset 4px 0 0 ${col};background:${hexA(col,.06)}">
+          <span class="ln-dot" style="background:${col}"></span>
+          <div class="ln-ms-head-t"><b>${esc(m.title||'未命名阶段')}</b><div class="ln-sub" style="font-size:11.5px">${esc(p.title)} · ${grp.length} 项</div></div>
+          <button class="ln-ms-go" onclick="lnOpenNode('${d.id}','${p.id}','${m.id}',null)">进入阶段 ›</button>
+        </div>
+        <div class="ln-ms-body">${tree||'<div class="ln-empty" style="margin:4px 0 2px 2px">该阶段下还没有具体内容。</div>'}</div>
+      </div>`;
+    });
+  });
+  const uncatList=dirContents.filter(c=>!lnContentMilestoneId(L0,c));
+  if(uncatList.length){
+    const subL0=Object.assign({},L0,{contents:uncatList});
+    const tree=lnContentListHtml(subL0,d.id,null,0);
+    html+=`<div class="ln-ms-group">
+      <div class="ln-ms-head ln-ms-head-uncat" style="box-shadow:inset 4px 0 0 #b9a88c;background:rgba(185,168,140,.06)">
+        <span class="ln-dot" style="background:#b9a88c"></span>
+        <div class="ln-ms-head-t"><b>未关联阶段</b><div class="ln-sub" style="font-size:11.5px">${uncatList.length} 项 · 编辑「关联节点」可绑定到具体阶段</div></div>
+      </div>
+      <div class="ln-ms-body">${tree}</div>
+    </div>`;
   }
-  const _renderL0=Object.assign({},L0,{contents:_renderContents});
-  const hasAny=L0.contents.some(c=>c.directionId===d.id);
-  if(!hasAny){html+='<div class="ln-empty">还没有内容，上方快速添加。</div>';return html}
-  const tree=lnContentListHtml(_renderL0,d.id,null,0);
-  html+= tree || '<div class="ln-empty">还没有内容，上方快速添加。</div>';
+  if(!anyGrouped&&!uncatList.length){html+='<div class="ln-empty">还没有内容，上方快速添加。</div>';}
   return html;
 }
 function lnQuickAddContent(dirId,parentId){
@@ -5095,6 +5138,20 @@ function lnNodeTitle(L0,nodeId){
   return ''
 }
 function lnTaskTitleById(L0,nodeId){return lnNodeTitle(L0,nodeId)}
+/* v3.20.21: 解析某个内容"有效归属的阶段(里程碑) id"。
+   规则：沿 parentId 向上找到第一个带 nodeId 的内容，取其 nodeId；
+   - 形如 ms:<id> 直接返回该里程碑 id；
+   - 形如任务 id（被某里程碑的某个任务持有）返回该里程碑 id；
+   - 形如 plan:<id> 或为空 / 无法映射到阶段 → 返回 null（归"未关联阶段"组）。 */
+function lnContentMilestoneId(L0,c){
+  let cur=c;const seen=new Set();
+  while(cur&&!seen.has(cur.id)){seen.add(cur.id);if(cur.nodeId)break;cur=cur.parentId?L0.contents.find(x=>x.id===cur.parentId):null;}
+  const nodeId=cur?cur.nodeId:null;
+  if(!nodeId)return null;
+  if(nodeId.startsWith('ms:'))return nodeId.slice(3);
+  for(const p of L0.plans){for(const m of (p.milestones||[])){if((m.tasks||[]).some(t=>t.id===nodeId))return m.id;}}
+  return null;
+}
 function renderLnNodeView(){
   const L0=lnData();
   const d=L0.directions.find(x=>x.id===lnNode.dirId);
