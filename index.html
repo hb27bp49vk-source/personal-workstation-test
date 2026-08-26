@@ -653,6 +653,21 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-kp.done{border-left-color:var(--good);background:linear-gradient(90deg,rgba(120,150,110,.08),transparent)}
 .ln-kp-state{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 8px;color:var(--text-2);background:var(--card-soft)}
 .ln-kp.done .ln-kp-state{border-color:rgba(120,150,110,.35);color:var(--good)}
+/* v3.20.10: 上下级视觉差——子级卡片比父级窄一点、短一点，让人一眼看出层级（内容/知识库 树节点用） */
+.ln-tree-child{margin-left:20px;max-width:94%}
+.ln-tree-child .ln-item{padding:7px 8px}
+.ln-tree-child .ln-title{font-size:13px;font-weight:500}
+.ln-tree-child .ln-sub{font-size:11.5px}
+.ln-tree-child .ln-acts button{padding:3px 7px;font-size:11px}
+/* v3.20.10: 知识库资源组子项 / 资源 tab 子项——已在父组内，再紧凑 + 微妙左边框标识从属 */
+.ln-res-child{margin-left:20px;max-width:94%;border-left:2px solid var(--line-soft)}
+.ln-res-child .ln-item{padding:6px 8px}
+.ln-res-child .ln-title{font-size:13px;font-weight:500}
+.ln-res-child .ln-sub{font-size:11.5px}
+.ln-res-child .ln-acts button{padding:3px 7px;font-size:11px}
+/* v3.20.10: 大纲 tab 任务行（子级）紧凑 + 左边框 */
+.ln-task-child{padding:2px 0 2px 14px;font-size:12.5px;border-left:2px solid var(--line-soft);margin-left:8px}
+.ln-task-child .ln-task-t{font-size:12.5px}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
 .ln-kb-chip.on{background:var(--text);border-color:var(--text);color:#fff}
@@ -1131,6 +1146,12 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.10',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
+    '子级卡片视觉分级：内容/知识库/资源 tab 的子级统一加 .ln-tree-child / .ln-res-child——margin-left 20px、max-width 94%、padding 7px 8px、font 13px/11.5px，让人一眼看出父-子层级差',
+    '大纲 tab 阶段加折叠（复用 lnToggleTopic + lnTopicCollapsed，key 命名空间 ms:msId 避免与内容 ID 冲突），任务行用 .ln-task-child 紧凑化（padding 2px 0 2px 14px、font 12.5px、微妙左边框）',
+    '时间轴最深层资料/问题/复习加 border-left 2px var(--line-soft) + padding-left 8px，视觉从属更明确',
+    '修知识库主题树无折叠按钮 bug：lnKbTreeHtml 把所有 ln-caret-ph 占位符换成真 ln-caret + onclick=lnToggleTopic（hasKids 时才显示折叠箭头），与内容 tab 行为对齐'
+  ]},
   {version:'v3.20.9',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     '修 5 残留 Bug：①大纲任务计数「📄9」错算（lnNodeItems 走 ms 聚合 → 改 lnTaskItems 只精确 taskId）；②时间轴飘内容（重写为 [计划→阶段→任务→资料/问题/复习] 层级嵌套 + 全折叠）；③知识库资源未折叠（按 parentId 一级主题分组、缺失归「📘 默认」）；④资源 tab 顺序与录入不一致（按父节点聚合 + 录入顺序稳定排序，支持折叠）；⑤内容新建不强关联父节点（lnQuickAddContent/lnContentCommit 强制归到 plan 第一个 topic + 设 parentId，push 而非 unshift 保末尾插入）',
     '新增计划 Tab 「全部展开/折叠全部」「按父节点聚合」按钮；资源 Tab 折叠后默认全展开；知识库 Tab 主题树/资源独立可折叠'
@@ -4333,13 +4354,13 @@ function lnContentListHtml(L0,dirId,parentId,depth){
     const isKp=c.kind==='kp';
     const hasKids=L0.contents.some(x=>x.directionId===dirId&&(x.parentId||null)===c.id);
     const open=!lnTopicCollapsed[c.id];
-    const indent=10*depth;
+    const isChild=depth>0;
     const hasNotes=c.notes&&c.notes.trim();
     const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
     const tags=(c.tags||[]).map(t=>`<span class="ln-tag">#${esc(t)}</span>`).join('');
     const kindName=isTopic?'主题':(isKp?'知识点':'资料');
     const state=isKp?`<span class="ln-kp-state">${c.mastered?'已掌握':'未掌握'}</span>`:'';
-    let h=`<div class="card ${isKp?'ln-kp':''} ${isKp&&c.mastered?'done':''}" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0">`;
+    let h=`<div class="card ${isKp?'ln-kp':''} ${isKp&&c.mastered?'done':''} ${isChild?'ln-tree-child':''}" style="margin-top:${isChild?6:8}px"><div class="ln-item" style="border:none;padding:0">`;
     h+= hasKids ? `<span class="ln-caret" onclick="lnToggleTopic('${c.id}')">${open?'▼':'▶'}</span>` : `<span class="ln-caret-ph"></span>`;
     h+=`<div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${kindName}</span>${state}${notesTag}</div><div class="ln-sub">${tags?tags+' · ':''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button>${!isKp?`<button onclick="lnQuickAddChild('${c.directionId}','${c.id}')">+ 子内容</button>`:''}${isKp?`<button onclick="lnToggleMastered('${c.id}')">${c.mastered?'标未掌握':'标掌握'}</button>`:''}<button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
     if(hasKids&&open) h+=lnContentListHtml(L0,dirId,c.id,depth+1);
@@ -4360,12 +4381,15 @@ function lnNodeContentsHtml(L0,roots,hit,depth){
   depth=depth||0; if(depth>12) return '';
   return roots.map(c=>{
     const isTopic=c.kind==='topic';
-    const indent=10*depth;
+    const isChild=depth>0;
+    const kids=L0.contents.filter(x=>(x.parentId||null)===c.id&&hit.has(x.id));
+    const hasKids=kids.length>0;
+    const open=!lnTopicCollapsed[c.id];
     const hasNotes=c.notes&&c.notes.trim();
     const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
-    let h=`<div class="card" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span>${notesTag}</div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
-    const kids=lnFifo(L0.contents.filter(x=>(x.parentId||null)===c.id&&hit.has(x.id)),'order');
-    if(kids.length) h+=lnNodeContentsHtml(L0,kids,hit,depth+1);
+    const caret=hasKids?`<span class="ln-caret" onclick="lnToggleTopic('${c.id}')" title="点击折叠/展开子节点">${open?'▼':'▶'}</span>`:`<span class="ln-caret-ph"></span>`;
+    let h=`<div class="card ${isChild?'ln-tree-child':''}" style="margin-top:${isChild?6:8}px"><div class="ln-item" style="border:none;padding:0">${caret}<div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${isTopic?'子主题':'资料'}</span>${notesTag}</div><div class="ln-sub">${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="addReview('content','${c.id}','${c.directionId}')">复习</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
+    if(hasKids&&open) h+=lnNodeContentsHtml(L0,lnFifo(kids,'order'),hit,depth+1);
     return h;
   }).join('');
 }
@@ -4579,7 +4603,7 @@ function renderLnDirKb(d,L0){
         const hasNotes=c.notes&&c.notes.trim();
         const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
         const tags=(c.tags||[]).map(t=>`<span class="ln-tag">#${esc(t)}</span>`).join('');
-        html+=`<div class="card" style="margin-top:6px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag" style="font-weight:500">资料</span>${notesTag}</div><div class="ln-sub">${tags?tags+' · ':''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'} · ${c.createdAt||''}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
+        html+=`<div class="card ln-res-child" style="margin-top:6px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag" style="font-weight:500">资料</span>${notesTag}</div><div class="ln-sub">${tags?tags+' · ':''}${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> · `:''}${c.note?esc(c.note):'无备注'} · ${c.createdAt||''}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
       });
       html+=`</div>`;
     });
@@ -4630,11 +4654,16 @@ function lnKbTreeHtml(L0,dirId,roots,hit,depth){
   depth=depth||0;if(depth>12)return '';
   return roots.map(c=>{
     const kids=lnFifo(L0.contents.filter(x=>x.directionId===dirId&&(x.parentId||null)===c.id&&hit.has(x.id)),'order');
-    const isKp=c.kind==='kp';const isTopic=c.kind==='topic';const indent=10*depth;
+    const isKp=c.kind==='kp';const isTopic=c.kind==='topic';
+    const isChild=depth>0;
+    const hasKids=kids.length>0;
+    const open=!lnTopicCollapsed[c.id];
     const tags=(c.tags||[]).map(t=>`<span class="ln-tag">#${esc(t)}</span>`).join('');
     const kind=isTopic?'主题':(isKp?'知识点':'资料');
-    let h=`<div class="card ${isKp?'ln-kp':''} ${isKp&&c.mastered?'done':''}" style="margin-top:8px;margin-left:${indent}px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${kind}</span>${isKp?`<span class="ln-kp-state">${c.mastered?'已掌握':'未掌握'}</span>`:''}</div><div class="ln-sub">${tags?tags+' · ':''}${c.note?esc(c.note):'无备注'}</div>${c.notes?lnNotesHtml(c,'compact'):''}</div><div class="ln-acts">${isKp?`<button onclick="lnToggleMastered('${c.id}')">${c.mastered?'标未掌握':'标掌握'}</button>`:''}<button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button></div></div></div>`;
-    if(kids.length)h+=lnKbTreeHtml(L0,dirId,kids,hit,depth+1);
+    // v3.20.10: 知识库主题树加真折叠按钮（之前是 ln-caret-ph 占位符，所有节点都不可折叠——用户反馈的 bug）
+    const caret=hasKids?`<span class="ln-caret" onclick="lnToggleTopic('${c.id}')" title="点击折叠/展开子节点">${open?'▼':'▶'}</span>`:`<span class="ln-caret-ph"></span>`;
+    let h=`<div class="card ${isKp?'ln-kp':''} ${isKp&&c.mastered?'done':''} ${isChild?'ln-tree-child':''}" style="margin-top:${isChild?6:8}px"><div class="ln-item" style="border:none;padding:0">${caret}<div class="ln-main"><div class="ln-title">${esc(c.name)} <span class="ln-tag">${kind}</span>${isKp?`<span class="ln-kp-state">${c.mastered?'已掌握':'未掌握'}</span>`:''}</div><div class="ln-sub">${tags?tags+' · ':''}${c.note?esc(c.note):'无备注'}</div>${c.notes?lnNotesHtml(c,'compact'):''}</div><div class="ln-acts">${isKp?`<button onclick="lnToggleMastered('${c.id}')">${c.mastered?'标未掌握':'标掌握'}</button>`:''}<button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button></div></div></div>`;
+    if(hasKids&&open)h+=lnKbTreeHtml(L0,dirId,kids,hit,depth+1);
     return h;
   }).join('');
 }
@@ -4985,7 +5014,7 @@ function renderLnDirResources(d,L0){
       const notesTag=hasNotes?`<span class="ln-tag" style="cursor:pointer" onclick="lnToggleNotes('${c.id}')" title="点击查看学习心得">心得</span>`:'';
       const tags=(c.tags||[]).map(t=>`<span class="ln-tag">#${esc(t)}</span>`).join('');
       const link=c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a> ·`:'';
-      html+=`<div class="card" style="margin-top:6px;margin-left:12px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)}${notesTag}</div><div class="ln-sub">${tags?tags+' · ':''}${link}${c.note?esc(c.note):'无备注'} · ${c.createdAt||''}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
+      html+=`<div class="card ln-res-child" style="margin-top:6px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret-ph"></span><div class="ln-main"><div class="ln-title">${esc(c.name)}${notesTag}</div><div class="ln-sub">${tags?tags+' · ':''}${link}${c.note?esc(c.note):'无备注'} · ${c.createdAt||''}</div></div><div class="ln-acts"><button onclick="openLnContentModal('${c.directionId}','${c.id}')">编辑</button><button onclick="lnDelContent('${c.id}')" style="color:var(--bad)">删除</button></div></div>${lnNotesHtml(c)}</div>`;
     });
     html+=`</div>`;
   });
@@ -5017,8 +5046,15 @@ function renderLnDirOutline(d,L0){
   plans.forEach(p=>{
     html+=`<div class="ln-card"><div class="ln-ms-top"><b>${esc(p.title)}</b></div>`;
     (p.milestones||[]).forEach(m=>{
-      html+=`<div style="margin:6px 0 2px;font-size:12px;color:var(--text-2);font-weight:600">${esc(m.title||'阶段')}${m.due?' · '+m.due:''}</div>`;
-      (m.tasks||[]).forEach(t=>{const ni=lnTaskItems(L0,t.id);const done=t.done?'✅':'▫️';const cnts=[];if(ni.contents.length)cnts.push('📄'+ni.contents.length);if(ni.questions.length)cnts.push('💡'+ni.questions.length);html+=`<div class="ln-task ln-task-node" onclick="lnOpenNode('${d.id}','${p.id}','${m.id}','${t.id}')"><span class="ln-task-t">${done} ${t.title?esc(t.title):'未命名任务'}</span>${cnts.length?`<span class="ln-task-cnt">${cnts.join(' ')}</span>`:''}<span class="ln-task-go">›</span></div>`});
+      // v3.20.10: 阶段加折叠（复用 lnToggleTopic + lnTopicCollapsed，key 用 ms:msId 命名空间避免与内容 ID 冲突）
+      const mKey='ms:'+m.id;
+      const mOpen=!lnTopicCollapsed[mKey];
+      const hasT=(m.tasks||[]).length>0;
+      html+=`<div class="ln-ms-row" style="margin:6px 0 2px"><div onclick="lnToggleTopic('${mKey}')" style="font-size:12px;color:var(--text-2);font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px" title="点击折叠/展开该阶段任务"><span class="ln-ms-caret">${hasT?(mOpen?'▼':'▶'):'·'}</span><span>${esc(m.title||'阶段')}${m.due?' · '+m.due:''}</span></div>`;
+      if(hasT&&mOpen){
+        (m.tasks||[]).forEach(t=>{const ni=lnTaskItems(L0,t.id);const done=t.done?'✅':'▫️';const cnts=[];if(ni.contents.length)cnts.push('📄'+ni.contents.length);if(ni.questions.length)cnts.push('💡'+ni.questions.length);html+=`<div class="ln-task ln-task-node ln-task-child" onclick="lnOpenNode('${d.id}','${p.id}','${m.id}','${t.id}')"><span class="ln-task-t">${done} ${t.title?esc(t.title):'未命名任务'}</span>${cnts.length?`<span class="ln-task-cnt">${cnts.join(' ')}</span>`:''}<span class="ln-task-go">›</span></div>`});
+      }
+      html+=`</div>`;
     });
     html+='</div>';
   });
@@ -5132,7 +5168,7 @@ function renderLnDirTimeline(d,L0){
           cs.forEach(c=>{
             const kind=c.kind==='topic'?'主题':(c.kind==='kp'?'知识点':'资料');
             const link=c.url?` · <a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a>`:'';
-            html+=`<div style="margin-left:18px;margin-top:3px;font-size:12px">📄 <b>${esc(c.name)}</b> <span class="ln-tag" style="font-weight:500">${kind}</span><span style="color:var(--text-3)">${c.note?' · '+esc(c.note):''}${link} · ${c.createdAt||''}</span></div>`;
+            html+=`<div style="margin-left:18px;margin-top:3px;font-size:12px;border-left:2px solid var(--line-soft);padding-left:8px">📄 <b>${esc(c.name)}</b> <span class="ln-tag" style="font-weight:500">${kind}</span><span style="color:var(--text-3)">${c.note?' · '+esc(c.note):''}${link} · ${c.createdAt||''}</span></div>`;
           });
         }
         if(qs.length){
