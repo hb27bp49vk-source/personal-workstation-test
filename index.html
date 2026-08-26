@@ -1076,6 +1076,14 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="set-row"><span class="lab">模块显示与排序</span><button id="moduleManageBtn">编辑模块</button></div>
         </div>
       </div>
+      <div class="sec" data-module="lnOrganize">
+        <div class="page-title">学习资料整理</div>
+        <div class="card">
+          <p class="muted" style="margin:0 0 10px;font-size:12.5px">当学习模块出现「上下级错乱 / 顺序倒序乱序」时，可一键按创建时间重建顺序，并修复悬空、跨方向、成环的父子关系。运行前会自动导出一份备份。</p>
+          <div class="set-row"><span class="lab">整理学习资料树</span><button id="lnOrganizeBtn">开始整理</button></div>
+          <div class="set-row"><span class="lab">仅导出学习资料</span><button id="lnExportBtn">导出备份</button></div>
+        </div>
+      </div>
       <div class="sec" data-module="cloudSync">
         <div class="page-title">云同步</div>
         <div class="card">
@@ -1163,6 +1171,12 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.20',date:'2026-08-26',modules:['学习','数据安全'],status:'开发中',items:[
+    '新增「学习资料整理」工具（我的 → 数据管理下方）：一键按创建时间重建每个父子层级的顺序，修复倒序/乱序',
+    '同时修复悬空（parentId 指向已删除内容）、跨方向（parentId 指向其它方向）、成环的父子关系',
+    '运行前自动导出「整理前备份」JSON，防止误操作无法回退',
+    '修复潜在污染 bug：内容 tab 渲染时把孤儿内容临时挂到第一个主题仅用于展示，不再改写持久数据（否则渲染后若 persist 会把孤儿错误塞进第一个主题）'
+  ]},
   {version:'v3.20.19',date:'2026-08-26',modules:['学习'],status:'开发中',items:[
     '用户再次截图：内容模块父/子主题前端格式、颜色渲染与知识库明显不同',
     '根因：知识库主题树 lnKbTreeHtml 子级只加 ln-tree-child（灰边线 rgb(239,239,237)+灰背景），内容模块 resource 子级是 ln-tree-child ln-res-child（棕边线 rgb(185,168,140)+莫兰迪浅背景）',
@@ -2644,6 +2658,8 @@ function generateDailyReport(dateISO){
 }
 
 /* ============ 我的 ============ */
+$('#lnOrganizeBtn').onclick=lnOrganizeConfirm;
+$('#lnExportBtn').onclick=lnExportLearning;
 $('#exportBtn').onclick=()=>{
   const json=JSON.stringify(Object.assign({},S,{modules:moduleCfg}),null,2);
   const blob=new Blob([json],{type:'application/json'});
@@ -4484,15 +4500,17 @@ function renderLnDirContents(d,L0){
     <select id="lnQcNode_${d.id}" title="关联节点">${nodeOpts}</select>
     <button onclick="lnQuickAddContent('${d.id}')">添加</button>
   </div>`;
-  // v3.20.8: 兜底——没有 parentId 的内容（多为用户手动加的 resource/sub-topic）归到 plan 第一个 topic
-  // 这样渲染时就不会单独飘出来形成"孤岛"
+  // v3.20.8: 兜底——没有 parentId 的内容（多为用户手动加的 resource/sub-topic）归到 plan 第一个 topic，避免孤岛
+  // v3.20.20: 该重挂载仅用于本次渲染（用副本覆盖 parentId），**不改写持久数据**——否则渲染后若触发 persist 会把孤儿错误塞进第一个主题、污染正式库
   const firstTopic=L0.contents.filter(c=>c.directionId===d.id&&c.kind==='topic'&&(c.parentId||null)===null).sort((a,b)=>(a.order||0)-(b.order||0))[0];
+  let _renderContents=L0.contents;
   if(firstTopic){
-    L0.contents.filter(c=>c.directionId===d.id&&(c.parentId||null)===null&&c.id!==firstTopic.id&&c.kind!=='topic').forEach(c=>{c.parentId=firstTopic.id;});
+    _renderContents=L0.contents.map(c=>(c.directionId===d.id&&(c.parentId||null)===null&&c.id!==firstTopic.id&&c.kind!=='topic')?Object.assign({},c,{parentId:firstTopic.id}):c);
   }
+  const _renderL0=Object.assign({},L0,{contents:_renderContents});
   const hasAny=L0.contents.some(c=>c.directionId===d.id);
   if(!hasAny){html+='<div class="ln-empty">还没有内容，上方快速添加。</div>';return html}
-  const tree=lnContentListHtml(L0,d.id,null,0);
+  const tree=lnContentListHtml(_renderL0,d.id,null,0);
   html+= tree || '<div class="ln-empty">还没有内容，上方快速添加。</div>';
   return html;
 }
@@ -4573,6 +4591,66 @@ function openLnContentModal(dirId,id,nodeId,parentId){
   $('#lnCtSave').onclick=()=>{ if(lnContentCommit()) closeModal(); };
 }
 function lnDelContent(id){lnConfirm('确定删除该学习内容？',()=>{const L0=lnData();L0.questions.forEach(q=>{if(q.contentId===id)q.contentId=null});L0.contents.forEach(c=>{if(c.parentId===id)c.parentId=null});L0.contents=L0.contents.filter(x=>x.id!==id);persist();lnRefresh()})}
+/* —— 学习资料整理工具（v3.20.20） —— */
+function lnExportLearning(){
+  const L0=lnData();
+  const data={exportedAt:new Date().toISOString(),learning:JSON.parse(JSON.stringify(L0))};
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const ts=new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='学习资料备份-'+ts+'.json';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('已导出学习资料备份');
+}
+function lnOrganizeTree(){
+  const L0=lnData();
+  if(!L0.contents||!L0.contents.length){toast('没有学习资料');return;}
+  // 0) 安全：运行前自动导出「整理前备份」
+  try{
+    const data={exportedAt:new Date().toISOString(),learning:JSON.parse(JSON.stringify(L0))};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const ts=new Date().toISOString().replace(/[-:T]/g,'').slice(0,14);
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='整理前备份-'+ts+'.json';document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }catch(e){/* 备份失败不阻断整理 */}
+  const byId={};L0.contents.forEach(c=>byId[c.id]=c);
+  let fixedParent=0,fixedCycle=0;
+  // 1) 修复 parentId 完整性（基于原始快照，避免修改自身影响后续判定）
+  const origParent={};L0.contents.forEach(c=>origParent[c.id]=c.parentId||null);
+  L0.contents.forEach(c=>{
+    const pid=origParent[c.id];
+    if(!pid)return;
+    const p=byId[pid];
+    if(!p){c.parentId=null;fixedParent++;return;}
+    if((p.directionId||null)!==(c.directionId||null)){c.parentId=null;fixedParent++;return;}
+    // 成环检测：pid 是否为 c 的后代
+    let cur=p,depth=0,cyc=false;
+    while(cur&&depth<300){if(cur.id===c.id){cyc=true;break;}cur=origParent[cur.id]?byId[origParent[cur.id]]:null;depth++;}
+    if(cyc){c.parentId=null;fixedCycle++;}
+  });
+  // 2) 按 (directionId, parentId) 兄弟组，依 createdAt 升序重建 order
+  let fixedOrder=0;
+  const groups={};
+  L0.contents.forEach(c=>{const key=(c.directionId||'__n__')+'|'+(c.parentId||'__root__');(groups[key]=groups[key]||[]).push(c);});
+  Object.keys(groups).forEach(k=>{
+    const g=groups[k];
+    g.sort((a,b)=>{
+      const ak=a.createdAt||'',bk=b.createdAt||'';
+      if(ak&&bk)return ak.localeCompare(bk)||String(a.id).localeCompare(String(b.id));
+      if(ak&&!bk)return -1;if(!ak&&bk)return 1;
+      return String(a.id).localeCompare(String(b.id));
+    });
+    g.forEach((c,i)=>{if(c.order!==i){c.order=i;fixedOrder++;}});
+  });
+  persist();lnRefresh();
+  toast('已整理：顺序 '+fixedOrder+' 条 · 上下级 '+fixedParent+' 条'+(fixedCycle?(' · 成环 '+fixedCycle+' 条'):''));
+}
+function lnOrganizeConfirm(){
+  modal('<h4>整理学习资料树<span class="modal-close" onclick="closeModal()">×</span></h4>'
+    +'<p class="muted" style="margin:0 0 10px;font-size:12.5px">将按<b>创建时间</b>重建每个父子层级的顺序（修复倒序/乱序），并修复<b>悬空、跨方向、成环</b>的父子关系。运行前会自动导出一份「整理前备份」。</p>'
+    +'<div class="btns"><button class="cancel" onclick="closeModal()">取消</button><button class="ok" id="lnOrgGo" style="background:var(--ok)">开始整理</button></div>',{noMaskClose:true});
+  $('#lnOrgGo').onclick=()=>{closeModal();lnOrganizeTree()};
+}
 /* —— 问题 —— */
 function renderLnDirQuestions(d,L0){
   const questions=lnFifo(L0.questions.filter(q=>q.directionId===d.id));
