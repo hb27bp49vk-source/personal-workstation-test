@@ -669,18 +669,20 @@ summary::-webkit-details-marker{color:var(--text)}
 /* v3.20.14b: 嵌套场景修复——kb/resources tab 第二段资源分组是 <div class="card"> 包 <div data-res-grp-body/data-kb-grp-body>{子级卡片}</div> 嵌套结构。子级卡片原本被外层 .card padding-right:16px 限制，右边比主级卡片缩 16px。用 -16px 负 margin-right + border-box 穿出 16px，让子级右内边沿与外层 #lnBody 右内边沿对齐。仅 .card 内的子级生效（直接挂 #lnBody 下的主级不会被推 16px） */
 .card .ln-res-child,
 .card .ln-tree-child{margin-right:-16px;box-sizing:border-box}
-/* v3.20.15: 时间轴 tab 上下级展示统一到 v3.20.14b 视觉规范——所有子级「左缩进 + 左边框 + 浅背景 + 小字号 + 紧凑 padding + 右边齐平」。时间轴的层级比内容/知识库多 1 级（计划→阶段→任务→资料/问题/复习），所以拆 3 套专用类区分。padding-right 一律 16px 让每级右边沿与 #lnBody 右内边沿对齐 */
-.ln-tt-stage{margin:8px 0 0 14px;padding:6px 16px 6px 10px;border-left:3px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box}
-.ln-tt-stage .ln-caret{margin-top:1px}
+/* v3.20.15: 时间轴 tab 上下级展示统一到 v3.20.14b 视觉规范——所有子级「左缩进 + 左边框 + 浅背景 + 小字号 + 紧凑 padding + 右边齐平」。时间轴的层级比内容/知识库多 1 级（计划→阶段→任务→资料/问题/复习），所以拆 4 套专用类区分。padding-right 一律 16px 让每级右边沿与 #lnBody 右内边沿对齐。关键：display:flex 时 .ln-main 必须 flex:1 min-width:0 才能 stretch 到父容器宽度，否则只收缩到内容宽度 → 父容器 .card 内每个子级宽度会按内容自适应，参差不齐 */
+.ln-tt-stage{margin:8px 0 0 14px;padding:6px 16px 6px 10px;border-left:3px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box;width:auto}
+.ln-tt-stage .ln-caret{margin-top:1px;flex:none}
+.ln-tt-stage .ln-main{flex:1;min-width:0}
 .ln-tt-stage .ln-title{font-size:13px !important;font-weight:600 !important;line-height:1.4}
 .ln-tt-stage .ln-sub{font-size:11.5px !important;color:var(--text-3);margin-top:2px;line-height:1.4}
-.ln-tt-task{margin:6px 0 0 14px;padding:4px 16px 4px 10px;border-left:2px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box}
-.ln-tt-task .ln-caret{margin-top:2px;font-size:11px}
+.ln-tt-task{margin:6px 0 0 14px;padding:4px 16px 4px 10px;border-left:2px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box;width:auto}
+.ln-tt-task .ln-caret{margin-top:2px;font-size:11px;flex:none}
+.ln-tt-task .ln-main{flex:1;min-width:0}
 .ln-tt-task .ln-title{font-size:13px !important;font-weight:500 !important;line-height:1.4}
-.ln-tt-section{margin:8px 0 0 18px;padding:0 16px 0 0;font-size:11px;color:var(--text-3);font-weight:600;letter-spacing:.5px;box-sizing:border-box}
-.ln-tt-row{margin:3px 0 0 18px;padding:5px 16px 5px 10px;border-left:2px solid var(--line-soft);background:rgba(0,0,0,.018);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;border-radius:var(--r-xs);box-sizing:border-box}
-.ln-tt-row .ln-tt-kind{flex:none;font-weight:600;color:var(--text-2);min-width:0}
-.ln-tt-row .ln-tt-meta{flex:1;min-width:0;color:var(--text-3);font-size:11px;line-height:1.4}
+.ln-tt-section{margin:8px 0 0 18px;padding:0 16px 0 0;font-size:11px;color:var(--text-3);font-weight:600;letter-spacing:.5px;box-sizing:border-box;width:auto}
+.ln-tt-row{margin:3px 0 0 18px;padding:5px 16px 5px 10px;border-left:2px solid var(--line-soft);background:rgba(0,0,0,.018);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;border-radius:var(--r-xs);box-sizing:border-box;width:auto}
+.ln-tt-row .ln-tt-kind{flex:1;min-width:0;font-weight:600;color:var(--text-2)}
+.ln-tt-row .ln-tt-meta{flex:0 0 auto;color:var(--text-3);font-size:11px;line-height:1.4;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .ln-tt-row .ln-tt-meta a{color:var(--text-2)}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
