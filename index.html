@@ -670,17 +670,17 @@ summary::-webkit-details-marker{color:var(--text)}
 .card .ln-res-child,
 .card .ln-tree-child{margin-right:-16px;box-sizing:border-box}
 /* v3.20.15: 时间轴 tab 上下级展示统一到 v3.20.14b 视觉规范——所有子级「左缩进 + 左边框 + 浅背景 + 小字号 + 紧凑 padding + 右边齐平」。时间轴的层级比内容/知识库多 1 级（计划→阶段→任务→资料/问题/复习），所以拆 4 套专用类区分。padding-right 一律 16px 让每级右边沿与 #lnBody 右内边沿对齐。关键：左缩进用 padding-left（不用 margin-left） + width:100% + box-sizing:border-box 才能精确 stretch 到父级宽度；margin-left 方案在某些 flex/box 计算路径下会导致容器收缩到内容宽度（v1/v2 试过均失败）*/
-.ln-tt-stage{padding:6px 16px 6px 24px;border-left:3px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-top:8px}
+.ln-tt-stage{padding:6px 16px 6px 24px;border-left:3px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-right:-16px;margin-top:8px}
 .ln-tt-stage .ln-caret{margin-top:1px;flex:none}
 .ln-tt-stage .ln-main{flex:1;min-width:0}
 .ln-tt-stage .ln-title{font-size:13px !important;font-weight:600 !important;line-height:1.4}
 .ln-tt-stage .ln-sub{font-size:11.5px !important;color:var(--text-3);margin-top:2px;line-height:1.4}
-.ln-tt-task{padding:4px 16px 4px 24px;border-left:2px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-top:6px}
+.ln-tt-task{padding:4px 16px 4px 24px;border-left:2px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-right:-16px;margin-top:6px}
 .ln-tt-task .ln-caret{margin-top:2px;font-size:11px;flex:none}
 .ln-tt-task .ln-main{flex:1;min-width:0}
 .ln-tt-task .ln-title{font-size:13px !important;font-weight:500 !important;line-height:1.4}
-.ln-tt-section{padding:0 16px 0 28px;font-size:11px;color:var(--text-3);font-weight:600;letter-spacing:.5px;box-sizing:border-box;width:100%;margin-top:8px}
-.ln-tt-row{padding:5px 16px 5px 28px;border-left:2px solid var(--line-soft);background:rgba(0,0,0,.018);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-top:3px}
+.ln-tt-section{padding:0 16px 0 28px;font-size:11px;color:var(--text-3);font-weight:600;letter-spacing:.5px;box-sizing:border-box;width:100%;margin-right:-16px;margin-top:8px}
+.ln-tt-row{padding:5px 16px 5px 28px;border-left:2px solid var(--line-soft);background:rgba(0,0,0,.018);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;border-radius:var(--r-xs);box-sizing:border-box;width:100%;margin-right:-16px;margin-top:3px}
 .ln-tt-row .ln-tt-kind{flex:1;min-width:0;font-weight:600;color:var(--text-2)}
 .ln-tt-row .ln-tt-meta{flex:0 0 auto;color:var(--text-3);font-size:11px;line-height:1.4;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .ln-tt-row .ln-tt-meta a{color:var(--text-2)}
