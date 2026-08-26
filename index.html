@@ -658,8 +658,8 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-tree-child .ln-title{font-size:12.5px !important;font-weight:500;line-height:1.3}
 .ln-tree-child .ln-sub{font-size:11px !important;line-height:1.35;margin-top:1px}
 .ln-tree-child .ln-acts button{padding:2px 6px;font-size:10.5px}
-/* v3.20.13: 资料子项——左边少留白（ml 56→32）+ 负 margin-right 穿出 .card 的 padding-right 让卡片视觉贴齐右内边（max-width calc 无法吃掉父 .card padding，负 margin 是正解） */
-.ln-res-child{margin-left:32px;margin-right:-16px;padding:5px 8px;border-left:2px solid var(--line-soft);box-sizing:border-box}
+/* v3.20.13: 资料子项——左边少留白（ml 32）+ 负 margin-right 穿出 .card 的 padding-right 让卡片视觉贴齐右内边（max-width calc 无法吃掉父 .card padding，负 margin 是正解）；max-width none 覆盖 .ln-tree-child 78% 限制，让资料比通用子更宽贴右 */
+.ln-res-child{margin-left:32px;margin-right:-16px;max-width:none !important;padding:5px 8px;border-left:2px solid var(--line-soft);box-sizing:border-box}
 .ln-res-child .ln-title{font-size:12.5px !important;font-weight:500;line-height:1.3}
 .ln-res-child .ln-sub{font-size:11px !important;line-height:1.35;margin-top:1px}
 .ln-res-child .ln-acts button{padding:2px 6px;font-size:10.5px}
