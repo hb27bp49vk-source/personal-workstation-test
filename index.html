@@ -669,6 +669,19 @@ summary::-webkit-details-marker{color:var(--text)}
 /* v3.20.14b: 嵌套场景修复——kb/resources tab 第二段资源分组是 <div class="card"> 包 <div data-res-grp-body/data-kb-grp-body>{子级卡片}</div> 嵌套结构。子级卡片原本被外层 .card padding-right:16px 限制，右边比主级卡片缩 16px。用 -16px 负 margin-right + border-box 穿出 16px，让子级右内边沿与外层 #lnBody 右内边沿对齐。仅 .card 内的子级生效（直接挂 #lnBody 下的主级不会被推 16px） */
 .card .ln-res-child,
 .card .ln-tree-child{margin-right:-16px;box-sizing:border-box}
+/* v3.20.15: 时间轴 tab 上下级展示统一到 v3.20.14b 视觉规范——所有子级「左缩进 + 左边框 + 浅背景 + 小字号 + 紧凑 padding + 右边齐平」。时间轴的层级比内容/知识库多 1 级（计划→阶段→任务→资料/问题/复习），所以拆 3 套专用类区分。padding-right 一律 16px 让每级右边沿与 #lnBody 右内边沿对齐 */
+.ln-tt-stage{margin:8px 0 0 14px;padding:6px 16px 6px 10px;border-left:3px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box}
+.ln-tt-stage .ln-caret{margin-top:1px}
+.ln-tt-stage .ln-title{font-size:13px !important;font-weight:600 !important;line-height:1.4}
+.ln-tt-stage .ln-sub{font-size:11.5px !important;color:var(--text-3);margin-top:2px;line-height:1.4}
+.ln-tt-task{margin:6px 0 0 14px;padding:4px 16px 4px 10px;border-left:2px solid var(--line-soft);background:var(--card-soft);display:flex;align-items:flex-start;gap:8px;border-radius:var(--r-xs);box-sizing:border-box}
+.ln-tt-task .ln-caret{margin-top:2px;font-size:11px}
+.ln-tt-task .ln-title{font-size:13px !important;font-weight:500 !important;line-height:1.4}
+.ln-tt-section{margin:8px 0 0 18px;padding:0 16px 0 0;font-size:11px;color:var(--text-3);font-weight:600;letter-spacing:.5px;box-sizing:border-box}
+.ln-tt-row{margin:3px 0 0 18px;padding:5px 16px 5px 10px;border-left:2px solid var(--line-soft);background:rgba(0,0,0,.018);font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;border-radius:var(--r-xs);box-sizing:border-box}
+.ln-tt-row .ln-tt-kind{flex:none;font-weight:600;color:var(--text-2);min-width:0}
+.ln-tt-row .ln-tt-meta{flex:1;min-width:0;color:var(--text-3);font-size:11px;line-height:1.4}
+.ln-tt-row .ln-tt-meta a{color:var(--text-2)}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
 .ln-kb-chip.on{background:var(--text);border-color:var(--text);color:#fff}
@@ -1147,6 +1160,15 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.15',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
+    '用户截图反馈 v3.20.14b「右边对齐」样式铁律——所有其他学习对应模块只要涉及上下级展示，全部按 v3.20.14b 视觉规范统一',
+    '时间轴 tab 是学习模块最后一个未统一的子级展示：阶段/任务/资料/问题/复习 4 级原用 inline style（margin-left 14/18px + border-left 2px + font-size 12px），与 v3.20.14b 标准脱节',
+    '新增 4 套时间轴专用子级类：.ln-tt-stage（阶段/子级）/ .ln-tt-task（任务/孙级）/ .ln-tt-section（资料/问题/复习分组标题）/ .ln-tt-row（分组内每条记录/孙孙级）',
+    '全部沿用 v3.20.14b 规范：左缩进 14/14/18/18px + 左边框 3px/2px/-/2px var(--line-soft) + 浅背景 --card-soft/rgba(0,0,0,.018) + 小字号 13/13/11/12px + 紧凑 padding 6/16/6/10 + padding-right:16px 让每级右边沿与 #lnBody 右内边沿对齐',
+    'renderLnDirTimeline 全部 inline style 替换为类名渲染',
+    '铁律（写入 MEMORY.md「上下级展示」）：所有未来新加的子级卡片/孙级卡片/嵌套展示，必须按 v3.20.14b 视觉规范——左缩进 + 左边框 + 浅背景 + 小字号 + 紧凑 padding + 右边齐平；层级深度靠缩进量 + 边框粗细分，不靠宽度收缩',
+    '工作台其他模块（今日/账本/流水/报表/设置/我的/热力/历史/愿望/备份）扫描确认：均为扁平列表无嵌套，无需修改'
+  ]},
   {version:'v3.20.14b',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     '嵌套场景补刀：kb/resources tab 第二段「资源按父节点聚合」组渲染时，子级卡片 .ln-res-child / .ln-tree-child 嵌在外层 .card 内，被外层 .card padding-right:16px 限制导致右边比主级缩 16px',
     '新增 .card .ln-res-child / .card .ln-tree-child 选择器，用 -16px 负 margin-right + border-box 穿出 16px，让嵌套子级与直接挂 #lnBody 下的主级卡片右边对齐',
@@ -5174,7 +5196,7 @@ function lnExportOutline(dirId){
   },0);
 }
 /* —— 时间轴 —— */
-/* v3.20.9: 时间轴改为按 [计划 → 阶段 → 任务 → 关联内容/资料/问题/复习] 层级嵌套渲染，确保「资料X」等记录挂在对应任务下、绝不孤岛 */
+/* v3.20.15: 时间轴 tab 上下级展示统一到 v3.20.14b 视觉规范——阶段/任务/资料/问题/复习 全部用专用子级类（.ln-tt-stage / .ln-tt-task / .ln-tt-section / .ln-tt-row），沿用「左缩进 + 左边框 + 浅背景 + 小字号 + 紧凑 padding + padding-right:16px 右边齐平」 */
 function renderLnDirTimeline(d,L0){
   const plans=lnFifo(L0.plans.filter(p=>p.directionId===d.id),'order');
   if(!plans.length){
@@ -5187,7 +5209,7 @@ function renderLnDirTimeline(d,L0){
     (p.milestones||[]).forEach((m,mIdx)=>{
       const mKey=`m:${p.id}:${m.id}`;
       const mDate=m.due?`<span class="ln-tag" style="border-color:var(--bad);color:var(--bad)">${esc(m.due)}</span>`:'';
-      html+=`<div style="margin-left:14px;margin-top:8px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret" data-tt-key="${mKey}" onclick="lnToggleTimeline(this)">▼</span><div class="ln-main"><div class="ln-title" style="font-size:13px">${esc(m.title||'阶段')} ${mDate}</div></div></div><div data-tt-body="${mKey}">`;
+      html+=`<div class="ln-tt-stage"><span class="ln-caret" data-tt-key="${mKey}" onclick="lnToggleTimeline(this)">▼</span><div class="ln-main"><div class="ln-title">${esc(m.title||'阶段')} ${mDate}</div></div></div><div data-tt-body="${mKey}">`;
       const ts=m.tasks||[];
       if(!ts.length){html+=`<div class="ln-empty" style="padding:8px;font-size:12px">该阶段无任务</div>`;}
       ts.forEach((t,tIdx)=>{
@@ -5195,32 +5217,34 @@ function renderLnDirTimeline(d,L0){
         const items=lnItemsForNode(L0,{planId:p.id,msId:m.id,taskId:t.id});
         const cs=items.contents||[]; const qs=items.questions||[]; const revs=items.reviews||[];
         const done=t.done?'✅':'▫️';
-        html+=`<div style="margin-left:14px;margin-top:6px"><div class="ln-item" style="border:none;padding:0"><span class="ln-caret" data-tt-key="${tKey}" onclick="lnToggleTimeline(this)">${(cs.length+qs.length+revs.length)?'▼':'▶'}</span><div class="ln-main"><div class="ln-title" style="font-size:13px">${done} ${esc(t.title||'未命名任务')} <span class="ln-tag" style="font-weight:500">📄${cs.length} 💡${qs.length} 🔁${revs.length}</span></div></div></div><div data-tt-body="${tKey}" ${(cs.length+qs.length+revs.length)?'':'style="display:none"'}>`;
+        const hasKids=cs.length+qs.length+revs.length>0;
+        html+=`<div class="ln-tt-task"><span class="ln-caret" data-tt-key="${tKey}" onclick="lnToggleTimeline(this)">${hasKids?'▼':'▶'}</span><div class="ln-main"><div class="ln-title">${done} ${esc(t.title||'未命名任务')} <span class="ln-tag" style="font-weight:500">📄${cs.length} 💡${qs.length} 🔁${revs.length}</span></div></div><div data-tt-body="${tKey}" ${hasKids?'':'style="display:none"'}>`;
         if(cs.length){
-          html+=`<div style="margin-left:18px;margin-top:4px;font-size:12px;color:var(--text-3);font-weight:600">资料/子内容</div>`;
+          html+=`<div class="ln-tt-section">资料 / 子内容</div>`;
           cs.forEach(c=>{
             const kind=c.kind==='topic'?'主题':(c.kind==='kp'?'知识点':'资料');
-            const link=c.url?` · <a href="${esc(c.url)}" target="_blank" style="color:var(--text-2)">链接</a>`:'';
-            html+=`<div style="margin-left:18px;margin-top:3px;font-size:12px;border-left:2px solid var(--line-soft);padding-left:8px">📄 <b>${esc(c.name)}</b> <span class="ln-tag" style="font-weight:500">${kind}</span><span style="color:var(--text-3)">${c.note?' · '+esc(c.note):''}${link} · ${c.createdAt||''}</span></div>`;
+            const link=c.url?` · <a href="${esc(c.url)}" target="_blank">链接</a>`:'';
+            html+=`<div class="ln-tt-row"><span class="ln-tt-kind">📄 ${esc(c.name)}</span><span class="ln-tag" style="font-weight:500;flex:none">${kind}</span><span class="ln-tt-meta">${c.note?esc(c.note):''}${link}${c.createdAt?' · '+c.createdAt:''}</span></div>`;
           });
         }
         if(qs.length){
-          html+=`<div style="margin-left:18px;margin-top:6px;font-size:12px;color:var(--text-3);font-weight:600">问题</div>`;
+          html+=`<div class="ln-tt-section">问题</div>`;
           qs.forEach(q=>{
             const st=q.status==='solved'?'已解':(q.status==='doing'?'解决中':'待解决');
-            const hard=q.hard?'<span class="ln-tag" style="border-color:var(--bad);color:var(--bad)">难点</span>':'';
-            html+=`<div style="margin-left:18px;margin-top:3px;font-size:12px">💡 ${esc(q.title)} <span class="ln-tag" style="font-weight:500">${st}</span>${hard} <span style="color:var(--text-3)">${q.answer?' · 答:'+esc(q.answer.slice(0,40)):q.detail?' · '+esc(q.detail.slice(0,40)):''} · ${q.createdAt||''}</span></div>`;
+            const hard=q.hard?'<span class="ln-tag" style="border-color:var(--bad);color:var(--bad);flex:none">难点</span>':'';
+            const tail=q.answer?' · 答:'+esc(q.answer.slice(0,40)):(q.detail?' · '+esc(q.detail.slice(0,40)):'');
+            html+=`<div class="ln-tt-row"><span class="ln-tt-kind">💡 ${esc(q.title)}</span><span class="ln-tag" style="font-weight:500;flex:none">${st}</span>${hard}<span class="ln-tt-meta">${tail}${q.createdAt?' · '+q.createdAt:''}</span></div>`;
           });
         }
         if(revs.length){
-          html+=`<div style="margin-left:18px;margin-top:6px;font-size:12px;color:var(--text-3);font-weight:600">复习</div>`;
+          html+=`<div class="ln-tt-section">复习</div>`;
           revs.forEach(r=>{
-            html+=`<div style="margin-left:18px;margin-top:3px;font-size:12px">🔁 复习于 ${r.due||'未排'} · 间隔 ${r.interval||'-'}</div>`;
+            html+=`<div class="ln-tt-row"><span class="ln-tt-kind">🔁 复习</span><span class="ln-tt-meta">于 ${r.due||'未排'} · 间隔 ${r.interval||'-'}</span></div>`;
           });
         }
-        html+=`</div></div>`;
+        html+=`</div>`;
       });
-      html+=`</div></div>`;
+      html+=`</div>`;
     });
     html+=`</div></div>`;
   });
