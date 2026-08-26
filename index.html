@@ -666,7 +666,7 @@ summary::-webkit-details-marker{color:var(--text)}
 /* v3.20.14: 大纲 tab 任务行（子级）紧凑 + 左边框 + padding-right 12 让文本行尾与父容器右内边对齐 */
 .ln-task-child{padding:1px 12px 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:12px;line-height:1.4;background:var(--card-soft)}
 .ln-task-child .ln-task-t{font-size:12px !important}
-/* v3.20.14: 嵌套场景修复——kb/resources tab 第二段资源分组是 <div class="card"> 包 <div data-res-grp-body/data-kb-grp-body>{子级卡片}</div> 嵌套结构。子级卡片原本被外层 .card padding-right:16px 限制，右边比主级卡片缩 16px。用 -16px 负 margin-right + border-box 穿出 16px，让子级右内边沿与外层 #lnBody 右内边沿对齐。仅 .card 内的子级生效（直接挂 #lnBody 下的主级不会被推 16px） */
+/* v3.20.14b: 嵌套场景修复——kb/resources tab 第二段资源分组是 <div class="card"> 包 <div data-res-grp-body/data-kb-grp-body>{子级卡片}</div> 嵌套结构。子级卡片原本被外层 .card padding-right:16px 限制，右边比主级卡片缩 16px。用 -16px 负 margin-right + border-box 穿出 16px，让子级右内边沿与外层 #lnBody 右内边沿对齐。仅 .card 内的子级生效（直接挂 #lnBody 下的主级不会被推 16px） */
 .card .ln-res-child,
 .card .ln-tree-child{margin-right:-16px;box-sizing:border-box}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
@@ -1147,6 +1147,11 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.14b',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
+    '嵌套场景补刀：kb/resources tab 第二段「资源按父节点聚合」组渲染时，子级卡片 .ln-res-child / .ln-tree-child 嵌在外层 .card 内，被外层 .card padding-right:16px 限制导致右边比主级缩 16px',
+    '新增 .card .ln-res-child / .card .ln-tree-child 选择器，用 -16px 负 margin-right + border-box 穿出 16px，让嵌套子级与直接挂 #lnBody 下的主级卡片右边对齐',
+    'E2E 实测 kb tab 8 卡片 last_btn_right spread=1px（肉眼不可见），content/resources spread=0，完美对齐'
+  ]},
   {version:'v3.20.14',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     'UI 优化 v4（按用户反馈删按钮右边参差）：所有学习子卡片「右边与主级卡片完全对齐」',
     '.ln-tree-child / .ln-res-child / .ln-task-child 全部去掉 max-width 和负 margin-right——子级卡片只在左边缩进（margin-left），自然伸展到父容器右内边，与主级 .card 右边删除按钮完全对齐',
