@@ -653,18 +653,18 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-kp.done{border-left-color:var(--good);background:linear-gradient(90deg,rgba(120,150,110,.08),transparent)}
 .ln-kp-state{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 8px;color:var(--text-2);background:var(--card-soft)}
 .ln-kp.done .ln-kp-state{border-color:rgba(120,150,110,.35);color:var(--good)}
-/* v3.20.12: 上下级视觉差——子级卡片自身 padding 压缩（覆盖 .card 默认 16px）+ 紧凑字号行高，整体明显比父级更扁更矮 */
-.ln-tree-child{margin-left:48px;max-width:78%;padding:6px 8px}
+/* v3.20.13: 上下级视觉差——子级卡片比父级更扁更靠左；左边少留白 */
+.ln-tree-child{margin-left:32px;max-width:78%;padding:6px 8px}
 .ln-tree-child .ln-title{font-size:12.5px !important;font-weight:500;line-height:1.3}
 .ln-tree-child .ln-sub{font-size:11px !important;line-height:1.35;margin-top:1px}
 .ln-tree-child .ln-acts button{padding:2px 6px;font-size:10.5px}
-/* v3.20.12: 资料子项——靠右对齐（左边大幅缩进、卡几乎贴右边）+ 自压缩 padding + 左边框标识从属 */
-.ln-res-child{margin-left:56px;max-width:calc(100% - 60px);padding:5px 8px;border-left:2px solid var(--line-soft)}
+/* v3.20.13: 资料子项——左边少留白（ml 56→32）+ 负 margin-right 穿出 .card 的 padding-right 让卡片视觉贴齐右内边（max-width calc 无法吃掉父 .card padding，负 margin 是正解） */
+.ln-res-child{margin-left:32px;margin-right:-16px;padding:5px 8px;border-left:2px solid var(--line-soft);box-sizing:border-box}
 .ln-res-child .ln-title{font-size:12.5px !important;font-weight:500;line-height:1.3}
 .ln-res-child .ln-sub{font-size:11px !important;line-height:1.35;margin-top:1px}
 .ln-res-child .ln-acts button{padding:2px 6px;font-size:10.5px}
-/* v3.20.12: 大纲 tab 任务行（子级）紧凑 + 左边框 + 靠左 + 行间距压缩 */
-.ln-task-child{padding:1px 0 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:14px;line-height:1.4}
+/* v3.20.13: 大纲 tab 任务行（子级）紧凑 + 左边框 + 靠左 + 行间距压缩 */
+.ln-task-child{padding:1px 0 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:12px;line-height:1.4}
 .ln-task-child .ln-task-t{font-size:12px !important}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
@@ -1144,6 +1144,15 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.13',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
+    'UI 优化 v3（按用户截图反馈）：资料子卡片「左边少留白 + 跨 tab 右方贴齐」',
+    '.ln-res-child margin-left 56→32px（减少左边留白，与知识库图2 视觉一致）',
+    '.ln-res-child 用「负 margin-right: -16px」+ box-sizing border-box 撑过父 .card 的 padding-right，让卡片在内容/知识库/资源 3 个 tab 都视觉贴齐右内边（之前 max-width calc(100% - 60px) 算的是 .ln-ms 父级，没法吃掉 .card padding，导致知识库和资源 tab 右边还有 21px gap）',
+    '.ln-tree-child margin-left 48→32px 同步减左侧',
+    '.ln-task-child margin-left 14→12px 微调',
+    '关键心法：max-width 的"100%"按**直接父级**算，不按祖父级——要撑出祖父级 padding 必须用负 margin-right + box-sizing border-box',
+    '教训：用户截图红框位置要逐像素对照——v3.20.12 的右方留白问题只在桌面端可见，移动端 .card padding 处理不同；调试必须用同一视窗比对父链才能定位'
+  ]},
   {version:'v3.20.12',date:'2026-08-26',modules:['学习'],status:'测试中',items:[
     'UI 优化 v2（按用户截图红框重写）：资料子卡片「靠右对齐 + 高度压缩」——.ln-res-child 改 margin-left 56px + max-width calc(100% - 60px)（左边大幅留白、卡片几乎贴右边），padding 4px 7px、font 12.5px/11px、line-height 1.3/1.35，整体高度压缩 ~40%',
     '.ln-tree-child（普通子级）：margin-left 32→48px、max-width 80→78%、padding 7→4px、font 13→12.5px、line-height 1.3，同步实现「比父级矮 + 扁」',
