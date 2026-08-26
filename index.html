@@ -653,18 +653,18 @@ summary::-webkit-details-marker{color:var(--text)}
 .ln-kp.done{border-left-color:var(--good);background:linear-gradient(90deg,rgba(120,150,110,.08),transparent)}
 .ln-kp-state{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 8px;color:var(--text-2);background:var(--card-soft)}
 .ln-kp.done .ln-kp-state{border-color:rgba(120,150,110,.35);color:var(--good)}
-/* v3.20.14: 上下级视觉差——子级卡片「左边缩进 + 右边与主级卡片对齐」（用户新反馈：删除按钮右边必须齐）。整张卡片自然宽到父容器右内边，沿用左边框 + 小字号 + 浅背景做出层级感，不再用 max-width 让右边短一截 */
-.ln-tree-child{margin-left:32px;padding:6px 10px;border-left:3px solid var(--line-soft);background:var(--card-soft)}
+/* v3.20.14: 上下级视觉差——子级卡片「左边缩进 + 右边与主级卡片对齐」（用户新反馈：删除按钮右边必须齐）。子级 padding-right=16px 与主级 .card 一致 → 内部内容右边沿对齐 → ln-acts flex 自然右对齐 → 删除按钮右边全部对齐到 1106-16=1090。视觉层级靠左边框 + 小字号 + 浅背景，不再用 max-width 让卡片右边短一截 */
+.ln-tree-child{margin-left:32px;padding:6px 16px 6px 10px;border-left:3px solid var(--line-soft);background:var(--card-soft)}
 .ln-tree-child .ln-title{font-size:12.5px !important;font-weight:500;line-height:1.3}
 .ln-tree-child .ln-sub{font-size:11px !important;line-height:1.35;margin-top:1px}
 .ln-tree-child .ln-acts button{padding:2px 6px;font-size:10.5px}
-/* v3.20.14: 资料子项——与普通子级一致右边对齐父容器；左边框加深为 3px，与资料型主题色对齐，让「资料」子类一眼可辨 */
-.ln-res-child{margin-left:32px;padding:5px 10px;border-left:3px solid #b9a88c;background:rgba(185,168,140,.05)}
+/* v3.20.14: 资料子项——padding-right=16px 与主级对齐（删除按钮右边齐），左边框加深为 3px #b9a88c 与资料类主题色对应 */
+.ln-res-child{margin-left:32px;padding:5px 16px 5px 10px;border-left:3px solid #b9a88c;background:rgba(185,168,140,.05)}
 .ln-res-child .ln-title{font-size:12.5px !important;font-weight:500;line-height:1.3}
 .ln-res-child .ln-sub{font-size:11px !important;line-height:1.35;margin-top:1px}
 .ln-res-child .ln-acts button{padding:2px 6px;font-size:10.5px}
-/* v3.20.14: 大纲 tab 任务行（子级）紧凑 + 左边框 + 右边对齐父容器；不再用 max-width 限宽 */
-.ln-task-child{padding:1px 10px 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:12px;line-height:1.4;background:var(--card-soft)}
+/* v3.20.14: 大纲 tab 任务行（子级）紧凑 + 左边框 + padding-right 12 让文本行尾与父容器右内边对齐 */
+.ln-task-child{padding:1px 12px 1px 12px;font-size:12px;border-left:2px solid var(--line-soft);margin-left:12px;line-height:1.4;background:var(--card-soft)}
 .ln-task-child .ln-task-t{font-size:12px !important}
 .ln-kb-filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
 .ln-kb-chip{border:1px solid var(--line);background:var(--card-soft);color:var(--text-2);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer}
