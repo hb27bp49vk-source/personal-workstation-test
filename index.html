@@ -3960,6 +3960,11 @@ function lnNodeMatches(cNodeId,targetNodeId,L0){
   }
   return false;
 }
+/* 取某 task 精确绑定的内容（不含阶段聚合），用于任务行统计；review 走原聚合（点进 task 才看） */
+function lnTaskItems(L0,taskId){return {
+  contents:L0.contents.filter(c=>c.nodeId===taskId),
+  questions:L0.questions.filter(q=>q.nodeId===taskId)
+}}
 /* 取某节点（plan / milestone / task）下的全部关联记录 */
 function lnNodeItems(L0,nodeId){return {
   contents:L0.contents.filter(c=>lnNodeMatches(c.nodeId,nodeId,L0)),
@@ -4156,10 +4161,10 @@ function renderLnPlanMilestones(p,L0){
     const _tHasOrder=_tAll.length&&_tAll.every(t=>typeof t.order==='number');
     const _tSorted=_tHasOrder?lnFifo(_tAll,'order'):_tAll;
     const tasks=_tSorted.map(t=>{
-      const ni=lnNodeItems(L0,t.id);const cnts=[];
+      // v3.20.8: 任务行资料数只看精确绑定到该 task 的内容（不再被同 ms 的 topic 污染）
+      const ni=lnTaskItems(L0,t.id);const cnts=[];
       if(ni.contents.length)cnts.push('📄'+ni.contents.length);
       if(ni.questions.length)cnts.push('💡'+ni.questions.length);
-      if(ni.reviews.length)cnts.push('🔁'+ni.reviews.length);
       const cntHtml=cnts.length?`<span class="ln-task-cnt">${cnts.join(' ')}</span>`:'';
       return `<div class="ln-task ln-task-node" onclick="lnOpenNode('${p.directionId}','${p.id}','${m.id}','${t.id}')" title="点此查看该节点下的全部资料">
         <input type="checkbox" ${t.done?'checked':''} onclick="event.stopPropagation()" onchange="lnToggleTask('${p.id}','${m.id}','${t.id}',this.checked)">
@@ -4186,6 +4191,46 @@ function openLnPlanModal(dirId,id){
 function lnPlanCommit(){
   if(!lnPlanDraft.title.trim()){toast('请填写计划标题');return false}
   const L0b=lnData();
+  // v3.20.8: 同步建/删 content 跨模块强关联——plan 是其他模块的源
+  const oldPlan=lnPlanDraft.id?L0b.plans.find(x=>x.id===lnPlanDraft.id):null;
+  const oldMsIds={};(oldPlan?(oldPlan.milestones||[]):[]).forEach(m=>{oldMsIds[m.id]=m});
+  const oldTaskIds={};Object.values(oldMsIds).forEach(m=>{(m.tasks||[]).forEach(t=>{oldTaskIds[t.id]=t;});});
+  const newMsIds={};(lnPlanDraft.milestones||[]).forEach(m=>{newMsIds[m.id]=m;});
+  const newTaskIds={};Object.values(newMsIds).forEach(m=>{(m.tasks||[]).forEach(t=>{newTaskIds[t.id]=t;});});
+  // 1) 新增的 ms：建对应 topic content（nodeId=ms:${msId}）
+  Object.keys(newMsIds).forEach(msId=>{
+    if(!oldMsIds[msId]){
+      const m=newMsIds[msId];
+      const sameKind=L0b.contents.filter(c=>c.directionId===lnPlanDraft.directionId&&c.kind==='topic');
+      const maxOrder=sameKind.reduce((mx,c)=>Math.max(mx,typeof c.order==='number'?c.order:-1),-1);
+      L0b.contents.push({id:uid(),name:m.title||'未命名阶段',directionId:lnPlanDraft.directionId,kind:'topic',nodeId:`ms:${msId}`,tags:[],url:'',note:'',notes:'',order:maxOrder+1,createdAt:todayStr()});
+    }
+  });
+  // 2) 删除的 ms：删对应 topic content + 它的 kp 子内容
+  Object.keys(oldMsIds).forEach(msId=>{
+    if(!newMsIds[msId]){
+      L0b.contents=L0b.contents.filter(c=>!(c.kind==='topic'&&c.nodeId===`ms:${msId}`));
+      L0b.contents=L0b.contents.filter(c=>!((c.kind==='kp'||c.kind==='resource')&&c.nodeId&&c.nodeId.startsWith('ms:')&&c.nodeId===`ms:${msId}`));
+    }
+  });
+  // 3) 新增的 task：建对应 kp content（nodeId=taskId，parentId=该 ms 对应 topic）
+  Object.keys(newTaskIds).forEach(taskId=>{
+    if(!oldTaskIds[taskId]){
+      const t=newTaskIds[taskId];
+      // 找该 task 所在 ms 对应的 topic
+      let msId=null;Object.keys(newMsIds).forEach(mid=>{if((newMsIds[mid].tasks||[]).some(x=>x.id===taskId))msId=mid;});
+      const topic=msId?L0b.contents.find(c=>c.kind==='topic'&&c.nodeId===`ms:${msId}`):null;
+      const sameKind=L0b.contents.filter(c=>c.directionId===lnPlanDraft.directionId&&c.kind==='kp');
+      const maxOrder=sameKind.reduce((mx,c)=>Math.max(mx,typeof c.order==='number'?c.order:-1),-1);
+      L0b.contents.push({id:uid(),name:t.title||'未命名任务',directionId:lnPlanDraft.directionId,kind:'kp',nodeId:taskId,parentId:topic?topic.id:null,tags:[],mastered:false,url:'',note:'',notes:'',order:maxOrder+1,createdAt:todayStr()});
+    }
+  });
+  // 4) 删除的 task：删对应 kp content（精确 taskId 匹配）
+  Object.keys(oldTaskIds).forEach(taskId=>{
+    if(!newTaskIds[taskId]){
+      L0b.contents=L0b.contents.filter(c=>!(c.kind==='kp'&&c.nodeId===taskId));
+    }
+  });
   if(lnPlanDraft.id&&L0b.plans.find(x=>x.id===lnPlanDraft.id)){const i=L0b.plans.findIndex(x=>x.id===lnPlanDraft.id);L0b.plans[i]=lnPlanDraft;}
   else L0b.plans.unshift(lnPlanDraft);
   persist();lnRefresh();
@@ -4326,6 +4371,12 @@ function renderLnDirContents(d,L0){
     <select id="lnQcNode_${d.id}" title="关联节点">${nodeOpts}</select>
     <button onclick="lnQuickAddContent('${d.id}')">添加</button>
   </div>`;
+  // v3.20.8: 兜底——没有 parentId 的内容（多为用户手动加的 resource/sub-topic）归到 plan 第一个 topic
+  // 这样渲染时就不会单独飘出来形成"孤岛"
+  const firstTopic=L0.contents.filter(c=>c.directionId===d.id&&c.kind==='topic'&&(c.parentId||null)===null).sort((a,b)=>(a.order||0)-(b.order||0))[0];
+  if(firstTopic){
+    L0.contents.filter(c=>c.directionId===d.id&&(c.parentId||null)===null&&c.id!==firstTopic.id&&c.kind!=='topic').forEach(c=>{c.parentId=firstTopic.id;});
+  }
   const hasAny=L0.contents.some(c=>c.directionId===d.id);
   if(!hasAny){html+='<div class="ln-empty">还没有内容，上方快速添加。</div>';return html}
   const tree=lnContentListHtml(L0,d.id,null,0);
@@ -4335,7 +4386,10 @@ function renderLnDirContents(d,L0){
 function lnQuickAddContent(dirId,parentId){
   const name=$(`#lnQcName_${dirId}`).value.trim();if(!name){toast('请填写名称');return}
   const kind=$(`#lnQcKind_${dirId}`).value;const nodeId=$(`#lnQcNode_${dirId}`).value||null;const L0=lnData();
-  const obj={id:uid(),name,directionId:dirId,kind,nodeId,url:'',note:'',notes:'',tags:[],mastered:false,createdAt:todayStr()};
+  // v3.20.8: order 字段按当前同类内容最后+1（保证新加内容在末尾，不乱序）
+  const sameKind=L0.contents.filter(c=>c.directionId===dirId&&c.kind===kind);
+  const maxOrder=sameKind.reduce((mx,c)=>Math.max(mx,typeof c.order==='number'?c.order:-1),-1);
+  const obj={id:uid(),name,directionId:dirId,kind,nodeId,url:'',note:'',notes:'',tags:[],mastered:false,order:maxOrder+1,createdAt:todayStr()};
   if(parentId){obj.parentId=parentId;const p=L0.contents.find(c=>c.id===parentId);if(p&&!nodeId)obj.nodeId=p.nodeId||null;}
   L0.contents.unshift(obj);persist();
   lnCurrentDir=dirId;lnDetailTab='contents';lnRefresh();toast('已添加');
@@ -4371,7 +4425,13 @@ function openLnContentModal(dirId,id,nodeId,parentId){
   function lnContentCommit(){
     const name=$('#lnCtName').value.trim();if(!name){toast('请填写名称');return false}
     const obj={name,directionId:$('#lnCtDir').value||null,kind:k,url:$('#lnCtUrl').value.trim(),note:$('#lnCtNote').value.trim(),tags:splitTags($('#lnCtTags').value),mastered:$('#lnCtMastered').value==='1',notes:serializeNotesEntries(),notesSymbol:_lnCurrentSymbol,nodeId:$('#lnCtNode').value||null,parentId:$('#lnCtParent').value||null};
-    if(c){Object.assign(c,obj);}else{L0.contents.unshift(Object.assign({id:uid(),createdAt:todayStr(),notes:''},obj));}
+    if(c){Object.assign(c,obj);}
+    else{
+      // v3.20.8: 新加内容时按同类内容最后 order+1 设 order，避免乱序
+      const sameKind=L0.contents.filter(x=>x.directionId===obj.directionId&&x.kind===k);
+      const maxOrder=sameKind.reduce((mx,x)=>Math.max(mx,typeof x.order==='number'?x.order:-1),-1);
+      L0.contents.unshift(Object.assign({id:uid(),createdAt:todayStr(),notes:'',order:maxOrder+1},obj));
+    }
     persist();lnRefresh();
     return true;
   }
@@ -4607,7 +4667,8 @@ function lnCommitOutlineImport(){
         // v3.20.6: order 用 push 时递增的 idx（0,1,2...），不再用 orderBase-idx
         curPlan.milestones.push({id:msId,title:it.name,due:'',order:curPlan.milestones.length,tasks:[]});
         curMs=curPlan.milestones[curPlan.milestones.length-1];addMs++;
-        const c={id:uid(),name:it.name,directionId:curDir.id,kind:'topic',tags:it.tags||[],url:'',note:'由大纲导入',notes:'',order:0,createdAt:T};
+        // v3.20.8: topic 的 nodeId 直接关联到自己的 ms（之前是统一打到 plan 第一个 ms，导致任务 1/2/3 全部命中所有 topic）
+        const c={id:uid(),name:it.name,directionId:curDir.id,kind:'topic',nodeId:`ms:${msId}`,tags:it.tags||[],url:'',note:'由大纲导入',notes:'',order:0,createdAt:T};
         L0.contents.push(c);
         (_newContentsForDir[curDir.id]=_newContentsForDir[curDir.id]||[]).push(c);
         addContent++;
@@ -4635,16 +4696,13 @@ function lnCommitOutlineImport(){
     (p.milestones||[]).forEach((m,mi)=>{if(typeof m.order!=='number')m.order=mi;});
     (p.milestones||[]).forEach(m=>{(m.tasks||[]).forEach((t,ti)=>{if(typeof t.order!=='number')t.order=ti;});});
   });
-  // 把主题 content 的 nodeId 指到同方向 plan 里第一个任务的 id（如果存在）
-  L0.contents.filter(c=>c.kind==='topic').forEach(t=>{
-    for(const pl of L0.plans){
-      if(pl.directionId!==t.directionId)continue;
-      for(const ms of (pl.milestones||[])){
-        if(ms.tasks&&ms.tasks.length){t.nodeId=ms.tasks[0].id;break}
-        t.nodeId=`ms:${ms.id}`;break;
-      }
-      break;
-    }
+  // v3.20.8: 老数据兜底——把所有 topic.content.nodeId 重新匹配到 title 相同的 ms（修 v3.20.2/v3.20.6 时代码统一打到 ms1 的旧 bug）
+  L0.plans.forEach(p=>{
+    const msByTitle={};(p.milestones||[]).forEach(m=>{if(m.title)msByTitle[m.title]=m;});
+    L0.contents.filter(c=>c.kind==='topic'&&c.directionId===p.directionId).forEach(t=>{
+      const m=msByTitle[t.name];
+      if(m){t.nodeId=`ms:${m.id}`;}
+    });
   });
   // v3.20.6: 自动迁移老数据 order 字段（如果发现 ms/tasks/content 的 order 不是 number 或看起来是反向编码）
   migrateLearningOrdering(L0,true);
