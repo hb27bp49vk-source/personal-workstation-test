@@ -1449,6 +1449,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.39',date:'2026-08-27',modules:['云同步'],status:'测试库demo',items:[
+    '云同步账户新增「登录账号」字段：注册时填写，账户列表与登录框展示，便于多用户识别各自库',
+    '新增「导出/导入账户配置」：导出为 Passcode 加密的 .lwbsync 文件，新设备导入 + 输密码即恢复同步，免记 Gist ID 与 Token'
+  ]},
   {version:'v3.20.38',date:'2026-08-27',modules:['账本','预算'],status:'测试库demo',items:[
     '日警戒线进一步醒目：颜色由橙（var(--warn)）改为高亮红 #ff4d4f 并加发光阴影，线宽 2px→3px',
     '警戒线下方新增金额标注「警戒 ¥X」，金额 = 当月有效预算 ×（今日 / 当月总天数），随日期每天右移并同步显隐'
@@ -4173,7 +4177,7 @@ function promptLogin(profile){
   if(!profile||!profile.binId){toast('该账户尚未配置 Gist ID');return;}
   const defaultDays=7;
   modal(`<h4>登录云同步账户<span class="modal-close" onclick="closeModal()">×</span></h4>
-    <p class="muted" style="margin:0 0 12px">正在登录：<b>${esc(profile.name)}</b></p>
+    <p class="muted" style="margin:0 0 12px">正在登录：<b>${esc(profile.name)}</b>${profile.login?(' · 账号 <b>'+esc(profile.login)+'</b>'):''}</p>
     <div class="privacy-box" style="margin:0 0 12px">数据经 <b>AES-GCM 端到端加密</b>后存于 GitHub Gist。请输入该账户的加密 Passcode 以解密同步数据。</div>
     <input id="loginPass" type="password" class="sync-input" placeholder="加密 Passcode" autocomplete="off">
     <div id="loginErr" style="color:var(--bad);font-size:12px;min-height:16px;margin:4px 0 8px"></div>
@@ -4247,7 +4251,7 @@ function renderAccountManager(){
       ? `<span class="acc-tag">当前</span>`
       : `<button class="acc-btn" data-switch="${esc(p.id)}">切换</button>`;
     const del=(syncProfiles.length>1)?`<button class="acc-btn danger" data-del="${esc(p.id)}">删除</button>`:'';
-    return `<div class="acc-row"><div class="acc-info"><div class="acc-name">${esc(p.name)}</div><div class="acc-gist">Gist ${esc(maskGist(p.binId))}</div></div><div class="acc-acts">${acts}${del}</div></div>`;
+    return `<div class="acc-row"><div class="acc-info"><div class="acc-name">${esc(p.name)}</div><div class="acc-gist">${p.login?('账号 '+esc(p.login)+' · '):''}Gist ${esc(maskGist(p.binId))}</div></div><div class="acc-acts">${acts}${del}</div></div>`;
   }).join('');
   const trustDays=cur?getTrustRemainingDays(cur.id):0;
   const trustRow=cur&&trustDays>0?`<div class="sync-row"><span>本机信任</span><span style="font-size:13px">已记住 ${trustDays} 天 <button class="acc-btn danger" id="revokeTrust" style="margin-left:6px;padding:2px 8px;font-size:12px">撤销信任</button></span></div>`:'';
@@ -4270,7 +4274,11 @@ function renderAccountManager(){
       <button id="syncCopyBtn" class="acc-btn" ${loggedIn?'':'disabled'}>复制 Gist ID</button>
       <button id="logoutBtn" class="acc-btn danger" ${loggedIn?'':'disabled'}>退出登录</button>
     </div>
-    <p class="muted" style="font-size:12px;margin-top:12px;margin-bottom:0">Passcode 不保存于本机，每次打开需重新登录对应账户；账户配置会保留，无需重复填写 Token。</p>`,{noMaskClose:true});
+    <div class="btn-pair" style="margin-top:10px">
+      <button id="exportAccBtn" class="acc-btn" ${loggedIn?'':'disabled'}>导出账户配置</button>
+      <button id="importAccBtn" class="acc-btn">导入账户配置</button>
+    </div>
+    <p class="muted" style="font-size:12px;margin-top:12px;margin-bottom:0">Passcode 不保存于本机，每次打开需重新登录对应账户；账户配置会保留，无需重复填写 Token。新设备用「导入账户配置」+ Passcode 即可恢复同步。</p>`,{noMaskClose:true});
   const s2=$('#syncStatus2'),ss=$('#syncStatus');if(s2&&ss){s2.className=ss.className;s2.textContent=ss.textContent;}
   $('#modalBox').querySelectorAll('[data-switch]').forEach(b=>b.onclick=()=>{const p=syncProfiles.find(x=>x.id===b.getAttribute('data-switch'));if(p)switchProfile(p);});
   $('#modalBox').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{deleteProfile(b.getAttribute('data-del'));});
@@ -4283,6 +4291,9 @@ function renderAccountManager(){
     $('#syncCopyBtn').onclick=()=>{navigator.clipboard?.writeText(cur.binId).then(()=>toast('Gist ID 已复制'),()=>toast('复制失败'));};
     $('#logoutBtn').onclick=doLogout;
   }
+  const _eb=$('#exportAccBtn');
+  if(_eb)_eb.onclick=()=>exportAccountConfig(cur);
+  $('#importAccBtn').onclick=importAccountConfig;
 }
 
 /* 切换账户 = 登录到该账户（输入其 passcode） */
@@ -4308,6 +4319,7 @@ function deleteProfile(id){
 /* 新增账户 */
 function addAccount(){
   modal(`<h4>新增云同步账户<span class="modal-close" onclick="closeModal()">×</span></h4>
+    <input id="accLogin" class="sync-input" placeholder="登录账号（字母/数字，新设备凭此+密码登录，如 chance）">
     <input id="accName" class="sync-input" placeholder="账户名称，如 工作备份库">
     <input id="accMK" class="sync-input" placeholder="GitHub Token（ghp_ 开头）">
     <input id="accBin" class="sync-input" placeholder="Gist ID（新建留空 / 已有填 ID）">
@@ -4320,6 +4332,7 @@ function addAccount(){
     </div>`,{noMaskClose:true});
   $('#accCancel').onclick=()=>{renderAccountManager();};
   $('#accSave').onclick=async()=>{
+    const login=$('#accLogin').value.trim();
     const name=$('#accName').value.trim()||'未命名账户';
     const mk=$('#accMK').value.trim();
     const binId=$('#accBin').value.trim();
@@ -4327,7 +4340,7 @@ function addAccount(){
     if(!mk){toast('请填 GitHub Token');return;}
     if(!p1||p1.length<4){toast('Passcode 至少 4 位');return;}
     if(p1!==p2){toast('两次 Passcode 不一致');return;}
-    const profile={id:'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,binId:binId||null,masterKey:mk,salt:btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))))};
+    const profile={id:'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,login:login||null,binId:binId||null,masterKey:mk,salt:btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))))};
     syncProfiles.push(profile);currentProfileId=profile.id;saveProfiles();
     sessionPasscode=p1;
     closeModal();setSyncStatus('sync');toast('正在初始化…');
@@ -4348,6 +4361,71 @@ function addAccount(){
       toast('初始化失败：'+(e.message||e));
     }
   };
+}
+
+/* 通用 Passcode 输入弹窗，返回 Promise<string|null> */
+function askPasscode(title){
+  return new Promise(res=>{
+    modal(`<h4>${esc(title||'输入 Passcode')}<span class="modal-close" onclick="closeModal()">×</span></h4>
+      <input id="askPw" type="password" class="sync-input" placeholder="Passcode" autocomplete="off">
+      <div id="askErr" style="color:var(--bad);font-size:12px;min-height:16px;margin:4px 0 8px"></div>
+      <div class="btn-pair">
+        <button id="askCancel" style="flex:1;border:1px solid var(--line);border-radius:var(--r-sm);padding:11px">取消</button>
+        <button id="askOk" style="flex:1;background:var(--text);color:#fff;border-radius:var(--r-sm);padding:11px;font-weight:600">确定</button>
+      </div>`,{noMaskClose:true});
+    const done=v=>{closeModal();res(v);};
+    $('#askCancel').onclick=()=>done(null);
+    $('#askOk').onclick=()=>{const v=$('#askPw').value;if(!v||v.length<4){$('#askErr').textContent='Passcode 至少 4 位';return;}done(v);};
+    $('#askPw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#askOk').click();});
+  });
+}
+
+/* 导出账户配置（Passcode 加密，含 登录账号/Gist ID/Token/salt），用于新设备导入 */
+async function exportAccountConfig(p){
+  if(!p){toast('请先选择一个账户');return;}
+  let pw=sessionPasscode;
+  if(!(pw&&p.id===currentProfileId)){
+    pw=await askPasscode('导出账户配置需验证 Passcode（用于加密配置文件）');
+    if(!pw){renderAccountManager();return;}
+  }
+  try{
+    const cfg={login:p.login,name:p.name,binId:p.binId,masterKey:p.masterKey,salt:p.salt,id:p.id};
+    const salt=btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+    const payload=await encryptState(cfg,salt,pw);
+    const env={app:'LifeWorkbench',type:'account-config',v:1,exportedAt:Date.now(),payload};
+    const blob=new Blob([JSON.stringify(env,null,2)],{type:'application/json;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='workbench-account-'+(p.login||p.id)+'.lwbsync';
+    a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    toast('账户配置已导出（Passcode 加密，安全可携带）');
+  }catch(e){toast('导出失败：'+(e.message||e));}
+  renderAccountManager();
+}
+
+/* 导入账户配置：选文件 → 输 Passcode → 解密 → 加入账户并登录拉取 */
+function importAccountConfig(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.lwbsync,application/json';
+  inp.onchange=async()=>{
+    const f=inp.files&&inp.files[0];if(!f)return;
+    let env;try{env=JSON.parse(await f.text());}catch(e){toast('文件解析失败，不是有效的配置文件');return;}
+    if(!env||env.type!=='account-config'||!env.payload){toast('不是有效的账户配置文件');return;}
+    const pw=await askPasscode('输入该账户的 Passcode 以解密并导入');
+    if(!pw){renderAccountManager();return;}
+    try{
+      const cfg=await decryptState(env.payload,pw);
+      const prof={id:cfg.id||('p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+                  login:cfg.login||null,name:cfg.name||'导入账户',binId:cfg.binId,masterKey:cfg.masterKey,salt:cfg.salt};
+      if(!prof.binId||!prof.masterKey){toast('配置缺少 Gist ID 或 Token，无法导入');renderAccountManager();return;}
+      /* 去重：同 id 或同登录账号则覆盖 */
+      syncProfiles=syncProfiles.filter(x=>x.id!==prof.id&&!(prof.login&&x.login===prof.login));
+      syncProfiles.push(prof);currentProfileId=prof.id;saveProfiles();
+      closeModal();
+      await loginToProfile(prof,pw,{silent:true});
+      toast('账户已导入并登录：'+prof.name);
+      renderAccountManager();
+    }catch(e){toast('解密失败，Passcode 错误或文件损坏');renderAccountManager();}
+  };
+  inp.click();
 }
 
 /* 退出当前账户登录（保留配置，下次可再登录） */
