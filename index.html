@@ -502,15 +502,17 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
   box-shadow:0 0 0 3px var(--pri-soft);
 }
 .side-toggle{
-  width:26px;height:26px;border-radius:8px;
-  background:transparent;border:1px solid var(--line);
+  position:fixed;z-index:80;
+  width:28px;height:28px;border-radius:8px;
+  background:var(--card);border:1px solid var(--line);
   color:var(--text-2);cursor:pointer;flex:none;
   display:inline-flex;align-items:center;justify-content:center;
-  transition:all .18s;outline:none;padding:0;
+  transition:left .28s cubic-bezier(.4,0,.2,1),background .18s,border-color .18s,box-shadow .18s;
+  outline:none;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.06);
 }
-.side-toggle:hover{background:var(--pri-soft);border-color:var(--pri);color:var(--pri)}
+.side-toggle:hover{background:var(--pri-soft);border-color:var(--pri);color:var(--pri);box-shadow:0 2px 10px var(--pri-soft)}
 .side-toggle:active{transform:scale(.94)}
-.side-toggle svg{width:14px;height:14px;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.side-toggle svg{width:15px;height:15px;transition:transform .28s cubic-bezier(.4,0,.2,1)}
 .side-cap{
   flex:none;display:flex;align-items:center;gap:8px;
   padding:14px 18px 8px;
@@ -574,12 +576,18 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
   .main-area{margin-left:232px}
   body.nav-collapsed .side-nav{transform:translateX(-100%)}
   body.nav-collapsed .main-area{margin-left:0}
-  /* 折叠时主区内容占满，但 topbar 的折叠按钮依然存在可重新展开 */
+  /* 折叠按钮：展开时在侧栏内 logo 右侧，收起时滑到屏幕左边缘（永远可重新展开） */
+  .side-toggle{left:194px;top:calc(env(safe-area-inset-top,0px) + 22px)}
+  body.nav-collapsed .side-toggle{left:12px}
+  body.nav-collapsed .side-toggle svg{transform:rotate(180deg)}
 }
 /* 移动（<760px）：默认收起为抽屉，汉堡触发 nav-open 展开 */
 @media(max-width:759px){
   body.nav-open .side-nav{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.18)}
   .side-nav{width:82%;max-width:296px}
+  /* 移动端按钮固定在屏幕左边缘：抽屉关时右箭头(提示可展开)，抽屉开时左箭头(提示可收起) */
+  .side-toggle{left:11px;top:calc(env(safe-area-inset-top,0px) + 12px);width:30px;height:30px}
+  body:not(.nav-open) .side-toggle svg{transform:rotate(180deg)}
 }
 
 /* ====== 通用 ====== */
@@ -1380,13 +1388,14 @@ summary::-webkit-details-marker{color:var(--text)}
     </section>
   </main>
 
+  <!-- 折叠/展开按钮：独立 fixed 元素，不随侧栏移动，收起后依然可点开 -->
+  <button class="side-toggle" id="sideToggle" aria-label="折叠/展开侧栏" title="折叠/展开侧栏">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
   <!-- 二级导航侧栏（v3.20.31）：动态渲染当前 tab 下的子模块 -->
   <div class="side-nav" id="sideNav" aria-label="二级导航">
     <div class="side-brand">
       <span class="side-brand-name">我的工作台</span>
-      <button class="side-toggle" id="sideToggle" aria-label="折叠侧栏" title="折叠侧栏">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
     </div>
     <div class="side-cap" id="sideCap">今日</div>
     <nav class="side-list" id="sideList" role="navigation"></nav>
