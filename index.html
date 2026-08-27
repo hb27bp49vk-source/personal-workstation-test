@@ -570,16 +570,20 @@ nav.tabbar a.on{color:var(--tab-on)}
 nav.tabbar a.on .ic{color:var(--tab-on)}
 nav.tabbar a.on .ic{transform:scale(1.05)}
 
-/* 桌面（≥760px）：侧栏常驻展开，nav.tabbar 沿用全局底部 fixed（v3.20.32 后桌面/移动共用底部 fixed） */
+/* 桌面（≥760px）：v3.20.34 默认折叠侧栏（侧栏滑出屏幕外），主区占满全宽；点击折叠按钮切换 nav-open 展开 */
 @media(min-width:760px){
-  .side-nav{transform:translateX(0)}
-  .main-area{margin-left:232px}
-  body.nav-collapsed .side-nav{transform:translateX(-100%)}
-  body.nav-collapsed .main-area{margin-left:0}
-  /* 折叠按钮：展开时在侧栏内 logo 右侧，收起时滑到屏幕左边缘（永远可重新展开） */
-  .side-toggle{left:194px;top:calc(env(safe-area-inset-top,0px) + 22px)}
-  body.nav-collapsed .side-toggle{left:12px}
-  body.nav-collapsed .side-toggle svg{transform:rotate(180deg)}
+  /* 默认折叠状态：侧栏滑出 + 主区占满 */
+  .side-nav{transform:translateX(-100%)}
+  .main-area{margin-left:0}
+  /* 展开状态（由 nav-open 触发）：侧栏滑入 + 主区留出 232px */
+  body.nav-open .side-nav{transform:translateX(0)}
+  body.nav-open .main-area{margin-left:232px}
+  /* 折叠按钮定位：默认（折叠态）贴在屏幕左边缘；展开时滑到侧栏内 logo 右侧 */
+  .side-toggle{left:12px;top:calc(env(safe-area-inset-top,0px) + 22px)}
+  body.nav-open .side-toggle{left:194px}
+  /* 箭头方向：默认（折叠态）显示右箭头 → 提示"可向右展开"；展开后变左箭头 → 提示"可向左收起" */
+  .side-toggle svg{transform:rotate(180deg)}
+  body.nav-open .side-toggle svg{transform:rotate(0)}
 }
 /* 移动（<760px）：默认收起为抽屉，汉堡触发 nav-open 展开 */
 @media(max-width:759px){
@@ -759,8 +763,7 @@ summary::-webkit-details-marker{color:var(--text)}
   .card{margin-bottom:0}
   .hist-stat{grid-template-columns:repeat(6,1fr)}
   .report-area{min-height:56vh}
-  /* 折叠时主区内容占满 */
-  body.nav-collapsed main{padding-left:24px}
+  /* v3.20.34：nav-collapsed 类已废弃（改为统一用 nav-open），无需特殊 main padding */
 }
 /* 学习模块 */
 .ln-ov{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
@@ -2083,8 +2086,8 @@ function goTab(p,opts){
   const t=$('#sideToggle'),mask=$('#navMask');if(!t)return;
   /* 桌面端：点击 toggle 收起/展开；移动端：点击 toggle 打开抽屉，点遮罩或侧栏内二级项关闭 */
   t.addEventListener('click',()=>{
-    if(window.innerWidth>759)document.body.classList.toggle('nav-collapsed');
-    else document.body.classList.toggle('nav-open');
+    /* v3.20.34：桌面与移动共用 nav-open 类（CSS 默认 .side-nav 折叠，body.nav-open 时展开） */
+    document.body.classList.toggle('nav-open');
   });
   if(mask){
     mask.addEventListener('click',()=>{
