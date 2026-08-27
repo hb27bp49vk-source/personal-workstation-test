@@ -272,6 +272,24 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .fm-del{margin-left:auto;border:none;background:transparent;color:var(--bad);font-size:16px;cursor:pointer;line-height:1}
 .mini-btn{border:1px solid var(--line);background:var(--card);border-radius:var(--r-xs);padding:4px 10px;font-size:12px;color:var(--text-2);cursor:pointer}
 .mini-btn:hover{color:var(--text);border-color:var(--text-2)}
+/* v3.20.24: 存钱目标进度条 + 总资产条目 */
+.fm-prog{height:9px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0 4px}
+.fm-prog>i{display:block;height:100%;background:var(--mac,var(--ok));border-radius:99px;transition:width .35s}
+.fm-goal-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.fm-goal-row .lab{font-size:13px;color:var(--text-2);min-width:68px}
+.fm-goal-row .fm-num{width:104px}
+.fm-goal-row .muted{font-size:12px}
+.fm-item{display:flex;align-items:center;gap:8px;background:var(--card-soft);border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:7px 10px;margin-top:8px}
+.fm-item .fm-item-name{flex:1;min-width:0;border:none;background:transparent;font:inherit;color:var(--text);font-size:13.5px}
+.fm-item .fm-item-amt{width:110px;border:1px solid var(--line);border-radius:var(--r-xs);padding:5px 7px;font-size:12.5px;text-align:right}
+.fm-item .fm-unit{color:var(--text-3);font-size:12px}
+.fm-item .fm-del{margin-left:2px}
+.fm-comp{margin-top:10px}
+.fm-comp .nm{font-size:12.5px;color:var(--text-2);display:flex;justify-content:space-between;gap:8px}
+.fm-comp .nm .amt{color:var(--text-2);white-space:nowrap}
+.fm-comp .track{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:4px}
+.fm-comp .track>i{display:block;height:100%;border-radius:99px}
+.fm-empty{color:var(--text-3);font-size:12.5px;margin-top:8px}
 .flow-item .f-amt{font-weight:700;font-size:15px;flex:none}
 .flow-item .f-date{font-size:11px;color:var(--text-3);margin-top:2px}
 .budget-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:8px 0}
@@ -952,6 +970,18 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="row-between"><b>分配方向</b><button class="mini-btn" id="fmAddDir">＋ 方向</button></div>
           <div id="fmDirs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
         </div>
+        <div class="card">
+          <div class="row-between"><b>存钱目标</b><span class="muted">可自行修改</span></div>
+          <div class="fm-goal-row"><span class="lab">月存目标</span><input id="fmMonthGoal" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
+          <div class="fm-prog"><i id="fmMonthBar"></i></div>
+          <div class="muted" id="fmMonthTxt"></div>
+          <div class="fm-goal-row"><span class="lab">本月已存</span><input id="fmMonthSaved" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
+          <div class="div-line" style="margin:12px 0"></div>
+          <div class="fm-goal-row"><span class="lab">年末目标</span><input id="fmYearGoal" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
+          <div class="fm-prog"><i id="fmYearBar"></i></div>
+          <div class="muted" id="fmYearTxt"></div>
+          <div class="fm-goal-row"><span class="lab">累计已存</span><input id="fmYearSaved" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
+        </div>
       </div>
 
       <div class="sec" data-module="catExpense">
@@ -1026,6 +1056,30 @@ summary::-webkit-details-marker{color:var(--text)}
     </section>
 
     <!-- 热力 -->
+    <section class="page" id="page-assets" data-module="assets">
+      <div class="sec" data-module="assets">
+        <div class="page-title">总资产</div>
+        <div class="card">
+          <div class="fm-grid" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="fm-cell"><div class="fm-amt" style="color:var(--ok)" id="fmTotalAsset">¥0</div><div class="fm-lab">总资产</div></div>
+            <div class="fm-cell"><div class="fm-amt" style="color:var(--bad)" id="fmTotalLiab">¥0</div><div class="fm-lab">总负债</div></div>
+            <div class="fm-cell"><div class="fm-amt" id="fmNetAsset">¥0</div><div class="fm-lab">净资产</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row-between"><b>资产明细</b><button class="mini-btn" id="fmAddAsset">＋ 资产</button></div>
+          <div id="fmAssets"></div>
+          <div class="div-line" style="margin:12px 0"></div>
+          <div class="row-between"><b>负债明细</b><button class="mini-btn" id="fmAddLiab">＋ 负债</button></div>
+          <div id="fmLiabs"></div>
+        </div>
+        <div class="card">
+          <div class="row-between"><b>资产配置</b><span class="muted">各账户占比</span></div>
+          <div id="fmAssetBars"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="page" id="page-heat">
       <div class="sec" data-module="mood">
         <div class="page-title">今日心情</div>
@@ -1212,6 +1266,7 @@ summary::-webkit-details-marker{color:var(--text)}
   <nav class="tabbar">
     <a class="on" data-p="today"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>今日</a>
     <a data-p="money"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M2 10h4M18 10h4"/></svg>账本</a>
+    <a data-p="assets"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>资产</a>
     <a data-p="heat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>热力</a>
     <a data-p="history"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>历史</a>
     <a data-p="notes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>备忘</a>
@@ -1253,6 +1308,13 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.24',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
+    '资金管理新增「存钱目标」：月存目标 / 本月已存、年末存款目标 / 累计已存，四者均可自行修改，并各生成一个进度条（已存/目标百分比，达标显示 ✓ 已达成）',
+    '新增「总资产」独立页面（底部 Tab「资产」）：顶部总资产 / 总负债 / 净资产 三张卡片',
+    '资产明细默认含 支付宝小荷包 / 微信余额 / 基金账户（示例金额，可改），支持自定义增删、改名称与金额',
+    '负债明细支持自定义增删与金额录入；资产配置区按各账户金额占比生成横向占比条',
+    '总资产/负债数据随资金管理一并存本机 localStorage（红线隔离），与正式账本数据隔离'
+  ]},
   {version:'v3.20.23',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
     '账本新增「资金管理」模块（demo，仅部署测试库供预览）：输入每月工资收入，系统自动计算资金分配',
     '建议分配（按收入比例）：实时算出 50% 建议储蓄 / 15% 建议投资 / 35% 建议自由支配 三档金额',
@@ -1753,7 +1815,7 @@ $$('nav.tabbar a').forEach(a=>a.addEventListener('click',()=>{
   $$('nav.tabbar a').forEach(x=>x.classList.remove('on'));a.classList.add('on');
   const p=a.dataset.p;$$('.page').forEach(x=>x.classList.remove('active'));
   $('#page-'+p).classList.add('active');
-  if(p==='today')renderWorklog();if(p==='money')renderMoney();if(p==='heat')renderHeat();if(p==='notes')renderNotes();if(p==='history')renderActiveHis();if(p==='learning')renderLearning();
+  if(p==='today')renderWorklog();if(p==='money')renderMoney();if(p==='heat')renderHeat();if(p==='notes')renderNotes();if(p==='history')renderActiveHis();if(p==='learning')renderLearning();if(p==='assets')renderAssets();
   /* 强制滚动到指定 sec（被 goTab 第二参数触发，普通 tabbar 切换不进入） */
   /* 时序: ① 立即清 window scrollTop（去掉切换前的残留位置）
          ② 80ms 后第一次精确滚动（等 .page 完成 display:none→block + fade 动画起手）
@@ -2026,10 +2088,20 @@ const FM_DEFAULT_RULES=[
   {id:'r_fund',target:'d_fund',method:'fixed',value:1500,cond:'gt',threshold:7500},
   {id:'r_fsave',target:'d_fsave',method:'remainder',value:0,cond:'always'}
 ];
+const FM_DEFAULT_GOALS={monthGoal:3000,yearGoal:36000,monthSaved:0,yearSaved:0};
+const FM_DEFAULT_ASSETS=[
+  {id:'a_zfb',name:'支付宝小荷包',amount:5000},
+  {id:'a_wx',name:'微信余额',amount:2000},
+  {id:'a_fund',name:'基金账户',amount:12000}
+];
+const FM_DEFAULT_LIABS=[];
 function ensureFundMgr(){
-  if(!S.fundMgr)S.fundMgr={income:0,directions:JSON.parse(JSON.stringify(FM_DEFAULT_DIRS)),rules:JSON.parse(JSON.stringify(FM_DEFAULT_RULES))};
+  if(!S.fundMgr)S.fundMgr={income:0,directions:JSON.parse(JSON.stringify(FM_DEFAULT_DIRS)),rules:JSON.parse(JSON.stringify(FM_DEFAULT_RULES)),goals:JSON.parse(JSON.stringify(FM_DEFAULT_GOALS)),assets:JSON.parse(JSON.stringify(FM_DEFAULT_ASSETS)),liabilities:JSON.parse(JSON.stringify(FM_DEFAULT_LIABS))};
   if(!S.fundMgr.directions||!S.fundMgr.directions.length)S.fundMgr.directions=JSON.parse(JSON.stringify(FM_DEFAULT_DIRS));
   if(!S.fundMgr.rules)S.fundMgr.rules=JSON.parse(JSON.stringify(FM_DEFAULT_RULES));
+  if(!S.fundMgr.goals)S.fundMgr.goals=JSON.parse(JSON.stringify(FM_DEFAULT_GOALS));
+  if(!S.fundMgr.assets||!S.fundMgr.assets.length)S.fundMgr.assets=JSON.parse(JSON.stringify(FM_DEFAULT_ASSETS));
+  if(!S.fundMgr.liabilities)S.fundMgr.liabilities=JSON.parse(JSON.stringify(FM_DEFAULT_LIABS));
   return S.fundMgr;
 }
 function fmCondPass(cond,threshold,income){
@@ -2135,11 +2207,62 @@ function renderFundManager(){
   $('#fmResultGrid').innerHTML=res.html;
   fmRenderRules();
   fmRenderDirs();
+  renderGoals();
 }
 $('#fmIncome').oninput=()=>{const fm=ensureFundMgr();fm.income=parseFloat($('#fmIncome').value)||0;persist();renderFundManager();};
 $('#fmCalc').onclick=()=>{const fm=ensureFundMgr();fm.income=parseFloat($('#fmIncome').value)||0;persist();renderFundManager();toast('已按当前收入计算分配');};
 $('#fmAddRule').onclick=()=>{const fm=ensureFundMgr();const def=fm.directions[0]?fm.directions[0].id:'d_free';fm.rules.push({id:'r_'+uid().slice(0,6),target:def,method:'fixed',value:0,cond:'always',enabled:true});persist();renderFundManager();};
 $('#fmAddDir').onclick=()=>{const fm=ensureFundMgr();fm.directions.push({id:'d_'+uid().slice(0,6),name:'新方向',color:CAT_PALETTE[fm.directions.length%CAT_PALETTE.length]});persist();renderFundManager();};
+/* ===== v3.20.24: 存钱目标 + 总资产 ===== */
+function renderGoals(){
+  const fm=ensureFundMgr();const g=fm.goals;
+  const set=(id,val)=>{const el=$(id);if(el&&document.activeElement!==el)el.value=(val==null?'':val);};
+  set('#fmMonthGoal',g.monthGoal);set('#fmMonthSaved',g.monthSaved);
+  set('#fmYearGoal',g.yearGoal);set('#fmYearSaved',g.yearSaved);
+  const mp=g.monthGoal>0?Math.min(100,g.monthSaved/g.monthGoal*100):0;
+  $('#fmMonthBar').style.width=mp+'%';
+  $('#fmMonthTxt').textContent='本月已存 '+money(g.monthSaved)+' / 目标 '+money(g.monthGoal)+' · '+mp.toFixed(0)+'%'+(g.monthGoal>0&&g.monthSaved>=g.monthGoal?' ✓ 已达成':'');
+  const yp=g.yearGoal>0?Math.min(100,g.yearSaved/g.yearGoal*100):0;
+  $('#fmYearBar').style.width=yp+'%';
+  $('#fmYearTxt').textContent='累计已存 '+money(g.yearSaved)+' / 目标 '+money(g.yearGoal)+' · '+yp.toFixed(0)+'%'+(g.yearGoal>0&&g.yearSaved>=g.yearGoal?' ✓ 已达成':'');
+}
+function refreshAssetTotals(){
+  const fm=ensureFundMgr();
+  const ta=fm.assets.reduce((s,a)=>s+(parseFloat(a.amount)||0),0);
+  const tl=fm.liabilities.reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
+  $('#fmTotalAsset').textContent=money(ta);
+  $('#fmTotalLiab').textContent=money(tl);
+  $('#fmNetAsset').textContent=money(ta-tl);
+  const bars=fm.assets.filter(a=>(parseFloat(a.amount)||0)>0);
+  if(!bars.length){$('#fmAssetBars').innerHTML='<div class="fm-empty">暂无资产金额</div>';return;}
+  const maxA=Math.max.apply(null,bars.map(a=>parseFloat(a.amount)||0));
+  const palette=['#5a7a8a','#b9a88c','#7a9a5a','#9a7a9a','#7a82c4','#c98a5a','#b0854e'];
+  $('#fmAssetBars').innerHTML=bars.map((a,i)=>{const v=parseFloat(a.amount)||0;const pct=maxA>0?v/maxA*100:0;const pctAll=ta>0?v/ta*100:0;return `<div class="fm-comp"><div class="nm"><span>${esc(a.name)}</span><span class="amt">${money(v)} · ${pctAll.toFixed(0)}%</span></div><div class="track"><i style="width:${pct}%;background:${palette[i%palette.length]}"></i></div></div>`;}).join('');
+}
+function renderAssets(){
+  const fm=ensureFundMgr();
+  $('#fmAssets').innerHTML=fm.assets.map((a,i)=>`<div class="fm-item" data-i="${i}"><input class="fm-item-name" value="${esc(a.name)}" placeholder="账户名" maxlength="12"><span class="fm-unit">¥</span><input class="fm-item-amt" type="number" inputmode="decimal" value="${a.amount||0}"><button class="fm-del" data-del="${i}">×</button></div>`).join('')||'<div class="fm-empty">暂无资产，点「＋ 资产」添加</div>';
+  $$('#fmAssets .fm-item').forEach(el=>{
+    const i=+el.dataset.i;
+    el.querySelector('.fm-item-name').onchange=e=>{fm.assets[i].name=e.target.value.trim()||'账户';persist();renderAssets();};
+    el.querySelector('.fm-item-amt').oninput=e=>{fm.assets[i].amount=parseFloat(e.target.value)||0;persist();refreshAssetTotals();};
+    el.querySelector('.fm-del').onclick=()=>{fm.assets.splice(i,1);persist();renderAssets();};
+  });
+  $('#fmLiabs').innerHTML=fm.liabilities.map((l,i)=>`<div class="fm-item" data-i="${i}"><input class="fm-item-name" value="${esc(l.name)}" placeholder="负债名" maxlength="12"><span class="fm-unit">¥</span><input class="fm-item-amt" type="number" inputmode="decimal" value="${l.amount||0}"><button class="fm-del" data-del="${i}">×</button></div>`).join('')||'<div class="fm-empty">暂无负债，点「＋ 负债」添加</div>';
+  $$('#fmLiabs .fm-item').forEach(el=>{
+    const i=+el.dataset.i;
+    el.querySelector('.fm-item-name').onchange=e=>{fm.liabilities[i].name=e.target.value.trim()||'负债';persist();renderAssets();};
+    el.querySelector('.fm-item-amt').oninput=e=>{fm.liabilities[i].amount=parseFloat(e.target.value)||0;persist();refreshAssetTotals();};
+    el.querySelector('.fm-del').onclick=()=>{fm.liabilities.splice(i,1);persist();renderAssets();};
+  });
+  refreshAssetTotals();
+}
+$('#fmMonthGoal').oninput=()=>{const fm=ensureFundMgr();fm.goals.monthGoal=parseFloat($('#fmMonthGoal').value)||0;persist();renderGoals();};
+$('#fmMonthSaved').oninput=()=>{const fm=ensureFundMgr();fm.goals.monthSaved=parseFloat($('#fmMonthSaved').value)||0;persist();renderGoals();};
+$('#fmYearGoal').oninput=()=>{const fm=ensureFundMgr();fm.goals.yearGoal=parseFloat($('#fmYearGoal').value)||0;persist();renderGoals();};
+$('#fmYearSaved').oninput=()=>{const fm=ensureFundMgr();fm.goals.yearSaved=parseFloat($('#fmYearSaved').value)||0;persist();renderGoals();};
+$('#fmAddAsset').onclick=()=>{const fm=ensureFundMgr();fm.assets.push({id:'a_'+uid().slice(0,6),name:'新账户',amount:0});persist();renderAssets();};
+$('#fmAddLiab').onclick=()=>{const fm=ensureFundMgr();fm.liabilities.push({id:'l_'+uid().slice(0,6),name:'新负债',amount:0});persist();renderAssets();};
 function hexA(hex,a){
   if(!hex)return'rgba(0,0,0,'+a+')';
   hex=(''+hex).replace('#','');
@@ -4220,7 +4343,7 @@ function restoreModules(arr){
 let moduleCfg=loadModuleConfig();
 if(!S.modules)S.modules=moduleCfg;
 function applyModuleLayout(){
-  const byPage={today:$('#page-today'),money:$('#page-money'),heat:$('#page-heat'),history:$('#page-history'),notes:$('#page-notes'),learning:$('#page-learning'),me:$('#page-me')};
+  const byPage={today:$('#page-today'),money:$('#page-money'),heat:$('#page-heat'),history:$('#page-history'),notes:$('#page-notes'),learning:$('#page-learning'),me:$('#page-me'),assets:$('#page-assets')};
   moduleCfg.forEach(c=>{
     const meta=MODULES.find(m=>m.id===c.id);
     const el=document.querySelector('[data-module="'+c.id+'"]');
@@ -4273,7 +4396,7 @@ function initFilters(){
   const[mf,mt]=rangeOf('thisMonth');setFlowRange(mf,mt,'thisMonth');
   const[hf,ht]=rangeOf('7');setHisRange(hf,ht,'7');
 }
-function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderFocusCard();renderChangelog();renderAbout();renderLearning();applyModuleLayout()}
+function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderFocusCard();renderChangelog();renderAbout();renderLearning();renderAssets();applyModuleLayout()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 /* 首次使用预置示例 */
