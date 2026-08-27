@@ -475,45 +475,120 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
   font-size:18px;color:var(--text);cursor:pointer;
   box-shadow:0 1px 3px rgba(0,0,0,.08);
 }
-.nav-toggle:active{transform:scale(.94)}
+/* ====== 二级导航侧栏（v3.20.31：高大上、保留底部 Tab） ====== */
+.main-area{
+  position:relative;min-height:100vh;min-height:100dvh;
+  transition:margin-left .28s cubic-bezier(.4,0,.2,1);
+}
 .side-nav{
-  position:fixed;left:0;top:0;width:200px;height:100vh;height:100dvh;
-  background:var(--card);border-right:1px solid var(--line);
+  position:fixed;left:0;top:0;bottom:0;width:232px;
+  background:linear-gradient(180deg,var(--card) 0%,var(--bg2) 100%);
+  border-right:1px solid var(--line);
   z-index:55;display:flex;flex-direction:column;
-  transform:translateX(-100%);transition:transform .25s ease;
-  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  box-shadow:1px 0 0 rgba(0,0,0,.02);
+}
+.side-nav::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--pri) 0%,transparent 60%);opacity:.85;
 }
 .side-brand{
-  padding:calc(env(safe-area-inset-top,0px) + 18px) 18px 14px;
+  flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:18px 16px 14px 19px;
+  border-bottom:1px solid var(--line-soft);
+  position:relative;
+}
+.side-brand-name{
   font-size:15px;font-weight:700;color:var(--text);
-  border-bottom:1px solid var(--line);letter-spacing:.5px;flex:none;
+  letter-spacing:.4px;
+  display:inline-flex;align-items:center;gap:6px;
 }
+.side-brand-name::before{
+  content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:linear-gradient(135deg,var(--pri) 0%,var(--pri-2) 100%);
+  box-shadow:0 0 0 3px var(--pri-soft);
+}
+.side-toggle{
+  width:26px;height:26px;border-radius:8px;
+  background:transparent;border:1px solid var(--line);
+  color:var(--text-2);cursor:pointer;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:all .18s;outline:none;padding:0;
+}
+.side-toggle:hover{background:var(--pri-soft);border-color:var(--pri);color:var(--pri)}
+.side-toggle:active{transform:scale(.94)}
+.side-toggle svg{width:14px;height:14px;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.side-cap{
+  flex:none;display:flex;align-items:center;gap:8px;
+  padding:14px 18px 8px;
+  font-size:10.5px;font-weight:700;color:var(--text-3);
+  letter-spacing:1.2px;text-transform:uppercase;
+}
+.side-cap::after{content:"";flex:1;height:1px;background:var(--line-soft);margin-left:4px}
+.side-list{flex:1;padding:4px 8px 16px;list-style:none;margin:0}
+.side-item{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 12px;margin:1px 0;border-radius:9px;
+  color:var(--text-2);font-size:13.5px;cursor:pointer;user-select:none;
+  border:1px solid transparent;
+  transition:all .15s ease;
+  position:relative;
+}
+.side-item .si-ic{
+  width:18px;height:18px;flex:none;color:var(--text-3);transition:.18s;
+}
+.side-item .si-tx{flex:1;line-height:1.3;font-weight:500}
+.side-item:hover{background:var(--card-soft);color:var(--text);transform:translateX(2px)}
+.side-item:hover .si-ic{color:var(--pri)}
+.side-item.on{
+  background:linear-gradient(90deg,var(--pri-soft) 0%,transparent 100%);
+  color:var(--pri);font-weight:600;
+  border-left:2px solid var(--pri);
+  padding-left:10px;
+}
+.side-item.on .si-ic{color:var(--pri)}
+.side-item:active{transform:scale(.98)}
+.side-foot{
+  flex:none;padding:10px 18px 12px;font-size:10.5px;color:var(--text-3);
+  border-top:1px solid var(--line-soft);letter-spacing:.3px;
+  display:flex;align-items:center;gap:6px;
+}
+.side-foot .sf-dot{width:6px;height:6px;border-radius:50%;background:var(--warn);box-shadow:0 0 6px var(--warn);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* 抽屉遮罩（仅移动端 nav-open 时显示） */
+.nav-mask{
+  position:fixed;inset:0;background:rgba(0,0,0,.42);
+  z-index:54;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+body.nav-open .nav-mask{opacity:1;pointer-events:auto}
+
+/* ====== 底部/顶部 Tab（恢复 v3.20.29 原行为） ====== */
 nav.tabbar{
-  position:static;display:flex;flex-direction:column;
-  background:transparent;border:none;height:auto;flex:1;
-  padding-bottom:env(safe-area-inset-bottom,0px);
+  position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:var(--max);
+  background:#fff;border-top:1px solid var(--line);
+  display:flex;height:calc(var(--tab-h) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);
+  z-index:40;
 }
-nav.tabbar a{
-  flex:none;flex-direction:row;justify-content:flex-start;align-items:center;gap:12px;
-  padding:14px 18px;color:var(--text-2);font-size:14px;
-  text-decoration:none;transition:.15s;border-left:3px solid transparent;
-  border-bottom:1px solid var(--line-soft);border-radius:0;
-}
-nav.tabbar a .ic{width:20px;height:20px;transition:.15s}
-nav.tabbar a.on{color:var(--text);background:var(--pri-soft);border-left-color:var(--pri);font-weight:600}
-nav.tabbar a.on .ic{color:var(--text)}
-.main-area{margin-left:0;transition:margin-left .25s ease;min-height:100vh;min-height:100dvh}
-/* 桌面（≥760px）：默认展开侧栏 */
+nav.tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text-3);font-size:10.5px;text-decoration:none;transition:.15s}
+nav.tabbar a .ic{width:22px;height:22px;transition:.15s}
+nav.tabbar a.on{color:var(--tab-on)}
+nav.tabbar a.on .ic{color:var(--tab-on)}
+nav.tabbar a.on .ic{transform:scale(1.05)}
+
+/* 桌面（≥760px）：侧栏常驻展开，桌面端 tab 改顶部水平 sticky */
 @media(min-width:760px){
   .side-nav{transform:translateX(0)}
-  .main-area{margin-left:200px}
+  .main-area{margin-left:232px}
   body.nav-collapsed .side-nav{transform:translateX(-100%)}
   body.nav-collapsed .main-area{margin-left:0}
+  /* 折叠时主区内容占满，但 topbar 的折叠按钮依然存在可重新展开 */
 }
-/* 移动（<760px）：默认收起，汉堡触发 nav-open 展开为抽屉 */
+/* 移动（<760px）：默认收起为抽屉，汉堡触发 nav-open 展开 */
 @media(max-width:759px){
-  body.nav-open .side-nav{transform:translateX(0);box-shadow:2px 0 16px rgba(0,0,0,.18)}
-  .side-nav{width:80%;max-width:300px}
+  body.nav-open .side-nav{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.18)}
+  .side-nav{width:82%;max-width:296px}
 }
 
 /* ====== 通用 ====== */
@@ -674,7 +749,10 @@ summary::-webkit-details-marker{color:var(--text)}
 @media(min-width:760px){
   :root{--max:980px;--tab-h:52px}
   header.topbar{padding:20px 24px 16px}
-  /* nav.tabbar 已侧栏化，见上方“可隐藏侧边导航”段，此处不再设 sticky */
+  /* nav.tabbar 恢复 v3.20.29 顶部水平 sticky（见上"二级导航侧栏"段底部 @media 内的 nav.tabbar 桌面端规则） */
+  nav.tabbar{position:sticky;top:0;transform:none;left:auto;height:var(--tab-h)}
+  nav.tabbar a{flex-direction:row;gap:6px;font-size:13px}
+  nav.tabbar a .ic{width:20px;height:20px}
   main{padding:20px 24px 30px}
   .sec{margin-bottom:22px}
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
@@ -859,7 +937,6 @@ summary::-webkit-details-marker{color:var(--text)}
 </style>
 </head>
 <body>
-<button class="nav-toggle" id="navToggle" aria-label="菜单">☰</button>
 <div class="main-area" id="mainArea">
 <div class="app">
 
@@ -879,6 +956,17 @@ summary::-webkit-details-marker{color:var(--text)}
       </div>
     </div>
   </header>
+
+  <!-- 一级 Tab：桌面端顶部水平 sticky，移动端底部 fixed -->
+  <nav class="tabbar" id="tabbar">
+    <a class="on" data-p="today"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>今日</a>
+    <a data-p="money"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M2 10h4M18 10h4"/></svg>账本</a>
+    <a data-p="heat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>热力</a>
+    <a data-p="history"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>历史</a>
+    <a data-p="notes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>备忘</a>
+    <a data-p="learning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4zM4 18a2 2 0 0 1 2-2h13"/></svg>学习</a>
+    <a data-p="me"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>我的</a>
+  </nav>
 
   <!-- 内容 -->
   <main>
@@ -1299,21 +1387,22 @@ summary::-webkit-details-marker{color:var(--text)}
     </section>
   </main>
 
-  <!-- 侧边导航（替代原底部 Tab） -->
-  <div class="side-nav" id="sideNav">
-    <div class="side-brand">我的工作台</div>
-  <nav class="tabbar">
-    <a class="on" data-p="today"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>今日</a>
-    <a data-p="money"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M2 10h4M18 10h4"/></svg>账本</a>
-    <a data-p="heat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>热力</a>
-    <a data-p="history"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>历史</a>
-    <a data-p="notes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>备忘</a>
-    <a data-p="learning"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4zM4 18a2 2 0 0 1 2-2h13"/></svg>学习</a>
-    <a data-p="me"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>我的</a>
-  </nav>
+  <!-- 二级导航侧栏（v3.20.31）：动态渲染当前 tab 下的子模块 -->
+  <div class="side-nav" id="sideNav" aria-label="二级导航">
+    <div class="side-brand">
+      <span class="side-brand-name">我的工作台</span>
+      <button class="side-toggle" id="sideToggle" aria-label="折叠侧栏" title="折叠侧栏">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="side-cap" id="sideCap">今日</div>
+    <nav class="side-list" id="sideList" role="navigation"></nav>
+    <div class="side-foot"><span class="sf-dot"></span><span>v3.20.31 · 测试版</span></div>
   </div><!-- /side-nav -->
   </div><!-- /app -->
 </div><!-- /main-area -->
+<!-- 抽屉遮罩：仅移动端 nav-open 状态显示 -->
+<div class="nav-mask" id="navMask" aria-hidden="true"></div>
 
 <div class="toast" id="toast"></div>
 
@@ -1871,6 +1960,83 @@ function catCountInIncome(name){return !INCOME_EXCLUDED.has(name);}
 const HABIT_ICONS=['heart','book','trend','meal','phone','home','car','film'];
 const HABIT_COLORS=['#5a5a5a','#7a5a5a','#5a5a7a','#5a7a5a','#7a7a3a','#5a7a7a','#6a6a8a','#8a5a5a'];
 
+/* ============ 二级导航（v3.20.31）：按当前 Tab 渲染对应子模块 ============ */
+/* 各 tab 的子模块清单：键 = tab data-p，值 = 子模块数组 { id(用于跳转 .sec[data-module=xx]), secId（若 .sec 有 id）, label, icon(svg path d) }
+   顺序与 page 内的视觉顺序一致（从上到下） */
+const SUBMODULES={
+  today:[
+    {id:'worklog',label:'今日已做',ic:'M12 5v14M5 12h14'},
+    {id:'todos',label:'今日待办',ic:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'},
+    {id:'habits',label:'习惯打卡',ic:'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'},
+    {id:'todayMoney',label:'今日账目',ic:'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'}
+  ],
+  money:[
+    {id:'moneyForm',secId:'moneyFormSec',label:'记一笔',ic:'M12 5v14M5 12h14'},
+    {id:'monthOverview',label:'本月概览',ic:'M3 3v18h18M7 14l4-4 3 3 5-5'},
+    {id:'catExpense',label:'分类支出',ic:'M21 21H4.6c-.56 0-.84 0-1.05-.11a1 1 0 0 1-.44-.44C3 20.24 3 19.96 3 19.4V3'},
+    {id:'flowList',label:'账单明细',ic:'M9 5h11M9 12h11M9 19h11M5 5h.01M5 12h.01M5 19h.01'},
+    {id:'fundManager',label:'资金管理',ic:'M3 3h18v18H3zM3 9h18M9 3v18'},
+    {id:'assets',label:'总资产',ic:'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z'}
+  ],
+  heat:[
+    {id:'mood',label:'今日心情',ic:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01'},
+    {id:'heatmap',label:'年度热力图',ic:'M3 3v18h18M7 16V9M12 16V6M17 16v-4'},
+    {id:'countdown',label:'倒计日',ic:'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'},
+    {id:'checkins',label:'打卡记录',ic:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'}
+  ],
+  history:[
+    {id:'history',label:'历史信息',ic:'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l4 2'}
+  ],
+  notes:[
+    {id:'notes',label:'备忘录',ic:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6'}
+  ],
+  learning:[
+    {id:'learning',label:'学习资料',ic:'M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4zM4 18a2 2 0 0 1 2-2h13'}
+  ],
+  me:[
+    {id:'dataManage',label:'数据管理',ic:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3'},
+    {id:'lnOrganize',label:'学习资料整理',ic:'M3 6h18M3 12h18M3 18h18'},
+    {id:'cloudSync',label:'云同步',ic:'M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z'},
+    {id:'homeScreen',label:'添加到手机主屏',ic:'M12 17v5M5 12l7-7 7 7M19 21H5'},
+    {id:'changelog',label:'更新日志',ic:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8'},
+    {id:'about',label:'关于',ic:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 8v4M12 16h.01'}
+  ]
+};
+const TAB_LABELS={today:'今日',money:'账本',heat:'热力',history:'历史',notes:'备忘',learning:'学习',me:'我的'};
+
+function renderSidebar(tabKey){
+  const list=$('#sideList'),cap=$('#sideCap');
+  if(!list||!cap)return;
+  const mods=SUBMODULES[tabKey]||[];
+  cap.textContent=TAB_LABELS[tabKey]||tabKey;
+  list.innerHTML=mods.map(m=>{
+    const secSel=m.secId?'#'+m.secId:'.sec[data-module="'+m.id+'"]';
+    return `<a class="side-item" data-mod="${m.id}" data-sec="${secSel}">
+      <svg class="si-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${m.ic}"/></svg>
+      <span class="si-tx">${m.label}</span>
+    </a>`;
+  }).join('');
+  /* 绑定二级导航点击：滚动到 .sec + 移动端收起抽屉 */
+  $$('.side-item',list).forEach(it=>{
+    it.addEventListener('click',()=>{
+      const sel=it.dataset.sec;
+      const t=$(sel);if(!t)return;
+      $$('.side-item',list).forEach(x=>x.classList.remove('on'));
+      it.classList.add('on');
+      /* 滚动到 .sec，避开顶栏遮挡 */
+      const hdr=document.querySelector('header.topbar');
+      const hdrBottom=hdr?hdr.getBoundingClientRect().bottom:0;
+      const rect=t.getBoundingClientRect();
+      const absTop=rect.top+window.scrollY-Math.max(0,hdrBottom)-10;
+      window.scrollTo({top:Math.max(0,absTop),behavior:'smooth'});
+      /* 视觉提示：1.3s 高亮闪烁 */
+      if(!t.classList.contains('sec-flash')){t.classList.add('sec-flash');setTimeout(()=>t.classList.remove('sec-flash'),1300);}
+      /* 移动端：收起抽屉 */
+      if(window.innerWidth<=759){document.body.classList.remove('nav-open');}
+    });
+  });
+}
+
 /* ============ Tab 切换 ============ */
 $$('nav.tabbar a').forEach(a=>a.addEventListener('click',()=>{
   if(window.innerWidth<=759)document.body.classList.remove('nav-open');
@@ -1878,6 +2044,8 @@ $$('nav.tabbar a').forEach(a=>a.addEventListener('click',()=>{
   const p=a.dataset.p;$$('.page').forEach(x=>x.classList.remove('active'));
   $('#page-'+p).classList.add('active');
   if(p==='today')renderWorklog();if(p==='money')renderMoney();if(p==='heat')renderHeat();if(p==='notes')renderNotes();if(p==='history')renderActiveHis();if(p==='learning')renderLearning();
+  /* v3.20.31: 切换 tab 后刷新侧边栏二级模块 */
+  renderSidebar(p);
   /* 强制滚动到指定 sec（被 goTab 第二参数触发，普通 tabbar 切换不进入） */
   /* 时序: ① 立即清 window scrollTop（去掉切换前的残留位置）
          ② 80ms 后第一次精确滚动（等 .page 完成 display:none→block + fade 动画起手）
@@ -1908,13 +2076,26 @@ function goTab(p,opts){
   if(opts&&opts.scrollTo){a.dataset._forceScroll=opts.scrollTo;}
   a.click();
 }
-/* 侧边栏汉堡按钮：桌面 toggle 收起/展开，移动端 toggle 抽屉 */
+/* 侧栏折叠/抽屉（v3.20.31）：logo 右侧箭头 + 移动端遮罩点击关闭 */
 (function(){
-  const t=$('#navToggle');if(!t)return;
+  const t=$('#sideToggle'),mask=$('#navMask');if(!t)return;
+  /* 桌面端：点击 toggle 收起/展开；移动端：点击 toggle 打开抽屉，点遮罩或侧栏内二级项关闭 */
   t.addEventListener('click',()=>{
     if(window.innerWidth>759)document.body.classList.toggle('nav-collapsed');
     else document.body.classList.toggle('nav-open');
   });
+  if(mask){
+    mask.addEventListener('click',()=>{
+      document.body.classList.remove('nav-open');
+    });
+  }
+  /* ESC 关闭移动端抽屉（顺手做的小体验） */
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape')document.body.classList.remove('nav-open');
+  });
+  /* 初始化：渲染默认 tab 的二级模块 */
+  const initialKey=($$('nav.tabbar a.on')[0]||$$('nav.tabbar a')[0]).dataset.p;
+  renderSidebar(initialKey);
 })();
 
 /* ============ 头部 ============ */
