@@ -292,8 +292,10 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .fm-empty{color:var(--text-3);font-size:12.5px;margin-top:8px}
 .flow-item .f-amt{font-weight:700;font-size:15px;flex:none}
 .flow-item .f-date{font-size:11px;color:var(--text-3);margin-top:2px}
-.budget-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:8px 0}
+.budget-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:8px 0;position:relative}
 .budget-bar i{display:block;height:100%;border-radius:99px;transition:width .35s ease}
+.budget-bar .budget-warn{position:absolute;top:-2px;bottom:-2px;left:0;width:2px;background:var(--warn);z-index:2;opacity:0;transition:left .35s ease,opacity .2s ease;pointer-events:none}
+.budget-bar .budget-warn.show{opacity:1}
 .month-pick{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .month-pick button{background:transparent;border:1px solid var(--line);border-radius:var(--r-xs);padding:6px 10px;font-size:13px;transition:all .15s}
 .month-pick button:active{background:var(--card-soft)}
@@ -1075,7 +1077,7 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="money-stat" id="monthStat"></div>
           <div id="budgetWrap" style="margin-top:8px">
             <div class="row-between"><span class="muted">月预算（预算内支出）</span><span class="muted" id="budgetTxt">未设置</span></div>
-            <div class="budget-bar"><i id="budgetBar" style="width:0;background:var(--text)"></i></div>
+            <div class="budget-bar"><i id="budgetBar" style="width:0;background:var(--text)"></i><i class="budget-warn" id="budgetWarn"></i></div>
             <div class="muted" id="budgetHint" style="margin-top:2px">点右上「我的」可设置预算</div>
             <div class="muted" id="budgetExcl" style="margin-top:2px;color:var(--warn)"></div>
             <div class="muted" id="budgetCarry" style="margin-top:2px"></div>
@@ -1444,6 +1446,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.37',date:'2026-08-27',modules:['账本','预算'],status:'测试库demo',items:[
+    '月预算进度条新增动态日警戒线：仅查看当前月时显示，位置 = 今日 / 当月总天数，帮助判断当日支出是否超前/滞后',
+    '警戒线用橙色竖线（var(--warn)）叠加在进度条上，随日期每天自动右移；查看非当前月时自动隐藏'
+  ]},
   {version:'v3.20.36',date:'2026-08-27',modules:['移动端','布局'],status:'测试库demo',items:[
     '修复移动端（<760px）顶部左侧固定「折叠/展开侧栏」按钮遮挡日期与问候文字：为 header.topbar 增加左内边距 50px，文字内容向右让出按钮区域',
     '桌面端（≥760px）折叠态同样让出左侧固定按钮空间，避免首字被覆盖'
@@ -2992,6 +2998,11 @@ function renderMonthStat(){
     $('#budgetBar').style.background=over?'var(--bad)':'var(--text)';
     $('#budgetHint').textContent=over?`预算内已超支 ${money(budgetExp-effBudget)}`:`预算内剩余 ${money(effBudget-budgetExp)}`;
     const carryEl=$('#budgetCarry'); if(carryEl)carryEl.textContent=carry>0?`其中 ${money(carry)} 为上月超支结转（已从本月扣除）`:'';
+    // 日警戒线：仅当前月显示，位置 = 今日 / 当月总天数
+    const now=new Date();
+    const isCur=curMonth.getFullYear()===now.getFullYear()&&curMonth.getMonth()===now.getMonth();
+    const warnEl=$('#budgetWarn');
+    if(warnEl){warnEl.style.left=(isCur?Math.min(now.getDate()/new Date(now.getFullYear(),now.getMonth()+1,0).getDate()*100,100):0)+'%';warnEl.classList.toggle('show',isCur);}
   }else{
     $('#budgetTxt').textContent='未设置';
     $('#budgetBar').style.width='0';
