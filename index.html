@@ -1304,6 +1304,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.27',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
+    '账单明细列表新增分页：默认每页展示 10 条，列表超过 10 条时底部出现「第 N / M 页 · 共 X 笔」+「上一页/下一页」按钮（末页下一页禁用、首页上一页禁用）',
+    '切换日期范围/收支类型/备注筛选时自动重置回第 1 页'
+  ]},
   {version:'v3.20.26',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
     '【合并回主源】上月超支结转：当某月预算内支出超支时，超出部分自动从下月可用预算中扣除（追平/惩戒模型）。月预算区新增「其中 ¥X 为上月超支结转（已从本月扣除）」提示',
     '预算条分母、超支判断、剩余额度均改用「实际可用预算 = S.budget - 上月超支结转」；未设预算时结转金额强制为 0、不显示',
@@ -2452,6 +2456,7 @@ function rangeLabel(from,to){
 /* ---- 账单明细 ---- */
 let flowKind='all';
 let flowNoteSel=new Set();   /* 备注多选筛选（v3.18）；空 = 不过滤 */
+let flowPage=1; const FLOW_PAGE_SIZE=10;  /* v3.20.27：明细分页 */
 let pieFocus=new Set();        // 总饼图多选焦点（图例 selected 集合）；空=全量
 let pieBudgetFocus=new Set();  // 预算内饼图多选焦点；空=全量
 /* ---- 饼图统计维度（v3.19）---- */
@@ -2469,6 +2474,7 @@ function sliceColor(dim,type,name){return dim==='note'?noteColor(name):catMeta(t
 function setFlowRange(from,to,activeKey){
   $('#flowFrom').value=from||'';$('#flowTo').value=to||'';
   $$('#flowQuick .quick-chip').forEach(b=>b.classList.toggle('on',b.dataset.r===activeKey));
+  flowPage=1;
 }
 function flowFiltered(){
   const from=$('#flowFrom').value,to=$('#flowTo').value;
@@ -2514,7 +2520,11 @@ function renderFlow(){
   const list=flowFiltered();
   let inc=0,exp=0;list.forEach(x=>{if(x.type==='income')inc+=x.amount;else exp+=x.amount});
   $('#flowSum').innerHTML=`${rangeLabel(from,to)} · 共 <b>${list.length}</b> 笔 · 收入 <b style="color:var(--income)">${money(inc)}</b> · 支出 <b style="color:var(--expense)">${money(exp)}</b> · 结余 <b>${money(inc-exp)}</b>${flowNoteSel.size?` · <span style="color:var(--text-2)">备注筛选：${[...flowNoteSel].map(esc).join('、')}</span>`:''}`;
-  $('#flowList').innerHTML=list.length?list.map(x=>{
+  const totalPages=Math.max(1,Math.ceil(list.length/FLOW_PAGE_SIZE));
+  if(flowPage>totalPages)flowPage=totalPages;
+  if(flowPage<1)flowPage=1;
+  const pageList=list.slice((flowPage-1)*FLOW_PAGE_SIZE,flowPage*FLOW_PAGE_SIZE);
+  const listHtml=pageList.length?pageList.map(x=>{
     const meta=catMeta(x.type,x.category);
     return `<div class="flow-item" data-id="${x.id}" style="border-left-color:${meta[1]}">
       <div class="f-ic" style="background:${hexA(meta[1],.14)};color:${meta[1]}">${catIcon(meta[2])}</div>
@@ -2522,6 +2532,17 @@ function renderFlow(){
       <div class="f-amt" style="color:${x.type==='income'?'var(--income)':'var(--expense)'}">${x.type==='income'?'+':'-'}${money(x.amount)}</div>
     </div>`;
   }).join(''):'<div class="empty-mini">所选条件下暂无账单记录</div>';
+  const pagerHtml=list.length>FLOW_PAGE_SIZE?`<div class="row-between" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
+    <span class="muted" style="font-size:12px">第 ${flowPage} / ${totalPages} 页 · 共 ${list.length} 笔</span>
+    <div>
+      <button class="mini-btn" id="flowPrev" style="margin-right:6px" ${flowPage<=1?'disabled':''}>‹ 上一页</button>
+      <button class="mini-btn" id="flowNext" ${flowPage>=totalPages?'disabled':''}>下一页 ›</button>
+    </div>
+  </div>`:'';
+  $('#flowList').innerHTML=listHtml+pagerHtml;
+  const fp=$('#flowPrev'),fn=$('#flowNext');
+  if(fp)fp.onclick=()=>{if(flowPage>1){flowPage--;renderFlow()}};
+  if(fn)fn.onclick=()=>{if(flowPage<totalPages){flowPage++;renderFlow()}};
   renderPies(list);
 }
 /* 使用构成饼图：随账单明细筛选实时变化 */
@@ -2678,7 +2699,7 @@ $('#flowFrom').onchange=()=>{$$('#flowQuick .quick-chip').forEach(b=>b.classList
 $('#flowTo').onchange=()=>{$$('#flowQuick .quick-chip').forEach(b=>b.classList.remove('on'));renderFlow()};
 $('#flowKw').addEventListener('input',()=>renderFlow());
 $$('#flowQuick .quick-chip').forEach(b=>b.onclick=()=>{const[f,t]=rangeOf(b.dataset.r);setFlowRange(f,t,b.dataset.r);renderFlow()});
-$$('#flowType .quick-chip').forEach(b=>b.onclick=()=>{flowKind=b.dataset.t;$$('#flowType .quick-chip').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderFlow()});
+$$('#flowType .quick-chip').forEach(b=>b.onclick=()=>{flowKind=b.dataset.t;flowPage=1;$$('#flowType .quick-chip').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderFlow()});
 function monthSum(ms){
   let inc=0,exp=0;S.ledger.filter(x=>x.date.startsWith(ms)).forEach(x=>{if(x.type==='income')inc+=x.amount;else exp+=x.amount});
   return{inc,exp};
