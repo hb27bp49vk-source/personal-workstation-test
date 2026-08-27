@@ -1304,6 +1304,9 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.28',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
+    '修复资金管理/总资产模块未注册进 MODULES 导致 applyModuleLayout 不重排、位置异常的问题；现注册为账本页模块，默认排在流水记录之后（账本页底部），并可在「编辑模块」里上移/下移/隐藏'
+  ]},
   {version:'v3.20.27',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
     '账单明细列表新增分页：默认每页展示 10 条，列表超过 10 条时底部出现「第 N / M 页 · 共 X 笔」+「上一页/下一页」按钮（末页下一页禁用、首页上一页禁用）',
     '切换日期范围/收支类型/备注筛选时自动重置回第 1 页'
@@ -4357,6 +4360,8 @@ const MODULES=[
   {id:'monthOverview',name:'本月概览',page:'money'},
   {id:'catExpense',name:'分类支出',page:'money'},
   {id:'flowList',name:'流水记录',page:'money'},
+  {id:'fundManager',name:'资金管理',page:'money'},
+  {id:'assets',name:'总资产',page:'money'},
   {id:'mood',name:'今日心情',page:'heat'},
   {id:'heatmap',name:'年度活跃热力图',page:'heat'},
   {id:'countdown',name:'倒计日',page:'heat'},
