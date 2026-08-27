@@ -292,10 +292,13 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .fm-empty{color:var(--text-3);font-size:12.5px;margin-top:8px}
 .flow-item .f-amt{font-weight:700;font-size:15px;flex:none}
 .flow-item .f-date{font-size:11px;color:var(--text-3);margin-top:2px}
-.budget-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:8px 0;position:relative}
+.budget-bar-wrap{position:relative;margin:8px 0;padding-bottom:13px}
+.budget-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;position:relative}
 .budget-bar i{display:block;height:100%;border-radius:99px;transition:width .35s ease}
-.budget-bar .budget-warn{position:absolute;top:-2px;bottom:-2px;left:0;width:2px;background:var(--warn);z-index:2;opacity:0;transition:left .35s ease,opacity .2s ease;pointer-events:none}
-.budget-bar .budget-warn.show{opacity:1}
+.budget-warn{position:absolute;top:-3px;bottom:-3px;left:0;width:3px;background:#ff4d4f;box-shadow:0 0 5px rgba(255,77,79,.65);z-index:2;opacity:0;transition:left .35s ease,opacity .2s ease;pointer-events:none}
+.budget-warn.show{opacity:1}
+.budget-warn-label{position:absolute;top:100%;left:0;transform:translateX(-50%);font-size:10px;font-weight:700;color:#ff4d4f;white-space:nowrap;font-variant-numeric:tabular-nums;opacity:0;transition:left .35s ease,opacity .2s ease;pointer-events:none}
+.budget-warn-label.show{opacity:1}
 .month-pick{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .month-pick button{background:transparent;border:1px solid var(--line);border-radius:var(--r-xs);padding:6px 10px;font-size:13px;transition:all .15s}
 .month-pick button:active{background:var(--card-soft)}
@@ -1077,7 +1080,7 @@ summary::-webkit-details-marker{color:var(--text)}
           <div class="money-stat" id="monthStat"></div>
           <div id="budgetWrap" style="margin-top:8px">
             <div class="row-between"><span class="muted">月预算（预算内支出）</span><span class="muted" id="budgetTxt">未设置</span></div>
-            <div class="budget-bar"><i id="budgetBar" style="width:0;background:var(--text)"></i><i class="budget-warn" id="budgetWarn"></i></div>
+            <div class="budget-bar-wrap"><div class="budget-bar"><i id="budgetBar" style="width:0;background:var(--text)"></i><i class="budget-warn" id="budgetWarn"></i></div><span class="budget-warn-label" id="budgetWarnLabel"></span></div>
             <div class="muted" id="budgetHint" style="margin-top:2px">点右上「我的」可设置预算</div>
             <div class="muted" id="budgetExcl" style="margin-top:2px;color:var(--warn)"></div>
             <div class="muted" id="budgetCarry" style="margin-top:2px"></div>
@@ -1446,6 +1449,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.38',date:'2026-08-27',modules:['账本','预算'],status:'测试库demo',items:[
+    '日警戒线进一步醒目：颜色由橙（var(--warn)）改为高亮红 #ff4d4f 并加发光阴影，线宽 2px→3px',
+    '警戒线下方新增金额标注「警戒 ¥X」，金额 = 当月有效预算 ×（今日 / 当月总天数），随日期每天右移并同步显隐'
+  ]},
   {version:'v3.20.37',date:'2026-08-27',modules:['账本','预算'],status:'测试库demo',items:[
     '月预算进度条新增动态日警戒线：仅查看当前月时显示，位置 = 今日 / 当月总天数，帮助判断当日支出是否超前/滞后',
     '警戒线用橙色竖线（var(--warn)）叠加在进度条上，随日期每天自动右移；查看非当前月时自动隐藏'
@@ -3001,8 +3008,12 @@ function renderMonthStat(){
     // 日警戒线：仅当前月显示，位置 = 今日 / 当月总天数
     const now=new Date();
     const isCur=curMonth.getFullYear()===now.getFullYear()&&curMonth.getMonth()===now.getMonth();
+    const dayTotal=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+    const dayPct=isCur?Math.min(now.getDate()/dayTotal*100,100):0;
     const warnEl=$('#budgetWarn');
-    if(warnEl){warnEl.style.left=(isCur?Math.min(now.getDate()/new Date(now.getFullYear(),now.getMonth()+1,0).getDate()*100,100):0)+'%';warnEl.classList.toggle('show',isCur);}
+    const warnLabel=$('#budgetWarnLabel');
+    if(warnEl){warnEl.style.left=dayPct+'%';warnEl.classList.toggle('show',isCur);}
+    if(warnLabel){warnLabel.textContent='警戒 '+money(effBudget*dayPct/100);warnLabel.style.left=dayPct+'%';warnLabel.classList.toggle('show',isCur);}
   }else{
     $('#budgetTxt').textContent='未设置';
     $('#budgetBar').style.width='0';
