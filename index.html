@@ -949,41 +949,6 @@ summary::-webkit-details-marker{color:var(--text)}
         </div>
       </div>
 
-      <div class="sec" data-module="fundManager">
-        <div class="page-title">资金管理</div>
-        <div class="card">
-          <div class="field"><span class="lab">本月工资收入</span><input id="fmIncome" type="number" inputmode="decimal" placeholder="如 8000"></div>
-          <button class="btn-main" id="fmCalc">计算分配</button>
-        </div>
-        <div class="card" id="fmSuggest">
-          <div class="row-between"><b>建议分配（按收入比例）</b><span class="muted" id="fmSuggestHint"></span></div>
-          <div class="fm-grid" id="fmSuggestGrid"></div>
-        </div>
-        <div class="card" id="fmResult">
-          <div class="row-between"><b>规则分配结果</b><span class="muted" id="fmResultHint"></span></div>
-          <div class="fm-grid" id="fmResultGrid"></div>
-        </div>
-        <div class="card">
-          <div class="row-between"><b>分配规则</b><button class="mini-btn" id="fmAddRule">＋ 规则</button></div>
-          <div id="fmRules"></div>
-          <div class="div-line" style="margin:12px 0"></div>
-          <div class="row-between"><b>分配方向</b><button class="mini-btn" id="fmAddDir">＋ 方向</button></div>
-          <div id="fmDirs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
-        </div>
-        <div class="card">
-          <div class="row-between"><b>存钱目标</b><span class="muted">可自行修改</span></div>
-          <div class="fm-goal-row"><span class="lab">月存目标</span><input id="fmMonthGoal" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
-          <div class="fm-prog"><i id="fmMonthBar"></i></div>
-          <div class="muted" id="fmMonthTxt"></div>
-          <div class="fm-goal-row"><span class="lab">本月已存</span><input id="fmMonthSaved" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
-          <div class="div-line" style="margin:12px 0"></div>
-          <div class="fm-goal-row"><span class="lab">年末目标</span><input id="fmYearGoal" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
-          <div class="fm-prog"><i id="fmYearBar"></i></div>
-          <div class="muted" id="fmYearTxt"></div>
-          <div class="fm-goal-row"><span class="lab">累计已存</span><input id="fmYearSaved" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
-        </div>
-      </div>
-
       <div class="sec" data-module="catExpense">
         <div class="page-title">分类支出</div>
         <div class="card" id="catChart"></div>
@@ -1053,10 +1018,40 @@ summary::-webkit-details-marker{color:var(--text)}
           <div id="flowList"></div>
         </div>
       </div>
-    </section>
-
-    <!-- 热力 -->
-    <section class="page" id="page-assets" data-module="assets">
+          <div class="sec" data-module="fundManager">
+        <div class="page-title">资金管理</div>
+        <div class="card">
+          <div class="field"><span class="lab">本月工资收入</span><input id="fmIncome" type="number" inputmode="decimal" placeholder="如 8000"></div>
+          <button class="btn-main" id="fmCalc">计算分配</button>
+        </div>
+        <div class="card" id="fmSuggest">
+          <div class="row-between"><b>建议分配（按收入比例）</b><span class="muted" id="fmSuggestHint"></span></div>
+          <div class="fm-grid" id="fmSuggestGrid"></div>
+        </div>
+        <div class="card" id="fmResult">
+          <div class="row-between"><b>规则分配结果</b><span class="muted" id="fmResultHint"></span></div>
+          <div class="fm-grid" id="fmResultGrid"></div>
+        </div>
+        <div class="card">
+          <div class="row-between"><b>分配规则</b><button class="mini-btn" id="fmAddRule">＋ 规则</button></div>
+          <div id="fmRules"></div>
+          <div class="div-line" style="margin:12px 0"></div>
+          <div class="row-between"><b>分配方向</b><button class="mini-btn" id="fmAddDir">＋ 方向</button></div>
+          <div id="fmDirs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
+        </div>
+        <div class="card">
+          <div class="row-between"><b>存钱目标</b><span class="muted">可自行修改</span></div>
+          <div class="fm-goal-row"><span class="lab">月存目标</span><input id="fmMonthGoal" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
+          <div class="fm-prog"><i id="fmMonthBar"></i></div>
+          <div class="muted" id="fmMonthTxt"></div>
+          <div class="fm-goal-row"><span class="lab">本月已存</span><input id="fmMonthSaved" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
+          <div class="div-line" style="margin:12px 0"></div>
+          <div class="fm-goal-row"><span class="lab">年末目标</span><input id="fmYearGoal" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
+          <div class="fm-prog"><i id="fmYearBar"></i></div>
+          <div class="muted" id="fmYearTxt"></div>
+          <div class="fm-goal-row"><span class="lab">累计已存</span><input id="fmYearSaved" class="fm-num" type="number" inputmode="decimal"><span class="muted">元</span></div>
+        </div>
+      </div>
       <div class="sec" data-module="assets">
         <div class="page-title">总资产</div>
         <div class="card">
@@ -1078,7 +1073,8 @@ summary::-webkit-details-marker{color:var(--text)}
           <div id="fmAssetBars"></div>
         </div>
       </div>
-    </section>
+
+</section>
 
     <section class="page" id="page-heat">
       <div class="sec" data-module="mood">
@@ -1266,7 +1262,6 @@ summary::-webkit-details-marker{color:var(--text)}
   <nav class="tabbar">
     <a class="on" data-p="today"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>今日</a>
     <a data-p="money"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M2 10h4M18 10h4"/></svg>账本</a>
-    <a data-p="assets"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>资产</a>
     <a data-p="heat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>热力</a>
     <a data-p="history"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>历史</a>
     <a data-p="notes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>备忘</a>
@@ -1308,6 +1303,11 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.25',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
+    '布局调整：将「资金管理」与「总资产」合并进账本页，并统一放在账本页底部（资金管理在上、总资产在下），不再单独占用底部 Tab',
+    '移除底部导航「资产」入口；打开「账本」即可在页底看到 资金管理（收入/分配/存钱目标）与 总资产（资产/负债/净资产 + 占比条）',
+    '总资产改为账本页内的区块（data-module="assets"），随账本页一起渲染；数据仍独立存本机 localStorage（红线隔离），与正式账本数据不互通'
+  ]},
   {version:'v3.20.24',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
     '资金管理新增「存钱目标」：月存目标 / 本月已存、年末存款目标 / 累计已存，四者均可自行修改，并各生成一个进度条（已存/目标百分比，达标显示 ✓ 已达成）',
     '新增「总资产」独立页面（底部 Tab「资产」）：顶部总资产 / 总负债 / 净资产 三张卡片',
@@ -1815,7 +1815,7 @@ $$('nav.tabbar a').forEach(a=>a.addEventListener('click',()=>{
   $$('nav.tabbar a').forEach(x=>x.classList.remove('on'));a.classList.add('on');
   const p=a.dataset.p;$$('.page').forEach(x=>x.classList.remove('active'));
   $('#page-'+p).classList.add('active');
-  if(p==='today')renderWorklog();if(p==='money')renderMoney();if(p==='heat')renderHeat();if(p==='notes')renderNotes();if(p==='history')renderActiveHis();if(p==='learning')renderLearning();if(p==='assets')renderAssets();
+  if(p==='today')renderWorklog();if(p==='money')renderMoney();if(p==='heat')renderHeat();if(p==='notes')renderNotes();if(p==='history')renderActiveHis();if(p==='learning')renderLearning();
   /* 强制滚动到指定 sec（被 goTab 第二参数触发，普通 tabbar 切换不进入） */
   /* 时序: ① 立即清 window scrollTop（去掉切换前的残留位置）
          ② 80ms 后第一次精确滚动（等 .page 完成 display:none→block + fade 动画起手）
@@ -2074,7 +2074,7 @@ function renderFocusCard(){
 /* ============ 账本 ============ */
 let curType='expense',curCat=null,curMonth=new Date();
 function renderMoney(){
-  renderCats();renderFlow();renderMonthStat();renderCatChart();renderTodayStat();renderNoteQuickRow();renderFundManager();
+  renderCats();renderFlow();renderMonthStat();renderCatChart();renderTodayStat();renderNoteQuickRow();renderFundManager();renderAssets();
 }
 /* ============ 资金管理（v3.20.23 demo） ============ */
 const FM_DEFAULT_DIRS=[
@@ -4343,7 +4343,7 @@ function restoreModules(arr){
 let moduleCfg=loadModuleConfig();
 if(!S.modules)S.modules=moduleCfg;
 function applyModuleLayout(){
-  const byPage={today:$('#page-today'),money:$('#page-money'),heat:$('#page-heat'),history:$('#page-history'),notes:$('#page-notes'),learning:$('#page-learning'),me:$('#page-me'),assets:$('#page-assets')};
+  const byPage={today:$('#page-today'),money:$('#page-money'),heat:$('#page-heat'),history:$('#page-history'),notes:$('#page-notes'),learning:$('#page-learning'),me:$('#page-me')};
   moduleCfg.forEach(c=>{
     const meta=MODULES.find(m=>m.id===c.id);
     const el=document.querySelector('[data-module="'+c.id+'"]');
@@ -4396,7 +4396,7 @@ function initFilters(){
   const[mf,mt]=rangeOf('thisMonth');setFlowRange(mf,mt,'thisMonth');
   const[hf,ht]=rangeOf('7');setHisRange(hf,ht,'7');
 }
-function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderFocusCard();renderChangelog();renderAbout();renderLearning();renderAssets();applyModuleLayout()}
+function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderFocusCard();renderChangelog();renderAbout();renderLearning();applyModuleLayout()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 /* 首次使用预置示例 */
