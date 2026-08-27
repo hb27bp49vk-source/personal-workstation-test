@@ -592,6 +592,8 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
   /* 移动端按钮固定在屏幕左边缘：抽屉关时右箭头(提示可展开)，抽屉开时左箭头(提示可收起) */
   .side-toggle{left:11px;top:calc(env(safe-area-inset-top,0px) + 12px);width:30px;height:30px}
   body:not(.nav-open) .side-toggle svg{transform:rotate(180deg)}
+  /* 让出左侧固定折叠按钮的空间，避免遮挡日期/问候 */
+  header.topbar{padding-left:50px}
 }
 
 /* ====== 通用 ====== */
@@ -1442,6 +1444,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.36',date:'2026-08-27',modules:['移动端','布局'],status:'测试库demo',items:[
+    '修复移动端（<760px）顶部左侧固定「折叠/展开侧栏」按钮遮挡日期与问候文字：为 header.topbar 增加左内边距 50px，文字内容向右让出按钮区域',
+    '桌面端（≥760px）折叠态同样让出左侧固定按钮空间，避免首字被覆盖'
+  ]},
   {version:'v3.20.29',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
     '修复分类支出/饼图区域布局被撑爆的问题：分类图标 SVG 缺少宽高属性，在无 CSS 约束的上下文里按浏览器默认大尺寸渲染',
     'catIcon() 统一输出 16px 图标并新增 .cat-ic-svg 尺寸约束；习惯卡片（24px）、补卡列表（22px）、流水列表（16px）、日历胶囊（16px）按上下文自适应'
