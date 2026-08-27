@@ -2015,8 +2015,9 @@ function renderSidebar(tabKey){
   const mods=SUBMODULES[tabKey]||[];
   cap.textContent=TAB_LABELS[tabKey]||tabKey;
   list.innerHTML=mods.map(m=>{
-    const secSel=m.secId?'#'+m.secId:'.sec[data-module="'+m.id+'"]';
-    return `<a class="side-item" data-mod="${m.id}" data-sec="${secSel}">
+    /* v3.20.35：只存 id / secId，跳转选择器在点击时由 JS 拼，避免把带双引号的
+       选择器塞进 data-sec HTML 属性导致属性被截断、querySelector 失效（仅“记一笔”带 secId 所以唯独它能跳） */
+    return `<a class="side-item" data-mod="${m.id}" data-secid="${m.secId||''}">
       <svg class="si-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${m.ic}"/></svg>
       <span class="si-tx">${m.label}</span>
     </a>`;
@@ -2024,7 +2025,8 @@ function renderSidebar(tabKey){
   /* 绑定二级导航点击：滚动到 .sec + 移动端收起抽屉 */
   $$('.side-item',list).forEach(it=>{
     it.addEventListener('click',()=>{
-      const sel=it.dataset.sec;
+      const id=it.dataset.mod,secId=it.dataset.secid;
+      const sel=secId?'#'+secId:'.sec[data-module="'+id+'"]';
       const t=$(sel);if(!t)return;
       $$('.side-item',list).forEach(x=>x.classList.remove('on'));
       it.classList.add('on');
