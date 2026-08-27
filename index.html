@@ -812,13 +812,13 @@ summary::-webkit-details-marker{color:var(--text)}
       <div class="focus">
         <div class="f-item">
           <div class="f-lab"><span class="dot" style="background:var(--expense)"></span>今日支出</div>
-          <div class="f-num ex">¥186</div>
-          <div class="f-sub">较昨日 ↓ 12%</div>
+          <div class="f-num ex" id="focusExp">¥0</div>
+          <div class="f-sub" id="focusExpSub">今日暂无支出</div>
         </div>
         <div class="f-item">
           <div class="f-lab"><span class="dot" style="background:var(--income)"></span>待办完成</div>
-          <div class="f-num ok">3/5</div>
-          <div class="f-sub">剩余 2 项</div>
+          <div class="f-num ok" id="focusTodo">0/0</div>
+          <div class="f-sub" id="focusTodoSub">暂无待办</div>
         </div>
       </div>
       <button class="qn-entry" id="qnEntry">
@@ -907,6 +907,7 @@ summary::-webkit-details-marker{color:var(--text)}
             <div class="budget-bar"><i id="budgetBar" style="width:0;background:var(--text)"></i></div>
             <div class="muted" id="budgetHint" style="margin-top:2px">点右上「我的」可设置预算</div>
             <div class="muted" id="budgetExcl" style="margin-top:2px;color:var(--warn)"></div>
+            <div class="muted" id="incomeExcl" style="margin-top:2px;color:var(--income)"></div>
           </div>
         </div>
       </div>
@@ -1651,7 +1652,7 @@ $('#refreshBtn').onclick=()=>{
 /* ============ 分类配置 ============ */
 const CATS={
   expense:[['餐饮','#c4756b','meal'],['交通','#c4a062','car'],['购物','#9a86b8','shop'],['居住','#6a8db5','home'],['娱乐','#c47a9e','film'],['医疗','#6ab58a','heart'],['通讯','#5fa0b0','phone'],['教育','#7a82c4','book'],['其他','#888888','tag']],
-  income:[['工资','#6ab58a','wallet'],['兼职','#9a86b8','briefcase'],['理财','#c4a062','trend'],['红包','#c4756b','gift'],['其他','#888888','tag']]
+  income:[['工资','#6ab58a','wallet'],['兼职','#9a86b8','briefcase'],['理财','#c4a062','trend'],['红包','#c4756b','gift'],['其他','#888888','tag'],['报销','#7a9cab','refresh']]
 };
 const CATICON={
   meal:'<path d="M3 12h6a3 3 0 0 0 0-6M3 12v6M3 12h18M21 12v6M21 12h-6a3 3 0 0 1 0-6"/>',
@@ -1666,7 +1667,8 @@ const CATICON={
   wallet:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 11h5M3 9h18"/>',
   briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>',
   trend:'<path d="M3 17l6-6 4 4 8-8M21 7v6h-6"/>',
-  gift:'<rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 12h18M12 8v13M12 8C9 8 7 5 9 4s3 4 3 4 1-4 3-4-2 4-3 4"/>'
+  gift:'<rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 12h18M12 8v13M12 8C9 8 7 5 9 4s3 4 3 4 1-4 3-4-2 4-3 4"/>',
+  refresh:'<path d="M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5"/><path d="M20 4v4h-4M4 20v-4h4"/>'
 };
 function catIcon(name){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CATICON[name]||CATICON.tag}</svg>`}
 /* 自定义分类：存于 S.customCats = {expense:[{name,color}], income:[...]} */
@@ -1689,6 +1691,9 @@ function setCatBudget(type,name,on){
   else{S.budgetCats[name]=!!on}
   persist();
 }
+/* 收入类型是否计入收入总额：报销等类型不计入收入统计 */
+const INCOME_EXCLUDED=new Set(['报销']);
+function catCountInIncome(name){return !INCOME_EXCLUDED.has(name);}
 
 /* 习惯图标库 */
 const HABIT_ICONS=['heart','book','trend','meal','phone','home','car','film'];
@@ -1945,6 +1950,15 @@ function renderTodayStat(){
     <div class="s exp"><div class="n">${money(exp)}</div><div class="l">今日支出</div></div>
     <div class="s"><div class="n" style="color:var(--text)">${money(inc-exp)}</div><div class="l">今日结余</div></div>`;
 }
+function renderFocusCard(){
+  const t=todayStr();
+  const exp=S.ledger.filter(x=>x.date===t&&x.type==='expense'&&catInBudget('expense',x.category)).reduce((s,x)=>s+x.amount,0);
+  const done=S.todos.filter(x=>x.done).length, all=S.todos.length;
+  const e1=$('#focusExp'); if(e1)e1.textContent='¥'+money(exp);
+  const e2=$('#focusTodo'); if(e2)e2.textContent=done+'/'+all;
+  const s1=$('#focusExpSub'); if(s1)s1.textContent=exp>0?'今日已支出':'今日暂无支出';
+  const s2=$('#focusTodoSub'); if(s2)s2.textContent=all>0?`剩余 ${all-done} 项`:'暂无待办';
+}
 
 /* ============ 账本 ============ */
 let curType='expense',curCat=null,curMonth=new Date();
@@ -1964,8 +1978,9 @@ function renderCats(){
   if(!cats.some(c=>c[0]===curCat))curCat=cats[0][0];
   $('#catRow').innerHTML=cats.map(c=>{
     const nb=curType==='expense'&&!catInBudget('expense',c[0]);
+    const nc=curType==='income'&&!catCountInIncome(c[0]);
     const on=c[0]===curCat;
-    return `<div class="cat-chip ${on?'on':''} ${nb?'no-budget':''}" data-c="${esc(c[0])}" ${on?`style="background:${c[1]};border-color:${c[1]};color:#fff"`:''}><span class="d" style="background:${on?'#fff':c[1]}"></span>${esc(c[0])}${nb?'<span class="nb-dot" title="不计入月预算"></span>':''}</div>`;
+    return `<div class="cat-chip ${on?'on':''} ${(nb||nc)?'no-budget':''}" data-c="${esc(c[0])}" ${on?`style="background:${c[1]};border-color:${c[1]};color:#fff"`:''}><span class="d" style="background:${on?'#fff':c[1]}"></span>${esc(c[0])}${nb?'<span class="nb-dot" title="不计入月预算"></span>':''}${nc?'<span class="nb-dot" title="不计入收入"></span>':''}</div>`;
   }).join('')
     +'<div class="cat-chip add" id="catAddChip">＋ 自定义</div>';
   $$('#catRow .cat-chip[data-c]').forEach(el=>el.onclick=()=>{
@@ -2355,9 +2370,12 @@ function monthSum(ms){
 }
 function renderMonthStat(){
   const ms=fmtDate(curMonth).slice(0,7);
-  const{inc,exp}=monthSum(ms);
+  const m0=monthSum(ms);
+  const inc=S.ledger.filter(x=>x.date.startsWith(ms)&&x.type==='income'&&catCountInIncome(x.category)).reduce((s,x)=>s+x.amount,0);
+  const excludedInc=m0.inc-inc;
+  const exp=S.ledger.filter(x=>x.date.startsWith(ms)&&x.type==='expense'&&catInBudget('expense',x.category)).reduce((s,x)=>s+x.amount,0);
+  const excludedExp=m0.exp-exp;
   const budgetExp=S.ledger.filter(x=>x.date.startsWith(ms)&&x.type==='expense'&&catInBudget('expense',x.category)).reduce((s,x)=>s+x.amount,0);
-  const excludedExp=exp-budgetExp;
   $('#mLabel').textContent=`${curMonth.getFullYear()}年${curMonth.getMonth()+1}月`;
   $('#monthStat').innerHTML=`
     <div class="s inc"><div class="n">${money(inc)}</div><div class="l">收入</div></div>
@@ -2375,20 +2393,24 @@ function renderMonthStat(){
     $('#budgetBar').style.width='0';
     $('#budgetHint').textContent='点「我的」可设置月预算';
   }
-  $('#budgetExcl').textContent=excludedExp>0?`其中 ${money(excludedExp)} 不计入预算`:'';
+  $('#budgetExcl').textContent=excludedExp>0?`其中 ${money(excludedExp)} 不计入预算、不计入支出`:'';
+  const incExclEl=$('#incomeExcl'); if(incExclEl)incExclEl.textContent=excludedInc>0?`其中 ${money(excludedInc)} 不计入收入`:'';
 }
 function renderCatChart(){
   const ms=fmtDate(curMonth).slice(0,7);
   const map={};
   S.ledger.filter(x=>x.type==='expense'&&x.date.startsWith(ms)).forEach(x=>{map[x.category]=(map[x.category]||0)+x.amount});
   const arr=Object.entries(map).sort((a,b)=>b[1]-a[1]);
-  const total=arr.reduce((s,[,v])=>s+v,0);
+  const totalAll=arr.reduce((s,[,v])=>s+v,0);
+  const totalCounted=arr.filter(([cat])=>catInBudget('expense',cat)).reduce((s,[,v])=>s+v,0);
+  const hasExcl=totalAll!==totalCounted;
   $('#catChart').innerHTML=arr.length?`<div style="margin-bottom:6px;font-size:12px;color:var(--text-3)">本月总支出 ${money(total)}</div>`+arr.map(([cat,v])=>{
     const meta=catMeta('expense',cat);
-    const pct=total?Math.round(v/total*100):0;
-    return `<div style="margin-bottom:10px">
-      <div class="row-between" style="margin-bottom:4px"><span style="font-size:13px;font-weight:600">${meta[2]?(catIcon(meta[2])):''} ${cat}</span><span style="font-size:13px;font-weight:700">${money(v)} · ${pct}%</span></div>
-      <div class="budget-bar" style="margin:0"><i style="width:${pct}%;background:${meta[1]}"></i></div>
+    const nb=!catInBudget('expense',cat);
+    const pct=totalAll?Math.round(v/totalAll*100):0;
+    return `<div style="margin-bottom:10px${nb?';opacity:.58':''}>
+      <div class="row-between" style="margin-bottom:4px"><span style="font-size:13px;font-weight:600">${meta[2]?(catIcon(meta[2])):''} ${cat}${nb?' <span style="font-size:11px;color:var(--warn);font-weight:500">· 不计入支出</span>':''}</span><span style="font-size:13px;font-weight:700">${money(v)} · ${pct}%</span></div>
+      <div class="budget-bar" style="margin:0"><i style="width:${pct}%;background:${nb?'var(--text-3)':meta[1]}"></i></div>
     </div>`;
   }).join(''):'<div class="empty-mini">本月无支出</div>';
 }
@@ -4076,7 +4098,7 @@ function initFilters(){
   const[mf,mt]=rangeOf('thisMonth');setFlowRange(mf,mt,'thisMonth');
   const[hf,ht]=rangeOf('7');setHisRange(hf,ht,'7');
 }
-function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderChangelog();renderAbout();renderLearning();applyModuleLayout()}
+function renderAll(){renderHeader();renderTodos();renderHabits();renderMoney();renderHeat();renderHistory();renderNotes();renderWorklog();renderTodayStat();renderFocusCard();renderChangelog();renderAbout();renderLearning();applyModuleLayout()}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 /* 首次使用预置示例 */
