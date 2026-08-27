@@ -466,15 +466,6 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .sync-preview-body{flex:1;overflow:auto;padding:2px;border-radius:var(--r-sm)}
 .sync-preview-body .muted{padding:20px 0;text-align:center}
 
-/* ====== 可隐藏侧边导航（替代原底部 Tab） ====== */
-.nav-toggle{
-  position:fixed;left:14px;top:14px;z-index:60;
-  width:40px;height:40px;border-radius:99px;
-  background:var(--card);border:1px solid var(--line);
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;color:var(--text);cursor:pointer;
-  box-shadow:0 1px 3px rgba(0,0,0,.08);
-}
 /* ====== 二级导航侧栏（v3.20.31：高大上、保留底部 Tab） ====== */
 .main-area{
   position:relative;min-height:100vh;min-height:100dvh;
@@ -577,7 +568,7 @@ nav.tabbar a.on{color:var(--tab-on)}
 nav.tabbar a.on .ic{color:var(--tab-on)}
 nav.tabbar a.on .ic{transform:scale(1.05)}
 
-/* 桌面（≥760px）：侧栏常驻展开，桌面端 tab 改顶部水平 sticky */
+/* 桌面（≥760px）：侧栏常驻展开，nav.tabbar 沿用全局底部 fixed（v3.20.32 后桌面/移动共用底部 fixed） */
 @media(min-width:760px){
   .side-nav{transform:translateX(0)}
   .main-area{margin-left:232px}
@@ -749,17 +740,19 @@ summary::-webkit-details-marker{color:var(--text)}
 @media(min-width:760px){
   :root{--max:980px;--tab-h:52px}
   header.topbar{padding:20px 24px 16px}
-  /* nav.tabbar 恢复 v3.20.29 顶部水平 sticky（见上"二级导航侧栏"段底部 @media 内的 nav.tabbar 桌面端规则） */
-  nav.tabbar{position:sticky;top:0;transform:none;left:auto;height:var(--tab-h)}
+  /* v3.20.32：桌面端 nav.tabbar 与移动端一致 底部 fixed（v3.20.31 sticky top:0 在桌面被误推到低端，且和 topbar 双 sticky 挤占首屏） */
+  nav.tabbar{height:var(--tab-h);padding-bottom:0}/* 桌面端底部固定沿用全局 position，仅校高度（去掉 env safe-area，因为 PC 无 home indicator） */
   nav.tabbar a{flex-direction:row;gap:6px;font-size:13px}
   nav.tabbar a .ic{width:20px;height:20px}
-  main{padding:20px 24px 30px}
+  main{padding:20px 24px calc(var(--tab-h) + 18px)}/* 18px 给 fixed 底部 tabbar 留位，避免覆盖最后一条内容 */
   .sec{margin-bottom:22px}
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:start}
   .card{margin-bottom:0}
   .hist-stat{grid-template-columns:repeat(6,1fr)}
   .report-area{min-height:56vh}
+  /* 折叠时主区内容占满 */
+  body.nav-collapsed main{padding-left:24px}
 }
 /* 学习模块 */
 .ln-ov{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
