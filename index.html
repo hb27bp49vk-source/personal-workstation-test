@@ -2071,7 +2071,7 @@ function renderFocusCard(){
   const t=todayStr();
   const exp=S.ledger.filter(x=>x.date===t&&x.type==='expense'&&catInBudget('expense',x.category)).reduce((s,x)=>s+x.amount,0);
   const done=S.todos.filter(x=>x.done).length, all=S.todos.length;
-  const e1=$('#focusExp'); if(e1)e1.textContent='¥'+money(exp);
+  const e1=$('#focusExp'); if(e1)e1.textContent=money(exp);
   const e2=$('#focusTodo'); if(e2)e2.textContent=done+'/'+all;
   const s1=$('#focusExpSub'); if(s1){
     if(exp>0){
