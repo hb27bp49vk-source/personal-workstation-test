@@ -322,6 +322,10 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .ci-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:99px;background:var(--card-soft);border:1px solid var(--line);font-size:12px;font-weight:600}
 .ci-chip .ci-ic{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center}
 .ci-chip .ci-ic svg{width:16px;height:16px}
+.cat-ic-svg{width:16px;height:16px;flex:none;vertical-align:-3px}
+.habit-card .h-ic .cat-ic-svg,.mk-ic .cat-ic-svg{width:100%;height:100%}
+.flow-item .f-ic .cat-ic-svg{width:16px;height:16px}
+.ci-chip .ci-ic .cat-ic-svg{width:16px;height:16px;vertical-align:0}
 .ci-chip.habit.arch{opacity:.6;border-style:dashed}
 .ci-chip.mood{background:transparent}
 .cd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -1304,6 +1308,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.29',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
+    '修复分类支出/饼图区域布局被撑爆的问题：分类图标 SVG 缺少宽高属性，在无 CSS 约束的上下文里按浏览器默认大尺寸渲染',
+    'catIcon() 统一输出 16px 图标并新增 .cat-ic-svg 尺寸约束；习惯卡片（24px）、补卡列表（22px）、流水列表（16px）、日历胶囊（16px）按上下文自适应'
+  ]},
   {version:'v3.20.28',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
     '修复资金管理/总资产模块未注册进 MODULES 导致 applyModuleLayout 不重排、位置异常的问题；现注册为账本页模块，默认排在流水记录之后（账本页底部），并可在「编辑模块」里上移/下移/隐藏'
   ]},
@@ -1794,7 +1802,7 @@ const CATICON={
   gift:'<rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 12h18M12 8v13M12 8C9 8 7 5 9 4s3 4 3 4 1-4 3-4-2 4-3 4"/>',
   refresh:'<path d="M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5"/><path d="M20 4v4h-4M4 20v-4h4"/>'
 };
-function catIcon(name){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CATICON[name]||CATICON.tag}</svg>`}
+function catIcon(name){return `<svg class="cat-ic-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CATICON[name]||CATICON.tag}</svg>`}
 /* 自定义分类：存于 S.customCats = {expense:[{name,color}], income:[...]} */
 const CAT_PALETTE=['#c4756b','#c4a062','#9a86b8','#6a8db5','#c47a9e','#6ab58a','#5fa0b0','#7a82c4','#888888'];
 function customCats(type){return (S.customCats&&Array.isArray(S.customCats[type]))?S.customCats[type]:[]}
