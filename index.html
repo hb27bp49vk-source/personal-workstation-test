@@ -34,21 +34,6 @@
   --m-notes:#9a86b8; --m-dataManage:#5a7a8a; --m-cloudSync:#5fa0b0; --m-homeScreen:#8aa0b0;
   --m-changelog:#b0894e; --m-about:#9a9a92; --m-learning:#5a7a8a;
 }
-[data-theme="dark"]{
-  --bg:#161616; --bg2:#1d1d1d;
-  --card:#212121; --card-soft:#272727; --card-hover:#2e2e2e; --card-tint:#212121;
-  --text:#ededed; --text-2:#a6a6a6; --text-3:#6f6f6f;
-  --line:#333; --line-soft:#2a2a2a;
-  --pri:#ededed; --pri-light:#cfcfcf; --pri-soft:rgba(255,255,255,.05); --pri-grad:#ededed;
-  --shadow:none; --shadow-sm:none;
-  --tab-on:#ededed;
-  --m-worklog:#d4b074; --m-todos:#86a8cf; --m-habits:#82c9a3; --m-todayMoney:#d68f86;
-  --m-moneyForm:#c89c66; --m-monthOverview:#d99f74; --m-catExpense:#cba968; --m-flowList:#969ecf;
-  --m-mood:#d68fb0; --m-heatmap:#7bb6c4; --m-countdown:#86a8cf; --m-history:#a89ccb;
-  --m-notes:#b29bd0; --m-dataManage:#7a9cab; --m-cloudSync:#7bb6c4; --m-homeScreen:#a6bccb;
-  --m-changelog:#c8a066; --m-about:#b3b3aa; --m-learning:#7a9cab;
-  --income:#7fae6e; --expense:#d68f86;
-}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{
@@ -93,9 +78,6 @@ main{flex:1;padding:16px 16px calc(var(--tab-h) + 24px)}
 .focus .f-num.ex{color:var(--expense)}
 .focus .f-num.ok{color:var(--income)}
 .focus .f-sub{font-size:12px;color:var(--text-3)}
-.topbar-actions{display:flex;align-items:center;gap:8px}
-.theme-toggle{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;background:var(--card);color:var(--text-2);flex:none;transition:all .15s}
-.theme-toggle:active{transform:scale(.94)}
 .topbar-row > div:first-child{flex:1}
 .card h3{margin:0 0 12px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
 .card h3 .ic{width:18px;height:18px;color:var(--text);flex:none}
@@ -818,9 +800,6 @@ summary::-webkit-details-marker{color:var(--text)}
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
       </div>
-      <button class="theme-toggle" id="themeBtn" title="切换亮/暗色">
-        <svg id="themeIc" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-      </button>
     </div>
   </header>
 
@@ -5641,25 +5620,6 @@ renderSyncBtn();
       promptLogin(p);
     })();
   }
-})();
-/* ====== 视觉精修：暗色模式（独立于业务数据，跟随系统 + 手动切换） ====== */
-(function(){
-  var root=document.documentElement, btn=document.getElementById('themeBtn'), ic=document.getElementById('themeIc');
-  var sun='<path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>';
-  var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
-  function paint(){ var d=root.getAttribute('data-theme')==='dark'; if(ic) ic.innerHTML=d?sun:moon; }
-  try{
-    var s=localStorage.getItem('wb_theme');
-    if(s) root.setAttribute('data-theme',s);
-    else if(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) root.setAttribute('data-theme','dark');
-  }catch(e){}
-  paint();
-  if(btn) btn.addEventListener('click',function(){
-    var n=root.getAttribute('data-theme')==='dark'?'light':'dark';
-    root.setAttribute('data-theme',n);
-    try{ localStorage.setItem('wb_theme',n); }catch(e){}
-    paint();
-  });
 })();
 </script>
 </body>
