@@ -944,6 +944,7 @@ summary::-webkit-details-marker{color:var(--text)}
             <div class="budget-bar"><i id="budgetBar" style="width:0;background:var(--text)"></i></div>
             <div class="muted" id="budgetHint" style="margin-top:2px">点右上「我的」可设置预算</div>
             <div class="muted" id="budgetExcl" style="margin-top:2px;color:var(--warn)"></div>
+            <div class="muted" id="budgetCarry" style="margin-top:2px"></div>
             <div class="muted" id="incomeExcl" style="margin-top:2px;color:var(--income)"></div>
           </div>
         </div>
@@ -1303,6 +1304,11 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.26',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
+    '【合并回主源】上月超支结转：当某月预算内支出超支时，超出部分自动从下月可用预算中扣除（追平/惩戒模型）。月预算区新增「其中 ¥X 为上月超支结转（已从本月扣除）」提示',
+    '预算条分母、超支判断、剩余额度均改用「实际可用预算 = S.budget - 上月超支结转」；未设预算时结转金额强制为 0、不显示',
+    '焦点卡显示bug修复：今日支出下方副文本由重复的「今日已支出」改为「占月预算 N%」（有预算时）/「今日已支出」（无预算时）/「今日暂无支出」'
+  ]},
   {version:'v3.20.25',date:'2026-08-27',modules:['账本'],status:'测试库demo',items:[
     '布局调整：将「资金管理」与「总资产」合并进账本页，并统一放在账本页底部（资金管理在上、总资产在下），不再单独占用底部 Tab',
     '移除底部导航「资产」入口；打开「账本」即可在页底看到 资金管理（收入/分配/存钱目标）与 总资产（资产/负债/净资产 + 占比条）',
@@ -2067,7 +2073,18 @@ function renderFocusCard(){
   const done=S.todos.filter(x=>x.done).length, all=S.todos.length;
   const e1=$('#focusExp'); if(e1)e1.textContent='¥'+money(exp);
   const e2=$('#focusTodo'); if(e2)e2.textContent=done+'/'+all;
-  const s1=$('#focusExpSub'); if(s1)s1.textContent=exp>0?'今日已支出':'今日暂无支出';
+  const s1=$('#focusExpSub'); if(s1){
+    if(exp>0){
+      if((S.budget||0)>0){
+        const pct=Math.min(Math.round(exp/(S.budget||1)*100),999);
+        s1.textContent=`占月预算 ${pct}%`;
+      }else{
+        s1.textContent='今日已支出';
+      }
+    }else{
+      s1.textContent='今日暂无支出';
+    }
+  }
   const s2=$('#focusTodoSub'); if(s2)s2.textContent=all>0?`剩余 ${all-done} 项`:'暂无待办';
 }
 
@@ -2666,6 +2683,14 @@ function monthSum(ms){
   let inc=0,exp=0;S.ledger.filter(x=>x.date.startsWith(ms)).forEach(x=>{if(x.type==='income')inc+=x.amount;else exp+=x.amount});
   return{inc,exp};
 }
+function prevMonthMs(ms){
+  const[y,m]=ms.split('-').map(Number);
+  const d=new Date(y,m-2,1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function budgetExpOf(ms){
+  return S.ledger.filter(x=>x.date.startsWith(ms)&&x.type==='expense'&&catInBudget('expense',x.category)).reduce((s,x)=>s+x.amount,0);
+}
 function renderMonthStat(){
   const ms=fmtDate(curMonth).slice(0,7);
   const m0=monthSum(ms);
@@ -2680,16 +2705,23 @@ function renderMonthStat(){
     <div class="s exp"><div class="n">${money(exp)}</div><div class="l">支出</div></div>
     <div class="s"><div class="n" style="color:var(--text)">${money(inc-exp)}</div><div class="l">结余</div></div>`;
   if(S.budget>0){
-    const pct=S.budget?Math.min(budgetExp/S.budget*100,100):0;
-    const over=budgetExp>S.budget;
-    $('#budgetTxt').textContent=`${money(budgetExp)} / ${money(S.budget)}`;
+    const prevMs=prevMonthMs(ms);
+    const prevExp=budgetExpOf(prevMs);
+    const carry=Math.max(0,prevExp-S.budget);
+    const effBudget=Math.max(0,S.budget-carry);
+    const denom=effBudget>0?effBudget:1;
+    const pct=Math.min(budgetExp/denom*100,100);
+    const over=budgetExp>effBudget;
+    $('#budgetTxt').textContent=carry>0?`${money(budgetExp)} / ${money(effBudget)}（已扣上月 ${money(carry)}）`:`${money(budgetExp)} / ${money(S.budget)}`;
     $('#budgetBar').style.width=pct+'%';
     $('#budgetBar').style.background=over?'var(--bad)':'var(--text)';
-    $('#budgetHint').textContent=over?`预算内已超支 ${money(budgetExp-S.budget)}`:`预算内剩余 ${money(S.budget-budgetExp)}`;
+    $('#budgetHint').textContent=over?`预算内已超支 ${money(budgetExp-effBudget)}`:`预算内剩余 ${money(effBudget-budgetExp)}`;
+    const carryEl=$('#budgetCarry'); if(carryEl)carryEl.textContent=carry>0?`其中 ${money(carry)} 为上月超支结转（已从本月扣除）`:'';
   }else{
     $('#budgetTxt').textContent='未设置';
     $('#budgetBar').style.width='0';
     $('#budgetHint').textContent='点「我的」可设置月预算';
+    const carryEl=$('#budgetCarry'); if(carryEl)carryEl.textContent='';
   }
   $('#budgetExcl').textContent=excludedExp>0?`其中 ${money(excludedExp)} 不计入预算、不计入支出`:'';
   const incExclEl=$('#incomeExcl'); if(incExclEl)incExclEl.textContent=excludedInc>0?`其中 ${money(excludedInc)} 不计入收入`:'';
