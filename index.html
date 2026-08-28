@@ -6485,12 +6485,10 @@ function promptLogin(profile){
   const defaultDays=7;
   modal(`<h4>登录云同步账户<span class="modal-close" onclick="closeModal()">×</span></h4>
     <p class="muted" style="margin:0 0 8px">正在登录：<b>${esc(profile.name)}</b></p>
-    <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm)">
-      <span style="font-size:13px;color:var(--sub);white-space:nowrap;min-width:64px">登录账号</span>
-      ${profile.login
-        ? `<span style="flex:1;font-weight:600;font-size:15px;font-family:monospace;letter-spacing:0.5px">${esc(profile.login)}</span><span class="acc-tag" style="font-size:11px">已设置</span>`
-        : `<span style="flex:1;font-size:14px;font-family:monospace;color:var(--sub)">${esc(maskGist(profile.binId))}</span><span class="muted" style="font-size:11px">用 Gist ID</span>`
-      }
+    <div style="margin:0 0 12px">
+      <label style="display:block;font-size:13px;color:var(--sub);margin-bottom:4px">登录账号</label>
+      <input id="loginAccount" class="sync-input" value="${esc(profile.login||'')}" placeholder="${profile.login?'':'可输入登录账号或 Gist ID'}" autocomplete="off" style="font-family:monospace;letter-spacing:0.5px">
+      ${(!profile.login)?`<p class="muted" style="font-size:11px;margin:3px 0 0">未设置登录账号时，也可直接粘贴 Gist ID 登录</p>`:''}
     </div>
     <div class="privacy-box" style="margin:0 0 12px">数据经 <b>AES-GCM 端到端加密</b>后存于 GitHub Gist。请输入该账户的加密 Passcode 以解密同步数据。</div>
     <input id="loginPass" type="password" class="sync-input" placeholder="加密 Passcode" autocomplete="off">
