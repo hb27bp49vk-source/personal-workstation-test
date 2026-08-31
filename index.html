@@ -7269,7 +7269,7 @@ $('#moduleManageBtn').onclick=openModuleManager;
 const _ss=$('#storageSnapshotBtn');if(_ss)_ss.onclick=createLocalSnapshot;
 const _sr=$('#storageRestoreBtn');if(_sr)_sr.onclick=restoreLocalSnapshot;
 const MONEY_VIEW_KEY='wb_money_view_v1';
-function setMoneyView(v){const page=$('#page-money');if(!page)return;const allowed=['entry','analysis','plan'];if(!allowed.includes(v))v='entry';page.dataset.moneyView=v;try{localStorage.setItem(MONEY_VIEW_KEY,v)}catch(e){}$$('#moneyViewSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));window.scrollTo({top:0,behavior:'auto'});renderSidebar('money')}
+function setMoneyView(v){const page=$('#page-money');if(!page)return;const allowed=['entry','analysis','plan'];if(!allowed.includes(v))v='entry';page.dataset.moneyView=v;try{localStorage.setItem(MONEY_VIEW_KEY,v)}catch(e){}$('#moneyViewSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if($('#page-money').classList.contains('active'))window.scrollTo({top:0,behavior:'auto'})}
 $$('#moneyViewSwitch button').forEach(b=>b.onclick=()=>setMoneyView(b.dataset.v));
 try{setMoneyView(localStorage.getItem(MONEY_VIEW_KEY)||'entry')}catch(e){setMoneyView('entry')}
 const _todayJump=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
