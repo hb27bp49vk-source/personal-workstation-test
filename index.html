@@ -605,7 +605,7 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
 .today-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
 .today-action{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 6px;font-size:12px;font-weight:600;color:var(--text-2);box-shadow:var(--shadow-sm)}
 .today-action:active{transform:scale(.97)}
-.view-switch{position:sticky;top:105px;z-index:19;display:flex;gap:5px;margin:0 0 14px;padding:4px;background:rgba(245,245,243,.94);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(12px)}
+.view-switch{position:relative;z-index:1;display:flex;gap:5px;margin:0 0 14px;padding:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px}
 .view-switch button{flex:1;padding:9px 8px;border-radius:9px;font-size:13px;font-weight:650;color:var(--text-2)}
 .view-switch button.on{background:var(--text);color:#fff;box-shadow:var(--shadow-sm)}
 #page-money[data-money-view="entry"] [data-module="catExpense"],#page-money[data-money-view="entry"] [data-module="flowList"],#page-money[data-money-view="entry"] [data-module="fundManager"],#page-money[data-money-view="entry"] [data-module="assets"]{display:none!important}
@@ -619,8 +619,8 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
 .storage-health-item b{display:block;font-size:15px}.storage-health-item span{display:block;margin-top:2px;font-size:10.5px;color:var(--text-3)}
 .storage-health-actions{display:flex;gap:8px}.storage-health-actions button{flex:1;padding:9px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;font-weight:600;font-size:12px}
 .storage-health-note{margin-top:10px;font-size:11.5px;color:var(--text-3);line-height:1.6}
-@media(max-width:759px){.today-actions{grid-template-columns:repeat(4,1fr)}.today-action{font-size:11.5px}.view-switch{top:106px}.ln-group-tabs{grid-template-columns:1fr 1fr}.storage-health-grid{grid-template-columns:1fr 1fr 1fr}}
-@media(min-width:1100px){body.nav-open .app{max-width:1040px}.today-actions{grid-template-columns:repeat(4,1fr)}.view-switch{top:113px}}
+@media(max-width:759px){.today-actions{grid-template-columns:repeat(4,1fr)}.today-action{font-size:11.5px}.ln-group-tabs{grid-template-columns:1fr 1fr}.storage-health-grid{grid-template-columns:1fr 1fr 1fr}}
+@media(min-width:1100px){body.nav-open .app{max-width:1040px}.today-actions{grid-template-columns:repeat(4,1fr)}}
 
 /* ====== 通用 ====== */
 .row-between{display:flex;align-items:center;justify-content:space-between}
@@ -3794,6 +3794,11 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.21.1-test',date:'2026-08-31',modules:['今日','账本','学习','我的'],status:'已修复',items:[
+    '修复账本切换器初始化报错，恢复今日四个快捷按钮及全站首次渲染',
+    '修复账本分析与资金规划高亮状态，并取消切换栏吸顶，避免滚动遮挡内容',
+    '恢复学习内容、更新日志等依赖首次渲染的模块'
+  ]},
   {version:'v3.21.0-test',date:'2026-08-31',modules:['数据安全','今日','账本','学习','布局'],status:'测试中',items:[
     '新增 IndexedDB 本机双代镜像：保留当前与上一代快照，localStorage 写满或异常时仍有恢复兜底',
     '数据管理新增容量与镜像健康面板，可立即创建快照或从本机镜像恢复',
@@ -7269,7 +7274,7 @@ $('#moduleManageBtn').onclick=openModuleManager;
 const _ss=$('#storageSnapshotBtn');if(_ss)_ss.onclick=createLocalSnapshot;
 const _sr=$('#storageRestoreBtn');if(_sr)_sr.onclick=restoreLocalSnapshot;
 const MONEY_VIEW_KEY='wb_money_view_v1';
-function setMoneyView(v){const page=$('#page-money');if(!page)return;const allowed=['entry','analysis','plan'];if(!allowed.includes(v))v='entry';page.dataset.moneyView=v;try{localStorage.setItem(MONEY_VIEW_KEY,v)}catch(e){}$('#moneyViewSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if($('#page-money').classList.contains('active'))window.scrollTo({top:0,behavior:'auto'})}
+function setMoneyView(v){const page=$('#page-money');if(!page)return;const allowed=['entry','analysis','plan'];if(!allowed.includes(v))v='entry';page.dataset.moneyView=v;try{localStorage.setItem(MONEY_VIEW_KEY,v)}catch(e){}$$('#moneyViewSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if($('#page-money').classList.contains('active'))window.scrollTo({top:0,behavior:'auto'})}
 $$('#moneyViewSwitch button').forEach(b=>b.onclick=()=>setMoneyView(b.dataset.v));
 try{setMoneyView(localStorage.getItem(MONEY_VIEW_KEY)||'entry')}catch(e){setMoneyView('entry')}
 const _todayJump=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
