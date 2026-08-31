@@ -1409,7 +1409,7 @@ summary::-webkit-details-marker{color:var(--text)}
     </div>
     <div class="side-cap" id="sideCap">今日</div>
     <nav class="side-list" id="sideList" role="navigation"></nav>
-    <div class="side-foot"><span class="sf-dot"></span><span>v3.20.31 · 测试版</span></div>
+    <div class="side-foot"><span class="sf-dot"></span><span id="sideVer">—</span></div>
   </div><!-- /side-nav -->
   </div><!-- /app -->
 </div><!-- /main-area -->
@@ -3752,6 +3752,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.20.41',date:'2026-08-28',modules:['云同步'],status:'测试库demo',items:[
+    '登录弹窗新增「登录账号」展示行：已配置账号时醒目显示并标记「已设置」，多账户登录前即可辨认目标账户',
+    '未配置登录账号时降级显示脱敏 Gist ID，并标记「用 Gist ID」，兼容既有账户配置'
+  ]},
   {version:'v3.20.40',date:'2026-08-27',modules:['云同步'],status:'测试库demo',items:[
     '账户配置新增「导出二维码」：Passcode 加密内容生成二维码，手机扫码迁移更方便；并支持「从文本/扫码粘贴」导入',
     '账户列表新增「编辑」入口，可直接修改账户名称与登录账号（如把默认云库登录账号维护为 chance）'
@@ -6868,6 +6872,8 @@ function renderAbout(){
     const mods=Array.isArray(c.modules)?c.modules.join(' / '):'';
     d.textContent=`${c.version} · ${c.date||''}${mods?' · '+mods:''}`;
   }
+  const sideVer=$('#sideVer');
+  if(sideVer)sideVer.textContent=c.version+(TEST_BUILD?' · 测试版':'');
 }
 
 /* ============ 历史信息 · 按时间筛选 ============ */
