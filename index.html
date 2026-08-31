@@ -605,7 +605,8 @@ nav.tabbar a.on .ic{transform:scale(1.05)}
 .today-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
 .today-action{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 6px;font-size:12px;font-weight:600;color:var(--text-2);box-shadow:var(--shadow-sm)}
 .today-action:active{transform:scale(.97)}
-.view-switch{position:relative;z-index:1;display:flex;gap:5px;margin:0 0 14px;padding:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px}
+.view-switch{position:sticky;top:calc(var(--topbar-h,105px) + 8px);z-index:20;display:flex;gap:5px;margin:0 0 14px;padding:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 12px var(--bg),var(--shadow-sm)}
+#page-money .sec{scroll-margin-top:calc(var(--topbar-h,105px) + var(--money-switch-h,50px) + 28px)}
 .view-switch button{flex:1;padding:9px 8px;border-radius:9px;font-size:13px;font-weight:650;color:var(--text-2)}
 .view-switch button.on{background:var(--text);color:#fff;box-shadow:var(--shadow-sm)}
 #page-money[data-money-view="entry"] [data-module="catExpense"],#page-money[data-money-view="entry"] [data-module="flowList"],#page-money[data-money-view="entry"] [data-module="fundManager"],#page-money[data-money-view="entry"] [data-module="assets"]{display:none!important}
@@ -3794,6 +3795,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.21.3-test',date:'2026-08-31',modules:['账本'],status:'已优化',items:[
+    '账本三视图切换栏恢复吸顶，并动态跟随实际页头高度，避免与页头重叠',
+    '账本模块定位自动预留页头和切换栏高度，侧栏跳转与快捷记账不会遮住模块标题和内容'
+  ]},
   {version:'v3.21.2-test',date:'2026-08-31',modules:['今日','账本'],status:'已修复',items:[
     '修复今日快捷入口定位被固定页头遮挡，待办与打卡模块会完整露出',
     '点击「＋记账」时固定进入记账视图，不再沿用上次停留的资金规划或分析视图'
@@ -4437,7 +4442,9 @@ function renderSidebar(tabKey){
       const hdr=document.querySelector('header.topbar');
       const hdrBottom=hdr?hdr.getBoundingClientRect().bottom:0;
       const rect=t.getBoundingClientRect();
-      const absTop=rect.top+window.scrollY-Math.max(0,hdrBottom)-10;
+      const moneySwitch=t.closest('#page-money')?$('#moneyViewSwitch'):null;
+      const stickyExtra=moneySwitch?moneySwitch.getBoundingClientRect().height+18:0;
+      const absTop=rect.top+window.scrollY-Math.max(0,hdrBottom)-stickyExtra-10;
       window.scrollTo({top:Math.max(0,absTop),behavior:'smooth'});
       /* 视觉提示：1.3s 高亮闪烁 */
       if(!t.classList.contains('sec-flash')){t.classList.add('sec-flash');setTimeout(()=>t.classList.remove('sec-flash'),1300);}
@@ -4453,6 +4460,7 @@ $$('nav.tabbar a').forEach(a=>a.addEventListener('click',()=>{
   $$('nav.tabbar a').forEach(x=>x.classList.remove('on'));a.classList.add('on');
   const p=a.dataset.p;$$('.page').forEach(x=>x.classList.remove('active'));
   $('#page-'+p).classList.add('active');
+  requestAnimationFrame(syncStickyOffsets);
   if(p==='today')renderWorklog();if(p==='money')renderMoney();if(p==='heat')renderHeat();if(p==='notes')renderNotes();if(p==='history')renderActiveHis();if(p==='learning')renderLearning();
   /* v3.20.31: 切换 tab 后刷新侧边栏二级模块 */
   renderSidebar(p);
@@ -4473,7 +4481,9 @@ $$('nav.tabbar a').forEach(a=>a.addEventListener('click',()=>{
       /* 关键：减去 sticky 顶栏高度，否则卡片顶部被顶栏遮住（E2E 实测 rectTop=0 vs 顶栏底 107px） */
       const hdr=document.querySelector('header.topbar');
       const hdrBottom=hdr?hdr.getBoundingClientRect().bottom:0;
-      const absTop=rect.top+window.scrollY-Math.max(0,hdrBottom)-8;
+      const moneySwitch=t.closest('#page-money')?$('#moneyViewSwitch'):null;
+      const stickyExtra=moneySwitch?moneySwitch.getBoundingClientRect().height+18:0;
+      const absTop=rect.top+window.scrollY-Math.max(0,hdrBottom)-stickyExtra-8;
       window.scrollTo({top:Math.max(0,absTop),behavior});
       if(!t.classList.contains('sec-flash')){t.classList.add('sec-flash');setTimeout(()=>t.classList.remove('sec-flash'),1300);}
     };
@@ -7277,6 +7287,8 @@ function openModuleManager(){
 $('#moduleManageBtn').onclick=openModuleManager;
 const _ss=$('#storageSnapshotBtn');if(_ss)_ss.onclick=createLocalSnapshot;
 const _sr=$('#storageRestoreBtn');if(_sr)_sr.onclick=restoreLocalSnapshot;
+function syncStickyOffsets(){const hdr=document.querySelector('header.topbar');if(hdr)document.documentElement.style.setProperty('--topbar-h',Math.ceil(hdr.getBoundingClientRect().height)+'px');const sw=$('#moneyViewSwitch');if(sw&&sw.getBoundingClientRect().height)document.documentElement.style.setProperty('--money-switch-h',Math.ceil(sw.getBoundingClientRect().height)+'px')}
+syncStickyOffsets();window.addEventListener('resize',syncStickyOffsets);if(window.ResizeObserver){const _stickyRO=new ResizeObserver(syncStickyOffsets);const _stickyHdr=document.querySelector('header.topbar');if(_stickyHdr)_stickyRO.observe(_stickyHdr)}
 const MONEY_VIEW_KEY='wb_money_view_v1';
 function setMoneyView(v){const page=$('#page-money');if(!page)return;const allowed=['entry','analysis','plan'];if(!allowed.includes(v))v='entry';page.dataset.moneyView=v;try{localStorage.setItem(MONEY_VIEW_KEY,v)}catch(e){}$$('#moneyViewSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if($('#page-money').classList.contains('active'))window.scrollTo({top:0,behavior:'auto'})}
 $$('#moneyViewSwitch button').forEach(b=>b.onclick=()=>setMoneyView(b.dataset.v));
