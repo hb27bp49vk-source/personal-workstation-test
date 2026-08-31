@@ -3794,6 +3794,10 @@ const dateAdd=(ds,n)=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n)
 
 /* ============ 升级功能清单 ============ */
 const CHANGELOG=[
+  {version:'v3.21.2-test',date:'2026-08-31',modules:['今日','账本'],status:'已修复',items:[
+    '修复今日快捷入口定位被固定页头遮挡，待办与打卡模块会完整露出',
+    '点击「＋记账」时固定进入记账视图，不再沿用上次停留的资金规划或分析视图'
+  ]},
   {version:'v3.21.1-test',date:'2026-08-31',modules:['今日','账本','学习','我的'],status:'已修复',items:[
     '修复账本切换器初始化报错，恢复今日四个快捷按钮及全站首次渲染',
     '修复账本分析与资金规划高亮状态，并取消切换栏吸顶，避免滚动遮挡内容',
@@ -7278,9 +7282,22 @@ function setMoneyView(v){const page=$('#page-money');if(!page)return;const allow
 $$('#moneyViewSwitch button').forEach(b=>b.onclick=()=>setMoneyView(b.dataset.v));
 try{setMoneyView(localStorage.getItem(MONEY_VIEW_KEY)||'entry')}catch(e){setMoneyView('entry')}
 const _todayJump=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
-_todayJump('#todayGoTodo',()=>{const t=document.querySelector('[data-module="todos"]');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})});
-_todayJump('#todayGoHabit',()=>{const t=document.querySelector('[data-module="habits"]');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})});
-_todayJump('#todayGoMoney',()=>goTab('money',{scrollTo:'#moneyFormSec'}));
+function scrollTodayModule(sel){
+  const scrollToTarget=(behavior)=>{
+    const t=$(sel);if(!t)return;
+    const hdr=document.querySelector('header.topbar');
+    const hdrBottom=hdr?hdr.getBoundingClientRect().bottom:0;
+    const rect=t.getBoundingClientRect();
+    const absTop=rect.top+window.scrollY-Math.max(0,hdrBottom)-10;
+    window.scrollTo({top:Math.max(0,absTop),behavior});
+    if(!t.classList.contains('sec-flash')){t.classList.add('sec-flash');setTimeout(()=>t.classList.remove('sec-flash'),1300);}
+  };
+  scrollToTarget('smooth');
+  setTimeout(()=>scrollToTarget('auto'),400);
+}
+_todayJump('#todayGoTodo',()=>scrollTodayModule('[data-module="todos"]'));
+_todayJump('#todayGoHabit',()=>scrollTodayModule('[data-module="habits"]'));
+_todayJump('#todayGoMoney',()=>{setMoneyView('entry');goTab('money',{scrollTo:'#moneyFormSec'})});
 _todayJump('#todayGoLearning',()=>goTab('learning'));
 queueLocalMirror(stateJson());
 
