@@ -4496,7 +4496,7 @@ function goTab(p,opts){
     if(e.key==='Escape')document.body.classList.remove('nav-open');
   });
   /* 初始化：渲染默认 tab 的二级模块 */
-  const initialKey=($('nav.tabbar a.on')[0]||$('nav.tabbar a')[0]).dataset.p;
+  const initialKey=($$('nav.tabbar a.on')[0]||$$('nav.tabbar a')[0]).dataset.p;
   if(window.innerWidth>=1100){try{if(localStorage.getItem('wb_sidebar_open')!=='0')document.body.classList.add('nav-open')}catch(e){document.body.classList.add('nav-open')}}
   renderSidebar(initialKey);
 })();
@@ -7269,8 +7269,8 @@ $('#moduleManageBtn').onclick=openModuleManager;
 const _ss=$('#storageSnapshotBtn');if(_ss)_ss.onclick=createLocalSnapshot;
 const _sr=$('#storageRestoreBtn');if(_sr)_sr.onclick=restoreLocalSnapshot;
 const MONEY_VIEW_KEY='wb_money_view_v1';
-function setMoneyView(v){const page=$('#page-money');if(!page)return;const allowed=['entry','analysis','plan'];if(!allowed.includes(v))v='entry';page.dataset.moneyView=v;try{localStorage.setItem(MONEY_VIEW_KEY,v)}catch(e){}$('#moneyViewSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));window.scrollTo({top:0,behavior:'auto'});renderSidebar('money')}
-$('#moneyViewSwitch button').forEach(b=>b.onclick=()=>setMoneyView(b.dataset.v));
+function setMoneyView(v){const page=$('#page-money');if(!page)return;const allowed=['entry','analysis','plan'];if(!allowed.includes(v))v='entry';page.dataset.moneyView=v;try{localStorage.setItem(MONEY_VIEW_KEY,v)}catch(e){}$$('#moneyViewSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));window.scrollTo({top:0,behavior:'auto'});renderSidebar('money')}
+$$('#moneyViewSwitch button').forEach(b=>b.onclick=()=>setMoneyView(b.dataset.v));
 try{setMoneyView(localStorage.getItem(MONEY_VIEW_KEY)||'entry')}catch(e){setMoneyView('entry')}
 const _todayJump=(id,fn)=>{const el=$(id);if(el)el.onclick=fn};
 _todayJump('#todayGoTodo',()=>{const t=document.querySelector('[data-module="todos"]');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})});
